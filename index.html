@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PC Assembly Lab: B450 Gaming Plus Max build</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="4" fill="#1b1c1f"/><rect x="8" y="8" width="16" height="16" rx="1.5" fill="#c9ced4"/><path d="M4 28 L4 20 L12 28 Z" fill="#e8b33a"/><rect x="26" y="4" width="2" height="24" fill="#d22630"/></svg>
+      <div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div>
+    </div>
+    <div class="head-actions">
+      <button class="chip-btn" id="langBtn"></button>
+      <button class="chip-btn" id="resetBtn" data-i18n="reset"></button>
+    </div>
+  </header>
+
+  <div class="work">
+    <aside>
+      <div>
+        <p class="module-title" data-i18n="lessons"></p>
+        <ul class="modules" id="modules"></ul>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <div class="explain" aria-live="polite"><h2 id="expTitle"></h2><p id="expText"></p></div>
+      <label class="toggle"><input type="checkbox" id="hintChk" checked> <span data-i18n="hints"></span></label>
+      <div class="stats">
+        <div class="stat"><b id="mistakes">0</b><small data-i18n="mistakes"></small></div>
+        <div class="stat"><b id="timer">0:00</b><small data-i18n="time"></small></div>
+      </div>
+      <details class="specs">
+        <summary data-i18n="specs"></summary>
+        <div class="spec"><b>MSI B450 GAMING PLUS MAX</b><span data-i18n="spec_board"></span></div>
+        <div class="spec"><b>AMD Ryzen 5 5600G</b><span data-i18n="spec_cpu"></span></div>
+        <div class="spec"><b>Asgard 8 GB DDR4-3200 (×2)</b><span data-i18n="spec_ram"></span></div>
+        <div class="spec"><b>AMD Wraith Stealth</b><span data-i18n="spec_cool"></span></div>
+      </details>
+      <details class="photos">
+        <summary data-i18n="photos"></summary>
+        <p data-i18n="photosHelp"></p>
+        <label><span data-i18n="photoLid"></span><input type="file" accept="image/*" data-photo="cpuTop"></label>
+        <label><span data-i18n="photoRam"></span><input type="file" accept="image/*" data-photo="ram"></label>
+        <label><span data-i18n="photoBoard"></span><input type="file" accept="image/*" data-photo="board"></label>
+      </details>
+    </aside>
+
+    <section class="stage">
+      <div class="viewport" id="viewport">
+        <div class="tools">
+          <button class="tool" id="rotL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 3v5h5"/></svg></button>
+          <button class="tool drop" id="dropBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg></button>
+          <button class="tool" id="rotR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></svg></button>
+          <button class="tool" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7L3 17h5z"/><path d="M16 7l5 10h-5z" fill="currentColor"/></svg></button>
+        </div>
+        <div class="view-btns"><label class="bright"><span id="brightLbl"></span><input type="range" id="bright" min="0.5" max="1.8" step="0.05"></label><button id="glowBtn" aria-pressed="true"></button><button id="topBtn" data-i18n="topView"></button><button id="viewBtn" data-i18n="resetView"></button></div>
+        <div class="toast" id="toast" role="status"></div>
+        <div class="loadmsg" id="loadMsg"><div><b>Loading the 3D workbench…</b></div></div>
+        <div class="done" id="done">
+          <div class="done-card">
+            <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="26" fill="#2f8f5b"/><path d="M16 29l8 8 16-17" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <h2 data-i18n="doneTitle"></h2>
+            <p id="doneText"></p>
+            <button class="primary" id="againBtn" data-i18n="ok"></button>
+          </div>
+        </div>
+      </div>
+      <div class="tray">
+        <h3 data-i18n="tray"></h3>
+        <div class="tray-items" id="tray"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="js/core/boot-errors.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/core/config.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/helpers.js"></script>
+<script src="js/core/layout.js"></script>
+<script src="js/core/textures.js"></script>
+<script src="js/core/scene.js"></script>
+<script src="js/parts/motherboard.js"></script>
+<script src="js/parts/rear-io.js"></script>
+<script src="js/parts/board-headers.js"></script>
+<script src="js/parts/socket.js"></script>
+<script src="js/parts/dimm-slots.js"></script>
+<script src="js/parts/pcie-latch.js"></script>
+<script src="js/parts/cpu.js"></script>
+<script src="js/parts/ram.js"></script>
+<script src="js/parts/fan-headers.js"></script>
+<script src="js/parts/thermal-paste.js"></script>
+<script src="js/parts/cooler.js"></script>
+<script src="js/parts/cables.js"></script>
+<script src="js/parts/m2-ssd.js"></script>
+<script src="js/parts/cmos-battery.js"></script>
+<script src="js/parts/case.js"></script>
+<script src="js/parts/side-panel.js"></script>
+<script src="js/parts/psu.js"></script>
+<script src="js/parts/gpu.js"></script>
+<script src="js/parts/sata-connectors.js"></script>
+<script src="js/parts/sata-ssd.js"></script>
+<script src="js/parts/connector-cables.js"></script>
+<script src="js/parts/front-panel.js"></script>
+<script src="js/parts/peripherals.js"></script>
+<script src="js/game/photos.js"></script>
+<script src="js/game/state.js"></script>
+<script src="js/game/take-parts.js"></script>
+<script src="js/game/actions.js"></script>
+<script src="js/game/drop.js"></script>
+<script src="js/game/connectors.js"></script>
+<script src="js/game/paste.js"></script>
+<script src="js/game/skip.js"></script>
+<script src="js/game/input.js"></script>
+<script src="js/game/ui.js"></script>
+<script src="js/game/loop.js"></script>
+</body>
+</html>
