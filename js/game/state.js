@@ -13,7 +13,7 @@ const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
 if(saved.lang==="ar") lang="ar";
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0,
-  hints:saved.hints!==false, glow:saved.glow!==false, bright:saved.bright||1.1,
+  hints:saved.hints!==false, glow:true, bright:saved.bright||1.1,
   used:{}, tightOrder:[], fanOn:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
 const nearPt=(x,z,px,pz,r)=>Math.hypot(x-px,z-pz)<r;
@@ -32,6 +32,7 @@ function viewFor(n){
   if(n===ST.boardScrews) return "boardTop";
   if(n===ST.pcieLatch) return "pcie";
   if(n===ST.gpu) return "gpu";
+  if(n===ST.sata) return "sataTop";
   if(n<=ST.sataPower) return "sata";
   if(n===ST.atx24) return "atx24";
   if(n===ST.cpu8) return "cpuPwr";
@@ -43,7 +44,8 @@ function viewFor(n){
 }
 function setStep(n){
   const prev=viewFor(S.step); S.step=n;
-  if(viewFor(n)!==prev) focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900);
+  if(viewFor(n)!==prev){ const v=nextConnView(n);                  // SATA cable steps: close-up framing instead of a fixed view
+    if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
   if(n===ST.fanCable) spawnCable(CABLES.fan);
   if(n===ST.psu) showCase();
   if(n===ST.boardScrews) mbScrewHints.visible=true;

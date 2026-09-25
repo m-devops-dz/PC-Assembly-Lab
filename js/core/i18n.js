@@ -113,7 +113,7 @@ const I18N = {
   },
   ar:{
     title:"مختبر تركيب الحاسوب", subtitle:"MSI B450 Gaming Plus Max، Ryzen 5 5600G، Asgard 8 GB DDR4", reset:"ابدأ من جديد", lessons:"الدروس",
-    hints:"إظهار التلميحات", mistakes:"أخطاء", time:"الوقت", tray:"القطع الموجودة", resetView:"إعادة العرض", topView:"عرض علوي", glowOn:"الإضاءة: تشغيل", glowOff:"الإضاءة: إيقاف", bright:"السطوع", ok:"حسنًا",
+    hints:"إظهار التلميحات", mistakes:"أخطاء", time:"الوقت", tray:"القطع الموجودة", resetView:"إعادة العرض", topView:"عرض علوي", glowOn:"توضيحات: تشغيل", glowOff:"توضيحات: إيقاف", bright:"السطوع", ok:"حسنًا",
     g_desk:"على الطاولة", g_case:"داخل الصندوق", g_power:"أسلاك الطاقة والبيانات", g_finish:"اللمسات الأخيرة",
     specs:"القطع في هذا التجميع",
     spec_board:"لوحة أم ATX بقياس 30.5 × 24.4 سم. مقبس AM4، شريحة AMD B450، أربع فتحات DDR4 (قناة مزدوجة، حتى 128 GB).",

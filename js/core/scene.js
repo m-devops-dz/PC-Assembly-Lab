@@ -15,7 +15,7 @@ const boardRoot=new T.Group(); scene.add(boardRoot);
 const camera=new T.PerspectiveCamera(36,1,0.5,200);
 const VIEWS={ cpu:{pos:[4,13.5,8.5],tgt:[-2.5,.6,-5]}, ram:{pos:[6.8,31,-3.8],tgt:[6.8,.5,-4.3]}, paste:{pos:[-4.6,23,-2.7],tgt:[-4.6,.5,-3.1]}, cooler:{pos:[6,17,10],tgt:[-2.5,1.2,-5]}, fan:{pos:[9,13,1],tgt:[0,1,-8.5]},
   m2:{pos:[3,15,19],tgt:[-1,.5,5.5]}, psu:{pos:[12,44,-23],tgt:[-12,7,-33]}, "case":{pos:[58,52,-18],tgt:[0,0,-25]}, caseClose:{pos:[20,52,-6],tgt:[2,4,-47]},
-  gpu:{pos:[16,34,-20],tgt:[-3,5,-46]}, sata:{pos:[36,28,-16],tgt:[18,2,-40]}, all:{pos:[34,52,-6],tgt:[4,3,-47]},
+  gpu:{pos:[16,34,-20],tgt:[-3,5,-46]}, sata:{pos:[36,28,-16],tgt:[18,2,-40]}, sataTop:{pos:[22.5,34,-34.4],tgt:[22.5,.75,-35]}, all:{pos:[96,46,-24],tgt:[22,10,-70]},
   atx24:{pos:[28,22,-45],tgt:[12,2,-50]}, cpuPwr:{pos:[-5,22,-58],tgt:[-10,2,-62]},
   battery:{pos:[-1.5,15,18],tgt:[-1.5,.5,9]}, boardTop:{pos:[2,46,-33],tgt:[0,1,-50]}, pcie:{pos:[5,12,-57],tgt:[-5,1,-47]},
   gpuPwr:{pos:[14,24,-38],tgt:[5,11.5,-46]}, frontPanel:{pos:[20,26,-30],tgt:[13,1.5,-41]},

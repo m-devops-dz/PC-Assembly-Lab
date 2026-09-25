@@ -1,12 +1,13 @@
 /* ---------------- peripherals: USB keyboard, USB mouse, HDMI monitor ----------------
-   They sit on the desk behind/beside the case and plug into the ports at the back:
+   Keyboard and mouse sit on the desk behind the case, the monitor past its front panel.
+   They plug into the ports at the back:
    the board's rear I/O (USB, HDMI) and the graphics card's bracket (HDMI, DisplayPort). */
 const periG=new T.Group(); periG.visible=false; scene.add(periG);
 const periBlack=new T.MeshStandardMaterial({color:0x17181b,roughness:.55}), periGrey=new T.MeshStandardMaterial({color:0x2a2c31,metalness:.3,roughness:.5});
 const plugMetal=new T.MeshStandardMaterial({color:0xc4c9cf,metalness:.9,roughness:.3});
 
-/* keyboard (beyond the top of the case) and mouse (beyond the bottom) */
-const KB_POS=V3(-27,0,L.z-26), MOUSE_POS=V3(-25,0,L.z+31);
+/* keyboard (behind the case, clear of the desk space where its plug lies) and mouse (beyond the bottom) */
+const KB_POS=V3(-44,0,L.z-20), MOUSE_POS=V3(-25,0,L.z+31);
 (function devices(){
   const keyTop=new T.MeshStandardMaterial({map:canvasTex(1024,320,(g,W,H)=>{ g.fillStyle="#141518"; g.fillRect(0,0,W,H);
     const rows=[15,15,14,13,12], kw=W/15.6;
@@ -17,19 +18,20 @@ const KB_POS=V3(-27,0,L.z-26), MOUSE_POS=V3(-25,0,L.z+31);
   mesh(box(.3,.1,.08),periGrey,[MOUSE_POS.x+1.2,1.95,MOUSE_POS.z],periG);                                         // scroll wheel
 })();
 
-/* monitor behind the case, screen facing +x so it's seen from the front of the desk */
-const MON_POS=V3(-44,0,L.z+2);
+/* monitor past the case's front panel and off beyond its top edge, screen turned toward the finishing camera */
+const MON_POS=V3(52,0,L.z-46), MON_YAW=-.5;
+const monG=new T.Group(); monG.position.copy(MON_POS); monG.rotation.y=MON_YAW; periG.add(monG);
 const screenOff=canvasTex(1024,576,(g,W,H)=>{ g.fillStyle="#050608"; g.fillRect(0,0,W,H); g.fillStyle="#3a3f47"; g.font="600 40px Barlow, Arial"; g.textAlign="center"; g.fillText("No signal",W/2,H/2); });
 const screenOn=canvasTex(1024,576,(g,W,H)=>{ const gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,"#0b0c10"); gr.addColorStop(1,"#1a0a0c"); g.fillStyle=gr; g.fillRect(0,0,W,H);
   g.fillStyle="#d22630"; g.font="800 150px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.fillText("MSI",W/2,H*.5);
   g.fillStyle="#c9ced4"; g.font="600 34px Barlow, Arial"; g.fillText("B450 GAMING PLUS MAX",W/2,H*.62);
   g.fillStyle="#8a9099"; g.font="500 26px Barlow, Arial"; g.fillText("Press DEL to run BIOS setup",W/2,H*.9); });
 const screenMat=new T.MeshStandardMaterial({map:screenOff,roughness:.3,metalness:.1,emissive:0xffffff,emissiveMap:screenOff,emissiveIntensity:.0});
-(function monitor(){ const x=MON_POS.x, z=MON_POS.z;
-  mesh(box(12,.6,18),periGrey,[x,.3,z],periG);                                                          // foot
-  mesh(box(2,20,4),periGrey,[x-1,10,z],periG);                                                          // neck
-  mesh(box(2,33,56),periBlack,[x+.4,26,z],periG);                                                       // bezel
-  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[x+1.42,26,z],periG,{cast:false}); s.rotation.y=Math.PI/2; })();
+(function monitor(){
+  mesh(box(12,.6,18),periGrey,[0,.3,0],monG);                                                           // foot
+  mesh(box(2,20,4),periGrey,[-1,10,0],monG);                                                            // neck
+  mesh(box(2,33,56),periBlack,[.4,26,0],monG);                                                          // bezel
+  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2; })();
 function screenBoot(){ screenMat.map=screenOn; screenMat.emissiveMap=screenOn; screenMat.emissiveIntensity=.9; screenMat.needsUpdate=true; }
 
 /* USB-A plug: metal shell with the plastic insert on one side (roll 0 = insert at the bottom, matching the port's tongue at the top) */
@@ -76,16 +78,17 @@ function makeIecPlug(id){
 const periCable=(c)=>new T.MeshStandardMaterial({color:c,roughness:.6});
 Object.assign(CONN,{
   usbKb:{id:"usbKb",mat:periCable(0x1b1c1f),radius:.18,mesh:null,a:makeUsbPlug("usbKb"),outside:true,
-    anchor:()=>V3(KB_POS.x+7.6,.5,KB_POS.z+8), anchorDir:()=>V3(1,0,0)},
+    anchor:()=>V3(KB_POS.x+7.6,.5,KB_POS.z+13), anchorDir:()=>V3(1,0,0)},
   usbMouse:{id:"usbMouse",mat:periCable(0x1b1c1f),radius:.14,mesh:null,a:makeUsbPlug("usbMouse"),outside:true,
     anchor:()=>V3(MOUSE_POS.x+3.1,.6,MOUSE_POS.z), anchorDir:()=>V3(1,0,0)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
-    anchor:()=>V3(MON_POS.x-.7,12,MON_POS.z), anchorDir:()=>V3(0,-1,0)},
+    anchor:()=>(monG.updateMatrixWorld(true),monG.localToWorld(V3(-2.1,12,0))), anchorDir:()=>V3(0,-1,0),
+    via:()=>[monG.localToWorld(V3(-6,.3,6)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, then along the desk around the top of the case
   ac:{id:"ac",mat:periCable(0x141517),radius:.3,mesh:null,a:makeIecPlug("ac"),outside:true,           // runs off the desk to the wall socket
     anchor:()=>V3(-80,.35,L.z+26), anchorDir:()=>V3(1,0,0)}
 });
 function showPeripherals(){ periG.visible=true; RPORTS.forEach(p=>p.hint.visible=true);
-  layLoose(CONN.usbKb.a,V3(-21,.5,L.z-13),.3,0); layLoose(CONN.usbMouse.a,V3(-21,.5,L.z+12),-.3,0); layLoose(CONN.hdmi.a,V3(-23,.55,L.z+1),0,0);
+  layLoose(CONN.usbKb.a,V3(-20.5,.5,L.z-7),0,0); layLoose(CONN.usbMouse.a,V3(-21,.5,L.z+12),-.3,0); layLoose(CONN.hdmi.a,V3(-20.5,.55,L.z-1),0,0);
   layLoose(CONN.ac.a,V3(-25,.65,L.z+21),-.2,Math.PI/2);
   drawConn(CONN.usbKb); drawConn(CONN.usbMouse); drawConn(CONN.hdmi); drawConn(CONN.ac); }
 

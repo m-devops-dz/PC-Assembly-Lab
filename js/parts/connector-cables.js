@@ -53,7 +53,7 @@ function drawConn(c){
   const mid=a.clone().lerp(b,.5); mid.y=c.overY??Math.max(Math.min(a.y,b.y)-1,.7);   // overY: arch over the GPU instead of sagging
   if(c.a.pins) return drawBundle(c,a,da,mid,db);
   const keep=c.outside?(p=>p):inCase;                                     // desk cables (keyboard, mouse, monitor) run outside the case
-  const pts=[a,keep(a.clone().addScaledVector(da,1.2)),keep(mid),keep(b.clone().addScaledVector(db,1.2)),b];
+  const pts=[a,keep(a.clone().addScaledVector(da,1.2)),...(c.via?c.via():[keep(mid)]),keep(b.clone().addScaledVector(db,1.2)),b];   // via: route around the case
   const geo=new T.TubeGeometry(new T.CatmullRomCurve3(pts),64,c.radius,8,false);
   if(!c.mesh){ c.mesh=new T.Mesh(geo,c.mat); c.mesh.castShadow=true; c.mesh.userData={part:"conn",conn:c.id}; scene.add(c.mesh); } else { c.mesh.geometry.dispose(); c.mesh.geometry=geo; }
 }
@@ -78,7 +78,7 @@ function showConnCables(){
   layLoose(CONN.data.a,V3(19.6,.75,L.z+9.6),2.4,Math.PI/2); layLoose(CONN.data.b,V3(17.2,.75,L.z+11),.4,Math.PI/2);
   layLoose(CONN.power.a,V3(3.5,.75,L.z+15.5),2.8,Math.PI/2);
   layLoose(CONN.atx24.a,V3(18.0,.95,L.z-1.0),Math.PI,0);
-  layLoose(CONN.cpu8.a,V3(-6.0,1.85,L.z-9.0),Math.PI/2,0);          // on the board, so it rests on the board surface
+  layLoose(CONN.cpu8.a,V3(-5.6,4.6,L.z-9.8),Math.PI/2,0);           // on the corner of the cooler shroud, so it isn't hidden under the cooler
   layLoose(CONN.gpu8.a,V3(19.5,.95,L.z+4.5),Math.PI,0);
   Object.values(CONN).forEach(drawConn);
 }
