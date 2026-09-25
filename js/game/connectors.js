@@ -8,9 +8,12 @@ function clickConn(id){
   const p0=P.outer.position.clone(), q0=P.outer.quaternion.clone(), r0=P.inner.rotation.x;
   S.roll=1+Math.floor(Math.random()*3); S.job=job; S.busy=true;
   const side=V3(0,0,1).applyQuaternion(w.q);
-  if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header: look down from the latch side
+  if(job.c.id==="data"){ const o=portWorld(job.key==="A"?mbSata[0]:ssdData).p, c=w.p.clone().lerp(o,.5);   // SATA data: frame both ends
+    focusPoint(c.clone().add(V3(0,11,11)).addScaledVector(w.out,3.5),c,1000); }
+  else if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header: look down from the latch side
     focusPoint(w.p.clone().add(V3(0,7,0)).addScaledVector(latch,5).addScaledVector(side,2),w.p.clone(),1000); }
-  else focusPoint(w.p.clone().addScaledVector(w.out,5.5).add(V3(0,4.2,0)).addScaledVector(side,3.2),w.p.clone(),1000);
+  else { const far=job.c.id==="ac"?2:1;                                      // the power-cord plug is long: step back so plug and socket both fit
+    focusPoint(w.p.clone().addScaledVector(w.out,5.5*far).add(V3(0,4.2*far,0)).addScaledVector(side,3.2*far),w.p.clone(),1000); }
   tween(1000,k=>{ P.outer.position.lerpVectors(p0,pre,k); P.outer.position.y+=Math.sin(k*Math.PI)*2.5; P.outer.quaternion.slerpQuaternions(q0,w.q,k); P.inner.rotation.x=r0+(S.roll*Math.PI/2-r0)*k; drawConn(job.c); },
     ()=>{ S.busy=false; S.held="conn"; updateTools(); drawConn(job.c); });
 }
@@ -25,7 +28,8 @@ function insertConn(){
     const nx=S.step+1; focus(viewFor(nx),900); setStep(nx); },easeOut);
 }
 // peripherals: after clicking a cable, the user clicks the port they want it in
-const GPU_HDMI_VIEW=()=>{ const p=portWorld(rport("hdmiGpu1")).p; focusPoint(p.clone().add(V3(-12,5,-5)),p.clone().add(V3(0,-1,-3)),900); };
+const GPU_HDMI_VIEW=()=>{ const ps=RPORTS.filter(p=>p.parent===gpuG).map(p=>portWorld(p).p), c=ps.reduce((a,p)=>a.add(p),V3(0,0,0)).multiplyScalar(1/ps.length);
+  focusPoint(c.clone().add(V3(-14,4,-6)),c,900); };                          // frames all of the card's outputs
 function clickRearPort(id){
   if(S.busy||S.held) return;
   const p=rport(id), job=connJob(S.step);

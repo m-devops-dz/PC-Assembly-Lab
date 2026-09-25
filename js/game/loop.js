@@ -33,7 +33,7 @@ function frame(now){
   setGlow(m2ScrewMat,st===ST.m2Out||st===ST.m2Screw,pulse);
   setGlow(boardEdge,st===ST.board&&!S.held,pulse);
   setGlow(psuHoleMat,S.hints&&st===ST.psu,pulse);
-  setGlow(mbHoleMat,st===ST.boardScrews&&S.used.screws,pulse);
+  setGlow(mbHoleMat,st===ST.boardScrews&&!S.used.screws,pulse);
   setGlow(pcieLatchMat,st===ST.pcieLatch,pulse);
   setGlow(fpMarkMat,S.hints&&st===ST.frontPanel,pulse);
   setGlow(panelFrameMat,st===ST.closeCase&&!S.busy,pulse);

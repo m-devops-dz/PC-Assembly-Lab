@@ -39,7 +39,7 @@ function takeGPU(){ if(S.used.gpu){ toast(t("e_taken")); return; } if(!gate(ST.g
 function takeSata(){ if(S.used.sata){ toast(t("e_taken")); return; } if(!gate(ST.sata)) return; S.used.sata=true; spawn("sata",sataG,V3(30,30,-14),V3(22,SATA_HOVER,L.z+14),1+Math.floor(Math.random()*3)); }
 function takeBattery(){ if(S.used.battery){ toast(t("e_taken")); return; } if(!gate(ST.battery)) return; S.used.battery=true;
   S.batFlip=Math.random()<.5?1:0; batFlip.rotation.z=S.batFlip*Math.PI; spawn("battery",batG,V3(-6,8,14),V3(-4,BAT_HOVER,12.5),0); }
-function takeScrews(){ if(S.used.screws){ toast(t("e_taken")); return; } if(!gate(ST.boardScrews)) return; S.used.screws=true; toast(t("ok_takeScrews"),"ok"); updateTray(); }
+function takeScrews(){ if(S.used.screws){ toast(t("e_taken")); return; } if(!gate(ST.boardScrews)) return; S.used.screws=true; toast(t("ok_takeScrews"),"ok"); updateTray(); screwAllBoard(); }
 function pickBoard(){ if(!gate(ST.board)) return; boardRoot.rotation.set(0,0,0); spawn("board",boardRoot,V3(0,0,0),V3(L.x+2,L.y+21,L.z+2),1); focus("caseClose",1200); }
 function spawnCable(c){
   if(c.id==="fan") fanLead.visible=false;

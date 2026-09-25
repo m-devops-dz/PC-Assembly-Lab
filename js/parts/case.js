@@ -2,6 +2,7 @@
 const L=V3(0,1.1,-50);                         // where the board ends up
 const caseG=new T.Group(); caseG.visible=false; scene.add(caseG);
 const steel=new T.MeshStandardMaterial({color:0x1c1d20,metalness:.45,roughness:.5});
+const MB_SCREW_Y=.2;                            // seated screw head centre, just on the board surface
 const CX0=-16.6, CX1=29.6, CZ0=L.z-18.1, CZ1=L.z+24.6;   // outer extents
 const trayTex=canvasTex(1024,900,(g,W,H)=>{ g.fillStyle="#26282c"; g.fillRect(0,0,W,H);
   const px=x=>(x-CX0)/(CX1-CX0)*W, pz=z=>(z-(L.z-17.3))/41.1*H;
@@ -18,7 +19,9 @@ const CASE_SLOTS=[3.2,5.0,6.8,8.6,10.2,11.6,13.2];
   const rect=(z0,z1,y0,y1)=>{ const h=new T.Path(); h.moveTo(z0,y0); h.lineTo(z0,y1); h.lineTo(z1,y1); h.lineTo(z1,y0); h.lineTo(z0,y0); s.holes.push(h); };
   rect(L.z-12.2,L.z-0.6,1.0,5.8);                                               // I/O shield opening (fits all ports)
   CASE_SLOTS.forEach(z=>rect(L.z+z-.45,L.z+z+.45,1.7,13.9));                    // expansion slots
-  rect(L.z+15.2,L.z+21.2,1.7,14.1);                                             // PSU opening (power cord goes here); screw holes around it
+  { const h=new T.Path(); h.moveTo(L.z+15.2,1.7);                               // PSU opening, notched out on one side to expose the power socket;
+    [[15.2,14.1],[21.2,14.1],[21.2,12.2],[22.0,12.2],[22.0,7.6],[21.2,7.6],[21.2,1.7],[15.2,1.7]].forEach(([z,y])=>h.lineTo(L.z+z,y));
+    s.holes.push(h); }                                                           //   the 4 screw holes stay in solid metal
   const f=new T.Path(); f.absarc(L.z-7,13,5.4,0,Math.PI*2,true); s.holes.push(f); // exhaust fan
   const g=new T.ExtrudeGeometry(s,{depth:.8,bevelEnabled:false,curveSegments:40}); g.rotateY(-Math.PI/2);
   const m=new T.Mesh(g,steel); m.position.x=CX0+.8; m.castShadow=true; m.receiveShadow=true; caseG.add(m);
@@ -51,9 +54,10 @@ mesh(box(CX1-CX0,.6,.8),new T.MeshStandardMaterial({color:0x2a2c30,metalness:.5,
     const h=mesh(new T.CylinderGeometry(.16,.16,.32,14),blackP,[x+.11,y,z],caseG); h.rotation.z=Math.PI/2; });
 })();
 
-const BOARD_HOLES=[[-14.2,-11.4],[14.2,-11.4],[-14.2,11.4],[14.2,11.4],[-5.6,-11.4],[5.9,-11.4],[-14.2,1.2],[8.4,1.6],[14.2,1.6]];
 BOARD_HOLES.forEach(([x,z])=>mesh(new T.CylinderGeometry(.22,.22,.6,12),brass,[L.x+x,.7,L.z+z],caseG));
-const boardScrews=BOARD_HOLES.map(([x,z])=>{ const m=mesh(new T.CylinderGeometry(.24,.24,.12,16),screwMetal,[x,.16,z],boardRoot); m.visible=false; return m; });
+// pan-head Phillips screws: big and bright enough to read against the board
+const screwHeadMat=new T.MeshStandardMaterial({map:canvasTex(64,64,(g,W)=>{ g.fillStyle="#c9ced4"; g.fillRect(0,0,W,W); g.fillStyle="#3a3d42"; g.fillRect(W*.44,W*.16,W*.12,W*.68); g.fillRect(W*.16,W*.44,W*.68,W*.12); }),metalness:.85,roughness:.3});
+const boardScrews=BOARD_HOLES.map(([x,z])=>{ const m=mesh(new T.CylinderGeometry(.34,.36,.2,20),[screwMetal,screwHeadMat,screwMetal],[x,MB_SCREW_Y,z],boardRoot); m.visible=false; return m; });
 // screw-down step: a glowing ring + click target over each mounting hole, shown only during that step
 const mbHoleMat=new T.MeshStandardMaterial({color:0xb9b3a3,roughness:.5});
 const mbScrewHints=new T.Group(); mbScrewHints.visible=false; boardRoot.add(mbScrewHints);

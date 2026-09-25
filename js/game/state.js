@@ -4,7 +4,7 @@
 const STEP_IDS=["leverUp","takeCpu","placeCpu","leverDown","clips","ram1","ram2","bracket","paste","cooler","coolerScrews","fanCable","m2Out","m2In","m2Screw","battery",
   "psu","board","boardScrews","pcieLatch","gpu","sata",
   "dataSsd","dataMb","sataPower","atx24","cpu8","gpuPower",
-  "frontPanel","closeCase","usbKeyboard","usbMouse","hdmi"];
+  "frontPanel","closeCase","usbKeyboard","usbMouse","hdmi","powerCord"];
 const ST={}; STEP_IDS.forEach((id,i)=>ST[id]=i);
 const STEPS=STEP_IDS.length;
 // sidebar groups (first step of each) and lesson modules (first step, and the step that ends them)
@@ -38,6 +38,7 @@ function viewFor(n){
   if(n===ST.gpuPower) return "gpuPwr";
   if(n===ST.frontPanel) return "frontPanel";
   if(n===ST.closeCase) return "case";
+  if(n===ST.powerCord) return "psuBack";
   return "rearIO";
 }
 function setStep(n){

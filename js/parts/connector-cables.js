@@ -31,7 +31,7 @@ const CONN={
         a:makePlug(1.9,0x141518,0xdddddd,"power"), stateA:"loose"},
   atx24:{id:"atx24",mat:new T.MeshStandardMaterial({color:0x18191c,roughness:.55}),radius:.085,mesh:null,
         a:makePinPlug(2,12,"atx24"), stateA:"loose"},
-  cpu8:{id:"cpu8",mat:new T.MeshStandardMaterial({color:0x18191c,roughness:.55}),radius:.085,mesh:null,
+  cpu8:{id:"cpu8",mat:new T.MeshStandardMaterial({color:0x18191c,roughness:.55}),radius:.085,mesh:null,overY:16,   // routed over the graphics card so it stays in view
         a:makePinPlug(2,4,"cpu8"), stateA:"loose"},
   gpu8:{id:"gpu8",mat:new T.MeshStandardMaterial({color:0x18191c,roughness:.55}),radius:.085,mesh:null,
         a:makePinPlug(2,4,"gpu8"), stateA:"loose"}
@@ -50,7 +50,7 @@ function drawConn(c){
     const psuOff={power:V3(7.3,3,-2),atx24:V3(7.3,3,1),cpu8:V3(7.3,3,-4),gpu8:V3(7.3,5.5,2.6)}[c.id];
     if(c.anchor){ a=c.anchor(); da=c.anchorDir(); } else { a=psuG.localToWorld(psuOff); da=V3(1,0,0).applyQuaternion(psuG.quaternion); }
     b=plugBack(c.a); db=plugBackDir(c.a); }
-  const mid=a.clone().lerp(b,.5); mid.y=Math.max(Math.min(a.y,b.y)-1,.7);
+  const mid=a.clone().lerp(b,.5); mid.y=c.overY??Math.max(Math.min(a.y,b.y)-1,.7);   // overY: arch over the GPU instead of sagging
   if(c.a.pins) return drawBundle(c,a,da,mid,db);
   const keep=c.outside?(p=>p):inCase;                                     // desk cables (keyboard, mouse, monitor) run outside the case
   const pts=[a,keep(a.clone().addScaledVector(da,1.2)),keep(mid),keep(b.clone().addScaledVector(db,1.2)),b];
@@ -94,6 +94,7 @@ function connJob(step){
   if(step===ST.usbKeyboard) return {c:CONN.usbKb,plug:CONN.usbKb.a,port:S.connPort,choose:"usb",ok:"ok_usbKb",err:"e_usbFlip"};
   if(step===ST.usbMouse) return {c:CONN.usbMouse,plug:CONN.usbMouse.a,port:S.connPort,choose:"usb",ok:"ok_usbMouse",err:"e_usbFlip"};
   if(step===ST.hdmi) return {c:CONN.hdmi,plug:CONN.hdmi.a,port:S.connPort,choose:"hdmi",ok:"ok_hdmi",err:"e_hdmiFlip"};
+  if(step===ST.powerCord) return {c:CONN.ac,plug:CONN.ac.a,port:psuInlet,key:"A",ok:"ok_powerCord",err:"e_iecFlip"};
   return null;
 }
 function portWorld(port){ const f=port.frame; f.updateMatrixWorld(true); const p=f.getWorldPosition(V3(0,0,0)); const q=f.getWorldQuaternion(new T.Quaternion()); return {p,q,out:V3(-1,0,0).applyQuaternion(q)}; }

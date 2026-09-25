@@ -55,15 +55,13 @@ function refuse(obj,hoverY,lowY){
 }
 function seat(obj,y,dur,done){ S.busy=true; animTo(obj.position,"y",y,dur,()=>{ S.busy=false; S.held=null; S.snap=null; done(); },easeOut); updateTools(); }
 const wrong=(key,obj,hover,low)=>{ mistake(); toast(t(key),"err"); refuse(obj,hover,low); };
-function clickBoardScrew(i){
-  if(S.busy) return;
-  if(S.step!==ST.boardScrews){ toast(t("e_notNow")); return; }
-  if(!S.used.screws){ toast(t("e_takeScrews")); return; }
-  const m=boardScrews[i]; if(m.visible) return;
-  mbHoleHints[i].visible=false; m.visible=true; m.position.y=.9; S.busy=true; S.mbScrews++;
-  tween(450,k=>{ m.position.y=.9-.74*k; m.rotation.y=k*Math.PI*6; },()=>{ S.busy=false;
-    if(S.mbScrews<BOARD_HOLES.length) toast(t("ok_mbScrew",{n:S.mbScrews}),"ok");
-    else { mbScrewHints.visible=false; toast(t("ok_boardScrews"),"ok"); setStep(ST.pcieLatch); } });
+// one click drives all 9 screws, one after another (clicking any glowing hole does the same as taking them from the tray)
+function clickBoardScrew(){ takeScrews(); }
+function screwAllBoard(){
+  S.busy=true; const gap=220, n=BOARD_HOLES.length;
+  boardScrews.forEach((m,i)=>setTimeout(()=>{ mbHoleHints[i].visible=false; m.visible=true; m.position.y=1.2;
+    tween(420,k=>{ m.position.y=1.2-(1.2-MB_SCREW_Y)*k; m.rotation.y=k*Math.PI*6; },()=>{ S.mbScrews=i+1; }); },i*gap));
+  setTimeout(()=>{ S.busy=false; mbScrewHints.visible=false; toast(t("ok_boardScrews"),"ok"); setStep(ST.pcieLatch); },(n-1)*gap+520);
 }
 function clickPcieLatch(){
   if(S.busy) return;

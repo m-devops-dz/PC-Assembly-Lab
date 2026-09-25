@@ -59,6 +59,20 @@ function makeHdmiPlug(id){
   tag(mesh(box(4.4,1.6,2.6),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[-1.9,0,0],inner,{cast:false}));
   return {outer,inner,roll:0,back:-3.8};
 }
+/* IEC C13 power-cord plug: same keyed outline as the PSU inlet (cut corners at −z), earth socket on the +z side */
+const iecFace=canvasTex(220,125,(g,W,H)=>{ g.fillStyle="#141518"; g.fillRect(0,0,W,H); g.fillStyle="#050506";
+  [[W*.26,H*.66],[W*.74,H*.66]].forEach(([x,y])=>g.fillRect(x-7,y-17,14,34)); g.fillRect(W/2-7,H*.2-15,14,30); });
+iecFace.repeat.set(1/2.2,1/1.25); iecFace.offset.set(.5,.5);                  // extrude caps use shape units as UVs
+function makeIecPlug(id){
+  const outer=new T.Group(), inner=new T.Group(); outer.add(inner); outer.visible=false; scene.add(outer);
+  const tag=m=>{ m.userData={part:"conn",conn:id}; return m; };
+  const body=new T.ExtrudeGeometry(portShape(2.2,1.25,.3,.3),{depth:2.2,bevelEnabled:false});
+  body.applyMatrix4(new T.Matrix4().makeBasis(V3(0,1,0),V3(0,0,1),V3(1,0,0)));   // shape x→y (long side), shape y→z, extrude→+x
+  tag(mesh(body,[new T.MeshStandardMaterial({map:iecFace,roughness:.6}),periBlack],[-2.2,0,0],inner));
+  const sr=tag(mesh(new T.CylinderGeometry(.34,.5,1.4,14),periBlack,[-2.9,0,0],inner)); sr.rotation.z=Math.PI/2;
+  tag(mesh(box(4.4,2.8,2),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[-1.8,0,0],inner,{cast:false}));
+  return {outer,inner,roll:0,back:-3.6};
+}
 const periCable=(c)=>new T.MeshStandardMaterial({color:c,roughness:.6});
 Object.assign(CONN,{
   usbKb:{id:"usbKb",mat:periCable(0x1b1c1f),radius:.18,mesh:null,a:makeUsbPlug("usbKb"),outside:true,
@@ -66,11 +80,14 @@ Object.assign(CONN,{
   usbMouse:{id:"usbMouse",mat:periCable(0x1b1c1f),radius:.14,mesh:null,a:makeUsbPlug("usbMouse"),outside:true,
     anchor:()=>V3(MOUSE_POS.x+3.1,.6,MOUSE_POS.z), anchorDir:()=>V3(1,0,0)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
-    anchor:()=>V3(MON_POS.x-.7,12,MON_POS.z), anchorDir:()=>V3(0,-1,0)}
+    anchor:()=>V3(MON_POS.x-.7,12,MON_POS.z), anchorDir:()=>V3(0,-1,0)},
+  ac:{id:"ac",mat:periCable(0x141517),radius:.3,mesh:null,a:makeIecPlug("ac"),outside:true,           // runs off the desk to the wall socket
+    anchor:()=>V3(-80,.35,L.z+26), anchorDir:()=>V3(1,0,0)}
 });
 function showPeripherals(){ periG.visible=true; RPORTS.forEach(p=>p.hint.visible=true);
   layLoose(CONN.usbKb.a,V3(-21,.5,L.z-13),.3,0); layLoose(CONN.usbMouse.a,V3(-21,.5,L.z+12),-.3,0); layLoose(CONN.hdmi.a,V3(-23,.55,L.z+1),0,0);
-  drawConn(CONN.usbKb); drawConn(CONN.usbMouse); drawConn(CONN.hdmi); }
+  layLoose(CONN.ac.a,V3(-25,.65,L.z+21),-.2,Math.PI/2);
+  drawConn(CONN.usbKb); drawConn(CONN.usbMouse); drawConn(CONN.hdmi); drawConn(CONN.ac); }
 
 /* clickable rear ports. Board ones are on the -x faces of the rear I/O blocks (see rear-io.js), GPU ones on its bracket (see gpu.js).
    A port frame's +x points into the port; GPU HDMI frames are turned 90° because the card's ports stand on end. */
@@ -79,8 +96,8 @@ const RPORTS=[
   {id:"usb32a",kind:"usb",parent:boardRoot,pos:V3(-15.55,2.43,-6.5)}, {id:"usb32b",kind:"usb",parent:boardRoot,pos:V3(-15.55,1.72,-6.5)},
   {id:"hdmiMb",kind:"hdmiMb",parent:boardRoot,pos:V3(-15.55,.83,-6.5)},
   {id:"usb31a",kind:"usb",parent:boardRoot,pos:V3(-15.55,1.5,-4.2)}, {id:"usb31b",kind:"usb",parent:boardRoot,pos:V3(-15.55,.8,-4.2)},
-  {id:"dpGpu",kind:"dp",parent:gpuG,pos:V3(-6.1,2.2,0),turn:true},
-  {id:"hdmiGpu1",kind:"hdmiGpu",parent:gpuG,pos:V3(-6.1,4.4,0),turn:true}, {id:"hdmiGpu2",kind:"hdmiGpu",parent:gpuG,pos:V3(-6.1,6.4,0),turn:true}
+  // the card's outputs, from GPU_OUTPUTS in gpu.js (HDMI, DP, HDMI, DP from the screw-tab end)
+  ...GPU_OUTPUTS.map((p,i)=>({id:(p.kind==="hdmi"?"hdmiGpu":"dpGpu")+(i<2?1:2),kind:p.kind==="hdmi"?"hdmiGpu":"dp",parent:gpuG,pos:V3(-6.1,p.y,GPU_PORT_Z),turn:true}))
 ];
 RPORTS.forEach(p=>{ const f=new T.Group(); f.position.copy(p.pos); if(p.turn) f.rotation.x=Math.PI/2; p.parent.add(f); p.frame=f;
   p.mat=new T.MeshBasicMaterial({color:0xffc400,transparent:true,opacity:0,depthWrite:false});   // own material: glows only when it fits the cable in hand

@@ -23,6 +23,6 @@ mesh(box(9.1,1.14,.85),new T.MeshStandardMaterial({color:0xc9ced4,metalness:.9,r
                                              // CPU_FAN1
 (function smd(){ const R=rng(77), im=new T.InstancedMesh(box(.2,.07,.1),new T.MeshStandardMaterial({color:0x8d7047,roughness:.5}),320), d=new T.Object3D(); let n=0;
   while(n<320){ const x=R()*29-14.5, z=R()*23-11.5;
-    if(Math.abs(x-SX)<4.2&&Math.abs(z-SZ)<5) continue; if(x>2.8&&x<7&&z<3&&z>-11.6) continue; if(x<-11&&z<-2) continue; if(z>2.6&&z<12.2&&x<-5) continue; if(x>-5.8&&x<3.8&&z>4.4&&z<7.4) continue;
+    if(Math.abs(x-SX)<4.2&&Math.abs(z-SZ)<5) continue; if(x>2.8&&x<7&&z<3&&z>-11.6) continue; if(x<-11&&z<-2) continue; if(z>2.6&&z<12.2&&x<-5) continue; if(x>-5.8&&x<3.8&&z>4.4&&z<7.4) continue; if(BOARD_HOLES.some(([hx,hz])=>Math.hypot(x-hx,z-hz)<.7)) continue;   // keep mounting holes clear
     d.position.set(x,.135,z); d.rotation.y=R()<.5?0:Math.PI/2; d.updateMatrix(); im.setMatrixAt(n++,d.matrix); }
   im.receiveShadow=true; im.raycast=()=>{}; boardRoot.add(im); })();

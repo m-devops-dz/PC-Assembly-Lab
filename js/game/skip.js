@@ -35,14 +35,14 @@ const finishStep={
   battery:()=>{ S.used.battery=true; S.batFlip=0; batFlip.rotation.z=0; batG.visible=true; batG.rotation.y=0; batG.position.set(BAT_POS.x,BAT_SEAT,BAT_POS.z); },
   psu:()=>{ S.used.psu=true; S.rot.psu=0; psuG.visible=true; psuG.position.copy(PSU_POS); psuG.rotation.y=0; psuScrews.forEach(g=>{ g.visible=true; g.position.x=CX0-.1; }); },
   board:()=>{ boardRoot.position.copy(L); boardRoot.rotation.set(0,0,0); S.rot.board=0; },
-  boardScrews:()=>{ S.used.screws=true; boardScrews.forEach(m=>{ m.visible=true; m.position.y=.16; }); S.mbScrews=BOARD_HOLES.length; mbScrewHints.visible=false; },
+  boardScrews:()=>{ S.used.screws=true; boardScrews.forEach(m=>{ m.visible=true; m.position.y=MB_SCREW_Y; }); S.mbScrews=BOARD_HOLES.length; mbScrewHints.visible=false; },
   pcieLatch:()=>{ pcieLatch.rotation.z=PCIE_OPEN; },
   gpu:()=>{ S.used.gpu=true; S.rot.gpu=0; gpuG.visible=true; gpuG.position.set(GPU_X,GPU_SEAT,L.z+3.2); gpuG.rotation.y=0; slotCovers[0].visible=false; pcieLatch.rotation.z=0; },
   sata:()=>{ S.used.sata=true; S.rot.sata=0; sataG.visible=true; sataG.position.copy(SATA_POS); sataG.rotation.y=0; },
   dataSsd:seatConnNow, dataMb:seatConnNow, sataPower:seatConnNow, atx24:seatConnNow, cpu8:seatConnNow, gpuPower:seatConnNow,
   frontPanel:()=>{ const c=CABLES.fp, tg=c.targets().find(x=>x.ok); c.plug.visible=true; c.plug.position.set(tg.x,tg.seatY,tg.z); c.plug.rotation.y=tg.rot; c.state="seated"; drawCable(c); },
   closeCase:()=>closeSidePanel(true),
-  usbKeyboard:seatConnNow, usbMouse:seatConnNow, hdmi:seatConnNow
+  usbKeyboard:seatConnNow, usbMouse:seatConnNow, hdmi:seatConnNow, powerCord:seatConnNow
 };
 function skipStep(){
   if(S.step>=STEPS) return;

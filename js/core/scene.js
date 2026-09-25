@@ -19,7 +19,8 @@ const VIEWS={ cpu:{pos:[4,13.5,8.5],tgt:[-2.5,.6,-5]}, ram:{pos:[6.8,31,-3.8],tg
   atx24:{pos:[28,22,-45],tgt:[12,2,-50]}, cpuPwr:{pos:[-5,22,-58],tgt:[-10,2,-62]},
   battery:{pos:[-1.5,15,18],tgt:[-1.5,.5,9]}, boardTop:{pos:[2,46,-33],tgt:[0,1,-50]}, pcie:{pos:[5,12,-57],tgt:[-5,1,-47]},
   gpuPwr:{pos:[14,24,-38],tgt:[5,11.5,-46]}, frontPanel:{pos:[20,26,-30],tgt:[13,1.5,-41]},
-  rearIO:{pos:[-40,15,-49],tgt:[-16,3,-48]} };                    // outside, behind the case: board rear I/O and the GPU's outputs
+  rearIO:{pos:[-40,15,-49],tgt:[-16,3,-48]},
+  psuBack:{pos:[-33,14,-19],tgt:[-17,8,-30]} };                    // outside, behind the case: the PSU's power inlet                    // outside, behind the case: board rear I/O and the GPU's outputs
 let view="cpu";
 camera.position.set(...VIEWS.cpu.pos);
 const controls=new T.OrbitControls(camera,renderer.domElement);

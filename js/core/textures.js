@@ -22,7 +22,7 @@ function boardTexture(){
     g.fillText("CPU_FAN1",px(0.4),pz(-11.7)); g.save(); g.translate(px(2.05),pz(-9.3)); g.rotate(Math.PI/2); g.fillText("SYS_FAN1",0,0); g.restore(); g.fillText("JPWR1",px(12.4),pz(-6.5)); g.fillText("CPU_PWR1",px(-11.1),pz(-11.9));
     g.fillText("BAT1",px(-3.2),pz(10.9)); g.fillText("SATA1_2",px(12.3),pz(5.75)); g.fillText("SATA3_4",px(12.3),pz(9.3)); g.fillText("JFP1",px(10.2),pz(11.95)); g.fillText("JAUD1",px(-11.4),pz(11.05)); g.fillText("JUSB1",px(4.3),pz(11.05)); g.fillText("JUSB2",px(6),pz(11.05)); g.save(); g.translate(px(13.2),pz(1.0)); g.rotate(Math.PI/2); g.fillText("JUSB3",0,0); g.restore();
     g.font="700 46px 'Barlow Semi Condensed', Arial"; g.fillText("B450 GAMING PLUS MAX",px(-3.6),pz(11.75));
-    [[-14.2,-11.4],[14.2,-11.4],[-14.2,11.4],[14.2,11.4],[-5.6,-11.4],[5.9,-11.4],[-14.2,1.2],[8.4,1.6],[14.2,1.6]].forEach(([x,z])=>{ g.fillStyle="#b9b3a3"; g.beginPath(); g.arc(px(x),pz(z),22,0,7); g.fill(); g.fillStyle="#2b2b2e"; g.beginPath(); g.arc(px(x),pz(z),12,0,7); g.fill(); });
+    BOARD_HOLES.forEach(([x,z])=>{ g.fillStyle="#b9b3a3"; g.beginPath(); g.arc(px(x),pz(z),22,0,7); g.fill(); g.fillStyle="#2b2b2e"; g.beginPath(); g.arc(px(x),pz(z),12,0,7); g.fill(); });
     for(let i=0;i<600;i++){ const x=R()*W,y=R()*H; if(Math.abs(x-px(SX))<4.3*U&&Math.abs(y-pz(SZ))<4.3*U) continue; g.fillStyle="rgba(170,160,140,.7)"; const w=R()<.5; g.fillRect(x,y,w?9:5,w?5:9); }
   });
 }

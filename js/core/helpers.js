@@ -17,3 +17,7 @@ function tween(dur,fn,done,ease=easeInOut){ tweens.push({s:performance.now(),dur
 function animTo(obj,prop,to,dur,done,ease){ const from=obj[prop]; tween(dur,k=>{ obj[prop]=from+(to-from)*k; },done,ease); }
 function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
 function brushed(g,W,H,base,seed,n){ g.fillStyle=base; g.fillRect(0,0,W,H); const R=rng(seed); for(let i=0;i<n;i++){ const y=R()*H; g.strokeStyle=R()<.5?"rgba(255,255,255,.07)":"rgba(0,0,0,.09)"; g.lineWidth=1; g.beginPath(); g.moveTo(R()*W,y); g.lineTo(R()*W,y+R()*2-1); g.stroke(); } }
+// keyed connector outline (HDMI, DisplayPort, IEC power): a w×h rectangle whose corners on the −y side are cut by cL (left) and cR (right).
+// inset shrinks it evenly, for the hollow inside of a port shell.
+function portShape(w,h,cL,cR,inset=0){ const s=new T.Shape(), a=-w/2+inset, b=w/2-inset, lo=-h/2+inset, hi=h/2-inset;
+  s.moveTo(a+cL,lo); s.lineTo(b-cR,lo); s.lineTo(b,lo+cR); s.lineTo(b,hi); s.lineTo(a,hi); s.lineTo(a,lo+cL); s.lineTo(a+cL,lo); return s; }

@@ -88,9 +88,6 @@ document.getElementById("rotR").onclick=()=>rotate(-1);
 document.getElementById("flipBtn").onclick=flip;
 document.getElementById("dropBtn").onclick=drop;
 const hintChk=document.getElementById("hintChk"); hintChk.checked=S.hints; hintChk.onchange=e=>{ S.hints=e.target.checked; persist(); };
-// hold Ctrl+H to skip the current step (checks e.code so it works on an Arabic keyboard layout too)
-let skipTimer=0;
-window.addEventListener("keydown",e=>{ if(!e.ctrlKey||e.code!=="KeyH") return; e.preventDefault();
-  if(!e.repeat&&!skipTimer&&S.step<STEPS){ toast(t("skipHold")); skipTimer=setTimeout(()=>{ skipTimer=0; skipStep(); },700); } });
-window.addEventListener("keyup",e=>{ if(skipTimer&&(e.code==="KeyH"||e.key==="Control")){ clearTimeout(skipTimer); skipTimer=0; } });
+// Ctrl+H skips the current step (checks e.code so it works on an Arabic keyboard layout too; holding the key doesn't repeat)
+window.addEventListener("keydown",e=>{ if(!e.ctrlKey||e.code!=="KeyH") return; e.preventDefault(); if(!e.repeat) skipStep(); });
 window.addEventListener("keydown",e=>{ if(e.target.tagName==="INPUT"||e.ctrlKey) return; const k=e.key.toLowerCase(); if(k==="q") rotate(1); else if(k==="e") rotate(-1); else if(k==="f") flip(); else if(e.key===" "&&S.held){ e.preventDefault(); drop(); } });
