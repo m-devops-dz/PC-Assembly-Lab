@@ -1,6 +1,7 @@
 /* ---------------- helpers ---------------- */
 if(typeof THREE==="undefined") throw new Error("The three.js library didn't load. Check the internet connection and reload.");
 const T=THREE;
+T.ColorManagement.legacyMode=false;   // hex colours are sRGB, like the canvas textures (r147 otherwise treats them as linear and they render washed-out)
 function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let x=Math.imul(seed^seed>>>15,1|seed); x=x+Math.imul(x^x>>>7,61|x)^x; return ((x^x>>>14)>>>0)/4294967296; }; }
 /* Phones get half-resolution textures, a smaller shadow map and a lower pixel ratio:
    the full-quality scene needs more graphics memory than many phone browsers allow. */

@@ -2,18 +2,18 @@
 function boardTexture(){
   return canvasTex(2048,1638,(g,W,H)=>{
     const R=rng(4), px=x=>(x+BW/2)/BW*W, pz=z=>(z+BD/2)/BD*H, U=W/BW;
-    g.fillStyle="#18191c"; g.fillRect(0,0,W,H);
-    for(let i=0;i<16000;i++){ g.fillStyle=R()<.5?"rgba(255,255,255,.018)":"rgba(0,0,0,.25)"; g.fillRect(R()*W,R()*H,2,2); }
+    g.fillStyle="#101113"; g.fillRect(0,0,W,H);                      // matte black solder mask
+    for(let i=0;i<16000;i++){ g.fillStyle=R()<.5?"rgba(255,255,255,.012)":"rgba(0,0,0,.25)"; g.fillRect(R()*W,R()*H,2,2); }
     g.lineCap="round"; g.lineJoin="round";
     for(let i=0;i<260;i++){ const x=R()*W,y=R()*H,n=3+(R()*8|0),vert=R()<.5,len=80+R()*420,turn=R()<.5?-1:1;
-      g.strokeStyle=`rgba(70,74,82,${.25+R()*.25})`; g.lineWidth=2+R()*2;
+      g.strokeStyle=`rgba(48,51,57,${.35+R()*.3})`; g.lineWidth=2+R()*2;   // copper traces under black mask: barely lighter than the board
       for(let k=0;k<n;k++){ g.beginPath(); let a=x+(vert?k*9:0),b=y+(vert?0:k*9); g.moveTo(a,b);
         if(vert){ b+=len; g.lineTo(a,b); g.lineTo(a+turn*45,b+45); g.lineTo(a+turn*45,b+45+len*.5); } else { a+=len; g.lineTo(a,b); g.lineTo(a+45,b+turn*45); g.lineTo(a+45+len*.5,b+turn*45); } g.stroke(); } }
     // red accent graphics (angular, board-edge)
-    g.strokeStyle="#c21f2b"; g.lineWidth=5;
+    g.strokeStyle="#b01c27"; g.lineWidth=5;
     [[[-15,11.2],[-6,11.2],[-5,10.2],[2,10.2]],[[15,-2],[15,5],[14,6],[14,11]],[[-15,-1],[-14.2,-0.2],[-14.2,2]]].forEach(pts=>{ g.beginPath(); pts.forEach(([x,z],k)=>k?g.lineTo(px(x),pz(z)):g.moveTo(px(x),pz(z))); g.stroke(); });
     // vias
-    for(let i=0;i<1500;i++){ const x=R()*W,y=R()*H; if(Math.abs(x-px(SX))<4*U&&Math.abs(y-pz(SZ))<4*U) continue; g.fillStyle="#9b9587"; g.beginPath(); g.arc(x,y,2.8,0,7); g.fill(); g.fillStyle="#0b0b0c"; g.beginPath(); g.arc(x,y,1.1,0,7); g.fill(); }
+    for(let i=0;i<900;i++){ const x=R()*W,y=R()*H; if(Math.abs(x-px(SX))<4*U&&Math.abs(y-pz(SZ))<4*U) continue; g.fillStyle="#3b3a37"; g.beginPath(); g.arc(x,y,2.6,0,7); g.fill(); g.fillStyle="#060607"; g.beginPath(); g.arc(x,y,1.1,0,7); g.fill(); }   // tented vias
     // silkscreen
     g.fillStyle="rgba(235,235,235,.92)"; g.strokeStyle="rgba(235,235,235,.8)"; g.lineWidth=3;
     g.font="600 26px Barlow, Arial, sans-serif";
@@ -23,7 +23,9 @@ function boardTexture(){
     g.fillText("BAT1",px(-3.2),pz(10.9)); g.fillText("SATA1_2",px(12.3),pz(5.75)); g.fillText("SATA3_4",px(12.3),pz(9.3)); g.fillText("JFP1",px(10.2),pz(11.95)); g.fillText("JAUD1",px(-11.4),pz(11.05)); g.fillText("JUSB1",px(4.3),pz(11.05)); g.fillText("JUSB2",px(6),pz(11.05)); g.save(); g.translate(px(13.2),pz(1.0)); g.rotate(Math.PI/2); g.fillText("JUSB3",0,0); g.restore();
     g.font="700 46px 'Barlow Semi Condensed', Arial"; g.fillText("B450 GAMING PLUS MAX",px(-3.6),pz(11.75));
     BOARD_HOLES.forEach(([x,z])=>{ g.fillStyle="#b9b3a3"; g.beginPath(); g.arc(px(x),pz(z),22,0,7); g.fill(); g.fillStyle="#2b2b2e"; g.beginPath(); g.arc(px(x),pz(z),12,0,7); g.fill(); });
-    for(let i=0;i<600;i++){ const x=R()*W,y=R()*H; if(Math.abs(x-px(SX))<4.3*U&&Math.abs(y-pz(SZ))<4.3*U) continue; g.fillStyle="rgba(170,160,140,.7)"; const w=R()<.5; g.fillRect(x,y,w?9:5,w?5:9); }
+    // tiny printed pads/parts: black bodies with tinned ends
+    for(let i=0;i<600;i++){ const x=R()*W,y=R()*H; if(Math.abs(x-px(SX))<4.3*U&&Math.abs(y-pz(SZ))<4.3*U) continue; const w=R()<.5;
+      g.fillStyle="#9a9ca0"; g.fillRect(x,y,w?9:5,w?5:9); g.fillStyle="#141416"; g.fillRect(x+(w?2:0),y+(w?0:2),w?5:5,w?5:5); }
   });
 }
 function socketTexture(){ // 4.8 cm cream AM4 top with hole grid

@@ -34,11 +34,15 @@ function usb2HdmiTex(){
     };
     drawUsb(20,true);
     drawUsb(140,true);
-    g.fillStyle="#d0202d"; roundRect(g,26,270,W-52,110,8); g.fill();
-    g.fillStyle="#8c929c"; roundRect(g,32,276,W-64,98,6); g.fill();
-    g.fillStyle="#060608"; roundRect(g,38,282,W-76,86,4); g.fill();
-    g.fillStyle="#151619"; roundRect(g,50,314,W-100,20,3); g.fill();
-    g.fillStyle="#d4af37"; g.fillRect(65,317,W-130,5);
+    // HDMI type A: wide, short opening with both bottom corners cut off (same outline as the plug, portShape(1.36,.42,.13,.13)),
+    // centred on the port frame at y .83 (canvas y 325; 170 px per cm on this 2.6 cm face)
+    const hdmi=(cx,cy,w,h,c)=>{ g.beginPath(); g.moveTo(cx-w/2,cy-h/2); g.lineTo(cx+w/2,cy-h/2); g.lineTo(cx+w/2,cy+h/2-c); g.lineTo(cx+w/2-c,cy+h/2);
+      g.lineTo(cx-w/2+c,cy+h/2); g.lineTo(cx-w/2,cy+h/2-c); g.closePath(); g.fill(); };
+    g.fillStyle="#9aa0a8"; hdmi(W/2,325,244,86,28);                     // metal shell lip
+    g.fillStyle="#060608"; hdmi(W/2,325,232,72,22);                     // opening
+    g.fillStyle="#1a1b1f"; g.fillRect(W/2-92,306,184,18);               // contact tongue, upper half
+    g.fillStyle="#d4af37"; for(let i=0;i<19;i++) g.fillRect(W/2-88+i*9.3,318,4,5);   // 19 gold contacts
+    g.fillStyle="#c9ced4"; g.font="600 20px Barlow, Arial"; g.textAlign="center"; g.fillText("HDMI",W/2,400);
   });
 }
 
@@ -87,7 +91,7 @@ function audioBlockTex(){
 
 /* rear I/O ports (face the back of the case, -x) - real MSI B450 GAMING PLUS MAX panel */
 (function rearIO(){
-  const shell=new T.MeshStandardMaterial({color:0xc4c9cf,metalness:.9,roughness:.25}), darkShell=new T.MeshStandardMaterial({color:0x7a8088,metalness:.85,roughness:.35});
+  const shell=new T.MeshStandardMaterial({color:0x8e9399,metalness:.85,roughness:.4}), darkShell=new T.MeshStandardMaterial({color:0x5c6168,metalness:.8,roughness:.42});   // nickel-plated steel
   const goldRing=new T.MeshStandardMaterial({color:0xd4af37,metalness:.95,roughness:.2});
   const col=c=>new T.MeshStandardMaterial({color:c,roughness:.45});
   const X=-15.55;

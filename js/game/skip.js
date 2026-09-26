@@ -41,6 +41,7 @@ const finishStep={
   sata:()=>{ S.used.sata=true; S.rot.sata=0; sataG.visible=true; sataG.position.copy(SATA_POS); sataG.rotation.y=0; },
   dataSsd:seatConnNow, dataMb:seatConnNow, sataPower:seatConnNow, atx24:seatConnNow, cpu8:seatConnNow, gpuPower:seatConnNow,
   frontPanel:()=>{ const c=CABLES.fp, tg=c.targets().find(x=>x.ok); c.plug.visible=true; c.plug.position.set(tg.x,tg.seatY,tg.z); c.plug.rotation.y=tg.rot; c.state="seated"; drawCable(c); },
+  caseFan:()=>{ const c=CABLES.caseFan, tg=c.targets().find(x=>x.ok); c.plug.visible=true; c.plug.position.set(tg.x,tg.seatY,tg.z); c.plug.rotation.y=tg.rot; c.state="seated"; drawCable(c); S.caseFanOn=true; },
   closeCase:()=>closeSidePanel(true),
   usbKeyboard:seatConnNow, usbMouse:seatConnNow, hdmi:seatConnNow, powerCord:seatConnNow
 };

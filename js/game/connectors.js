@@ -9,6 +9,7 @@ function clickConn(id){
   S.roll=1+Math.floor(Math.random()*3); S.job=job; S.busy=true;
   const side=V3(0,0,1).applyQuaternion(w.q);
   if(job.c.id==="data"){ const v=dataView(job); focusPoint(v.pos,v.tgt,1000); }
+  else if(job.c.id==="gpu8"){ const v=VIEWS.gpuPwrPlug; focusPoint(V3(...v.pos),V3(...v.tgt),1000); }   // step back: the whole card and the socket at its end
   else if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header: look down from the latch side
     focusPoint(w.p.clone().add(V3(0,7,0)).addScaledVector(latch,5).addScaledVector(side,2),w.p.clone(),1000); }
   else { const far=job.c.id==="ac"?2:1;                                      // the power-cord plug is long: step back so plug and socket both fit
@@ -16,7 +17,8 @@ function clickConn(id){
   tween(1000,k=>{ P.outer.position.lerpVectors(p0,pre,k); P.outer.position.y+=Math.sin(k*Math.PI)*2.5; P.outer.quaternion.slerpQuaternions(q0,w.q,k); P.inner.rotation.x=r0+(S.roll*Math.PI/2-r0)*k; drawConn(job.c); },
     ()=>{ S.busy=false; S.held="conn"; updateTools(); drawConn(job.c); });
 }
-function rollConn(dir){ const P=S.job.plug; S.roll+=dir; S.busy=true; animTo(P.inner.rotation,"x",S.roll*Math.PI/2,300,()=>{ S.busy=false; }); }
+function rollConn(dir){ const job=S.job, P=job.plug, r0=P.inner.rotation.x, r1=(S.roll+=dir)*Math.PI/2; S.busy=true;
+  tween(300,k=>{ P.inner.rotation.x=r0+(r1-r0)*k; drawConn(job.c); },()=>{ S.busy=false; drawConn(job.c); }); }   // the wires follow the plug as it turns
 function insertConn(){
   const job=S.job, P=job.plug, w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4);
   if(mod(S.roll,4)!==0){ mistake(); toast(t(job.err||"e_Lshape"),"err"); S.busy=true;

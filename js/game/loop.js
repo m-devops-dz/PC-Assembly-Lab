@@ -29,13 +29,17 @@ function frame(now){
   setGlow(bracketMat,st===ST.bracket,pulse);
   const o=S.tightOrder, next=o.length%2===1?(o[o.length-1]+2)%4:-1;
   coolerScrews.forEach((s,i)=>setGlow(s.mat,st===ST.coolerScrews&&!s.tight&&(next<0||!S.hints||i===next),pulse));
-  HEADERS.forEach(h=>setGlow(h.mat,S.hints&&st===ST.fanCable&&h.ok,pulse));
+  HEADERS.forEach(h=>setGlow(h.mat,S.hints&&(st===ST.fanCable&&h.ok||st===ST.caseFan&&!h.ok),pulse));
   setGlow(m2ScrewMat,st===ST.m2Out||st===ST.m2Screw,pulse);
+  m2Ring.visible=S.glow&&(st===ST.m2Out||st===ST.m2Screw)&&!S.busy;
+  if(m2Ring.visible){ const k=(now%900)/900; m2Ring.position.set(m2Screw.position.x,m2Screw.position.y+.07,m2Screw.position.z); m2Ring.scale.setScalar(1+2.2*k); m2Ring.material.opacity=.95*(1-k); }
   setGlow(boardEdge,st===ST.board&&!S.held,pulse);
   setGlow(psuHoleMat,S.hints&&st===ST.psu,pulse);
   setGlow(mbHoleMat,st===ST.boardScrews&&!S.used.screws,pulse);
   setGlow(pcieLatchMat,st===ST.pcieLatch,pulse);
   setGlow(fpMarkMat,S.hints&&st===ST.frontPanel,pulse);
+  fpRing.visible=S.glow&&st===ST.frontPanel&&!S.busy;
+  if(fpRing.visible){ const k=(now%900)/900; fpRing.scale.setScalar(1+2.2*k); fpRing.material.opacity=.95*(1-k); }
   setGlow(panelFrameMat,st===ST.closeCase&&!S.busy,pulse);
   // rear ports: glow the ones that fit the cable being plugged in (after a motherboard-HDMI warning, only the card's)
   RPORTS.forEach(p=>{ const fits=S.connPick==="usb"?p.kind==="usb"&&!p.used:S.connPick==="hdmi"?(p.kind==="hdmiGpu"||(p.kind==="hdmiMb"&&!S.hdmiWarned)):false;
@@ -65,7 +69,8 @@ function frame(now){
   }
 
   Object.values(CABLES).forEach(c=>{ if(c.plug.visible&&c.state!=="seated") drawCable(c); });
-  if(S.fanOn){ fanRot.rotation.y-=dt*14; rearBlades.rotation.x-=dt*10; }
+  if(S.fanOn) fanRot.rotation.y-=dt*14;
+  if(S.caseFanOn) rearBlades.rotation.x-=dt*10;
   if(S.step>=STEPS) gpuFans.forEach(r=>r.rotation.z-=dt*9);
   if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); }
   controls.update(); renderer.render(scene,camera);

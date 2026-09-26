@@ -61,7 +61,7 @@ function drop(){
     if(!sn){ toast(t("e_plugAbove"),"err"); return; }
     if(!sn.tg.ok){ mistake(); toast(t(sn.tg.err,{s:sn.tg.label||sn.tg.name}),"err"); refuse(c.plug,c.parent.worldToLocal(V3(0,c.hoverY,0)).y,c.parent.worldToLocal(V3(0,Math.max(sn.tg.seatY+1,1.2),0)).y); return; }
     const local=c.parent.worldToLocal(V3(sn.x,sn.tg.seatY,sn.z));
-    seat(c.plug,local.y,700,()=>{ c.state="seated"; drawCable(c); if(c.id==="fan") S.fanOn=true; toast(t(c.okMsg,{s:sn.tg.name}),"ok"); S.cable=null; setStep(S.step+1); });
+    seat(c.plug,local.y,700,()=>{ c.state="seated"; drawCable(c); if(c.id==="fan") S.fanOn=true; if(c.id==="caseFan") S.caseFanOn=true; toast(t(c.okMsg,{s:sn.tg.name}),"ok"); S.cable=null; setStep(S.step+1); });
   }
 }
 function wrong2(msg,obj,hover,low){ mistake(); toast(msg,"err"); refuse(obj,hover,low); }

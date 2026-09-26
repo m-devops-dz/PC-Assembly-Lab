@@ -15,6 +15,10 @@ makeCable("fp",{parent:scene,color:0x1a1a1d,radius:.05,plugColor:0x141518,plugSi
 (function(){ const c=CABLES.fp;                                           // "POWER SW" printed on the plug
   const lbl=new T.MeshBasicMaterial({map:canvasTex(256,128,(g,W,H)=>{ g.fillStyle="#141518"; g.fillRect(0,0,W,H); g.fillStyle="#e9eaec"; g.font="700 44px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.fillText("POWER SW",W/2,H*.64); })});
   const m=mesh(new T.PlaneGeometry(.5,.24),lbl,[0,c.plugSize[1]+.002,0],c.plug,{cast:false}); m.rotation.x=-Math.PI/2; m.userData={part:"cable",cable:"fp"}; })();
+// ripple ring that keeps pulsing out from the Power SW pair during the step (see loop.js)
+const fpRing=mesh(new T.RingGeometry(.3,.4,32),new T.MeshBasicMaterial({color:0xffc400,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}),
+  [JFP1.x+(FP_PAIRS[0].col-2)*JFP1.p,.46,JFP1.z+(FP_PAIRS[0].row-.5)*JFP1.p],boardRoot,{cast:false});
+fpRing.rotation.x=-Math.PI/2; fpRing.visible=false; fpRing.raycast=()=>{};
 // hint frame around the Power SW pair (glows during the step when hints are on)
 const fpMarkMat=new T.MeshStandardMaterial({color:0x3a3c40,roughness:.5});
 (function(){ const g=new T.Group(), pr=FP_PAIRS[0]; g.position.set(JFP1.x+(pr.col-2)*JFP1.p,.42,JFP1.z+(pr.row-.5)*JFP1.p); boardRoot.add(g);

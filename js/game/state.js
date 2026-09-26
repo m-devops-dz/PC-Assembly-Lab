@@ -4,7 +4,7 @@
 const STEP_IDS=["leverUp","takeCpu","placeCpu","leverDown","clips","ram1","ram2","bracket","paste","cooler","coolerScrews","fanCable","m2Out","m2In","m2Screw","battery",
   "psu","board","boardScrews","pcieLatch","gpu","sata",
   "dataSsd","dataMb","sataPower","atx24","cpu8","gpuPower",
-  "frontPanel","closeCase","usbKeyboard","usbMouse","hdmi","powerCord"];
+  "frontPanel","caseFan","closeCase","usbKeyboard","usbMouse","hdmi","powerCord"];
 const ST={}; STEP_IDS.forEach((id,i)=>ST[id]=i);
 const STEPS=STEP_IDS.length;
 // sidebar groups (first step of each) and lesson modules (first step, and the step that ends them)
@@ -13,8 +13,8 @@ const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
 if(saved.lang==="ar") lang="ar";
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0,
-  hints:saved.hints!==false, glow:true, bright:saved.bright||1.1,
-  used:{}, tightOrder:[], fanOn:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
+  hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
+  used:{}, tightOrder:[], fanOn:false, caseFanOn:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
 const nearPt=(x,z,px,pz,r)=>Math.hypot(x-px,z-pz)<r;
 function viewFor(n){
@@ -25,6 +25,7 @@ function viewFor(n){
   if(n===ST.paste) return "paste";
   if(n===ST.fanCable) return "fan";
   if(n<=ST.coolerScrews) return "cooler";
+  if(n===ST.m2Out||n===ST.m2Screw) return "m2Screw";
   if(n<=ST.m2Screw) return "m2";
   if(n===ST.battery) return "battery";
   if(n===ST.psu) return "psu";
@@ -38,6 +39,7 @@ function viewFor(n){
   if(n===ST.cpu8) return "cpuPwr";
   if(n===ST.gpuPower) return "gpuPwr";
   if(n===ST.frontPanel) return "frontPanel";
+  if(n===ST.caseFan) return "caseFan";
   if(n===ST.closeCase) return "case";
   if(n===ST.powerCord) return "psuBack";
   return "rearIO";
@@ -51,6 +53,7 @@ function setStep(n){
   if(n===ST.boardScrews) mbScrewHints.visible=true;
   if(n===ST.dataSsd) showConnCables();
   if(n===ST.frontPanel) spawnCable(CABLES.fp);
+  if(n===ST.caseFan) spawnCable(CABLES.caseFan);
   if(n===ST.closeCase) showSidePanel();
   if(n===ST.usbKeyboard) showPeripherals();
   renderSteps(); renderModules(); updateTools(); updateTray();

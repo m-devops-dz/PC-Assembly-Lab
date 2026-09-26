@@ -42,6 +42,8 @@ const I18N = {
     s_pcieLatch:"Open the PCIe slot latch", s_pcieLatchd:"PCI_E1 has a small retention latch at its far end. Push it down to open it before inserting the graphics card. It snaps shut on the card's notch to hold it in. Click the latch.",
     s_gpuPower:"Connect the GPU power cable", s_gpuPowerd:"A graphics card this size needs more power than the slot gives (75 W). Click the 8-pin PCIe power cable from the power supply. It comes down over the socket on the top edge of the card. Turn it until its clip lines up with the socket's latch tab, then press it straight down.",
     s_frontPanel:"Connect the power button", s_frontPaneld:"The case's power button is wired to two pins on JFP1, the front-panel header at the bottom-right of the board. Drag the POWER SW plug to the Power SW pins: bottom row, the two pins in the middle. The top row has the HDD LED and reset pins, and the pins on the left of the bottom row are the power LED. The power switch has no polarity, so either way round works.",
+    s_caseFan:"Connect the case fan", s_caseFand:"The 120 mm exhaust fan on the back of the case needs power too. Drag its plug to SYS_FAN1, the system fan header just right of the CPU cooler, and lower it on. CPU_FAN1 is already taken by the cooler. Once it's connected the fan starts spinning.",
+    ok_caseFan:"Connected to SYS_FAN1. The case fan spins.", e_caseFanCpu:"CPU_FAN1 already has the CPU cooler on it. Case fans go on a system fan header: SYS_FAN1, just right of the cooler.",
     s_closeCase:"Close the case", s_closeCased:"Everything is in and connected. Click the side panel to lower it onto the case. It slides forward to lock, and 2 thumbscrews at the back hold it shut.",
     ok_snapBat:"Above BAT1.", ok_bat:"Battery clicked in, + side up.", e_batAbove:"Move the battery over the BAT1 holder first.", e_batFlip:"The battery is upside down. The + side (with the text) must face up. Press Flip.",
     p_battery:"CMOS battery", p_screws:"Motherboard screws", ok_takeScrews:"Driving in all 9 screws…", ok_boardScrews:"All 9 screws in. The board is secure.",
@@ -131,9 +133,9 @@ const I18N = {
     s_clips:"افتح مشابك الذاكرة", s_clipsd:"مع شريحتين، تستخدم هذه اللوحة الفتحتين DIMMA2 و DIMMB2 للقناة المزدوجة: الفتحتان الحمراوان، الثانية والرابعة من جهة المعالج. انقر عليهما لفتح مشابكهما.",
     s_ram1:"ركّب شريحة الذاكرة الأولى", s_ram1d:"خذ شريحة Asgard 8 GB من الصندوق واسحبها فوق فتحة حمراء. الشق في نقاط التلامس الذهبية ليس في المنتصف: دوّر الشريحة حتى يتطابق مع المفتاح في الفتحة، ثم اضغطها للأسفل.",
     s_ram2:"ركّب شريحة الذاكرة الثانية", s_ram2d:"ضع الشريحة الثانية في الفتحة الحمراء الأخرى بنفس الطريقة.",
-    s_bracket:"انزع إطار التثبيت", s_bracketd:"المبرد الأصلي يُثبّت بالبراغي مباشرة في الصفيحة المعدنية خلف اللوحة، لذلك يجب نزع الإطار البلاستيكي الأسود حول المقبس. انقر على الإطار لفك براغيه الأربعة. الصفيحة الخلفية تبقى في مكانها.",
-    s_paste:"ضع المعجون الحراري", s_pasted:"خذ المعجون الحراري وضعه فوق وسط غطاء المعالج ثم اضغط زر الإنزال: سترسم حرف X رفيعًا من زاوية إلى زاوية. ضغط المبرد يوزّعه بالتساوي على كامل الغطاء. المبرد الأصلي يأتي مع معجون موضوع مسبقًا؛ هكذا تفعل عند إعادة تركيب مبرد.",
-    s_cooler:"ضع المبرد الأصلي", s_coolerd:"خذ المبرد واسحبه فوق المعالج. دوّره حتى تتطابق البراغي الأربعة مع ثقوب التثبيت ويتجه سلك المروحة نحو منفذ CPU_FAN1 في أعلى اللوحة. ثم أنزله للأسفل مباشرة.",
+    s_bracket:"انزع إطار التثبيت", s_bracketd:"المشتت الحراري يُثبّت بالبراغي مباشرة في الصفيحة المعدنية خلف اللوحة، لذلك يجب نزع الإطار البلاستيكي الأسود حول المقبس. انقر على الإطار لفك براغيه الأربعة. الصفيحة الخلفية تبقى في مكانها.",
+    s_paste:"ضع المعجون الحراري", s_pasted:"خذ المعجون الحراري وضعه فوق وسط غطاء المعالج ثم اضغط زر الإنزال: سترسم حرف X رفيعًا من زاوية إلى زاوية. ضغط المبرد يوزّعه بالتساوي على كامل الغطاء. المشتت الحراري يأتي مع معجون موضوع مسبقًا؛ هكذا تفعل عند إعادة تركيب مبرد.",
+    s_cooler:"ضع المشتت الحراري", s_coolerd:"خذ المبرد واسحبه فوق المعالج. دوّره حتى تتطابق البراغي الأربعة مع ثقوب التثبيت ويتجه سلك المروحة نحو منفذ CPU_FAN1 في أعلى اللوحة. ثم أنزله للأسفل مباشرة.",
     s_coolerScrews:"شدّ البراغي على شكل X", s_coolerScrewsd:"شدّ برغيًا، ثم البرغي المقابل له قطريًا، ثم البرغيين الباقيين بنفس الطريقة. هذا يوزّع الضغط على المعالج بالتساوي. انقر على البراغي بهذا الترتيب.",
     s_fanCable:"صِل سلك المروحة", s_fanCabled:"اسحب قابس المروحة إلى منفذ CPU_FAN1 في أعلى اللوحة وأنزله عليه. اللوحة تراقب مروحة المعالج على CPU_FAN1 فقط.",
     s_m2Out:"انزع برغي M.2", s_m2Outd:"منفذ M.2 (M2_1) يقع بين منافذ PCIe. فك البرغي الصغير من قاعدته واحتفظ به: سيثبّت القرص لاحقًا. انقر على البرغي.",
@@ -153,6 +155,8 @@ const I18N = {
     s_pcieLatch:"افتح مشبك منفذ PCIe", s_pcieLatchd:"في نهاية PCI_E1 مشبك تثبيت صغير. اضغطه إلى الأسفل لفتحه قبل إدخال بطاقة الرسوميات. سيُغلق على تجويف البطاقة ليثبتها. انقر على المشبك.",
     s_gpuPower:"صِل سلك طاقة بطاقة الرسوميات", s_gpuPowerd:"بطاقة بهذا الحجم تحتاج طاقة أكثر مما يعطيه المنفذ (75 واط). انقر على سلك طاقة PCIe ذي 8 سنون الخارج من وحدة التغذية. سينزل فوق المقبس على الحافة العلوية للبطاقة. دوّره حتى يتطابق مشبكه مع لسان القفل في المقبس، ثم اضغطه مباشرة إلى الأسفل.",
     s_frontPanel:"صِل زر التشغيل", s_frontPaneld:"زر تشغيل الصندوق موصول بسنّين في JFP1، منفذ اللوحة الأمامية أسفل يمين اللوحة الأم. اسحب قابس POWER SW إلى سنّي Power SW: الصف السفلي، السنّان في المنتصف. الصف العلوي فيه سنون ضوء القرص وزر إعادة التشغيل، والسنّان على يسار الصف السفلي لضوء التشغيل. زر التشغيل ليس له قطبية، فأي اتجاه يعمل.",
+    s_caseFan:"صِل مروحة الصندوق", s_caseFand:"مروحة العادم مقاس 120 مم في خلف الصندوق تحتاج إلى طاقة أيضًا. اسحب قابسها إلى SYS_FAN1، منفذ مروحة النظام على يمين مبرد المعالج مباشرة، وأنزله عليه. منفذ CPU_FAN1 مشغول بمبرد المعالج. بعد التوصيل تبدأ المروحة بالدوران.",
+    ok_caseFan:"تم التوصيل بـ SYS_FAN1. مروحة الصندوق تدور.", e_caseFanCpu:"منفذ CPU_FAN1 موصول به مبرد المعالج. مراوح الصندوق توصل بمنفذ مروحة النظام: SYS_FAN1، على يمين المبرد مباشرة.",
     s_closeCase:"أغلق الصندوق", s_closeCased:"كل شيء مركّب وموصول. انقر على الغطاء الجانبي لإنزاله على الصندوق. سينزلق إلى الأمام ليُقفل، ويثبته برغيان يدويان في الخلف.",
     ok_snapBat:"فوق BAT1.", ok_bat:"طقّت البطارية في مكانها، وجانب + إلى الأعلى.", e_batAbove:"حرّك البطارية فوق حامل BAT1 أولًا.", e_batFlip:"البطارية مقلوبة. يجب أن يتجه جانب + (المكتوب عليه) إلى الأعلى. اضغط زر القلب.",
     p_battery:"بطارية CMOS", p_screws:"براغي اللوحة الأم", ok_takeScrews:"جارٍ تركيب البراغي التسعة…", ok_boardScrews:"البراغي التسعة مركّبة. اللوحة ثابتة.",
@@ -186,7 +190,7 @@ const I18N = {
     e_clipsFirst:"افتح مشابك DIMMA2 و DIMMB2 أولًا.",
     e_ramFirst:"ركّب شريحتي الذاكرة أولًا.",
     e_oneAtATime:"ركّب القطعة التي تحملها أولًا.",
-    e_bracketFirst:"انزع إطار التثبيت البلاستيكي أولًا. المبرد الأصلي يُثبّت في الصفيحة الخلفية تحته.",
+    e_bracketFirst:"انزع إطار التثبيت البلاستيكي أولًا. المشتت الحراري يُثبّت في الصفيحة الخلفية تحته.",
     e_pasteAbove:"حرّك الأنبوب فوق وسط غطاء المعالج.",
     e_pasteFirst:"ضع المعجون الحراري قبل وضع المبرد.",
     e_coolerAbove:"حرّك المبرد فوق المعالج مباشرة أولًا.",
@@ -220,7 +224,7 @@ const I18N = {
     ok_snapBoard:"فوق القواعد.", ok_board:"اللوحة الأم موضوعة على القواعد التسع. ثبّتها الآن بالبراغي.",
     ok_snapGpu:"فوق {s}.", ok_gpu:"طق. البطاقة مثبتة في PCI_E1 وأُغلق المشبك عليها.",
     ok_snapSata:"فوق مكان الأقراص.", ok_sata:"تم تثبيت القرص.", ok_sataData:"تم توصيل سلك البيانات بـ {s}.", ok_sataPower:"تم توصيل طاقة SATA.",
-    ok_photo:"تم تطبيق الصورة.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"المعجون الحراري", p_cooler:"المبرد الأصلي", p_m2:"قرص M.2", p_psu:"وحدة التغذية", p_gpu:"بطاقة الرسوميات", p_sata:"قرص SATA"
+    ok_photo:"تم تطبيق الصورة.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"المعجون الحراري", p_cooler:"المشتت الحراري", p_m2:"قرص M.2", p_psu:"وحدة التغذية", p_gpu:"بطاقة الرسوميات", p_sata:"قرص SATA"
   }
 };
 let lang="en";
