@@ -64,6 +64,7 @@ function updateTools(){
   document.getElementById("flipBtn").disabled=!flips;
   document.getElementById("flipBtn").style.display=h&&!flips?"none":"";
   if(h!=="cpu") targetMat.opacity=0;
+  renderKeyView();
 }
 let toastTimer=0;
 function toast(msg,type){ const el=document.getElementById("toast"); el.textContent=msg; el.className="toast show"+(type?" "+type:""); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),type==="err"?5500:3200); }
@@ -75,7 +76,7 @@ function applyLang(){
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray(); renderPhotoUI();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };

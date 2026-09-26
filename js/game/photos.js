@@ -1,7 +1,8 @@
 /* ---------------- photo textures + photo themes ----------------
    A theme is a .zip of photos named after the slots below (board.jpg, cpuTop.png, ...), anywhere in the zip,
    optionally with a theme.json next to them: { "name": "...", "photos": { "board": "board.jpg", ... } }.
-   The photos in use are kept in IndexedDB so they survive a reload. */
+   Built-in themes live in themes/ (BUILTIN_THEMES) and are picked from the viewport's theme menu; the default is theme1.
+   Photos the user adds themselves are kept in IndexedDB so they survive a reload, and show up in the menu as "My photos". */
 const PHOTO_SLOTS={ board:[boardTopMat], cpuTop:[ihsTopMat], ram:[ramLabelMat,ramPlainMat], m2:[m2Top], sata:[sataTop], gpu:[gpuShroud], psu:[psuLabel] };
 const PHOTO_EXT={ jpg:"image/jpeg", jpeg:"image/jpeg", png:"image/png", webp:"image/webp", gif:"image/gif", avif:"image/avif" };
 const photoOrig=new Map(Object.values(PHOTO_SLOTS).flat().map(m=>[m,{map:m.map,color:m.color.getHex(),metalness:m.metalness,roughness:m.roughness}]));
@@ -31,10 +32,10 @@ function photoDB(mode,fn){ return new Promise(ok=>{ try{ const r=indexedDB.open(
   r.onerror=()=>ok(); }catch(e){ ok(); } }); }
 const savePhotos=()=>photoDB("readwrite",st=>st.put({name:themeName,photos:{...photoBlobs}},"theme"));
 
-async function loadTheme(file){
+async function loadTheme(data,fileName){                // data: a Blob/File, or the zip as a base64 string
   if(typeof JSZip==="undefined") throw new Error("nozip");
-  const zip=await JSZip.loadAsync(file), found={};
-  let name=file.name.replace(/\.zip$/i,"");
+  const zip=await JSZip.loadAsync(data,typeof data==="string"?{base64:true}:undefined), found={};
+  let name=fileName.replace(/\.zip$/i,"");
   const manifest=zip.file(/(^|\/)theme\.json$/i)[0];
   if(manifest){ const j=JSON.parse(await manifest.async("string")), dir=manifest.name.replace(/[^/]*$/,"");
     if(j.name) name=String(j.name);
@@ -58,18 +59,51 @@ function renderPhotoUI(){
   const n=Object.keys(photoBlobs).length;
   document.getElementById("themeName").textContent=n?t("themeActive",{n:themeName||t("themeCustom"),c:n}):"";
   document.getElementById("themeSave").disabled=!n; document.getElementById("photoClear").disabled=!n;
+  renderThemeSel();
 }
-function photosChanged(){ drawThumbs(); renderPhotoUI(); savePhotos(); }
+function photosChanged(){ hasCustom=Object.keys(photoBlobs).length>0; themeChoice=hasCustom?"custom":"none"; try{ localStorage.setItem("pcLabTheme",themeChoice); }catch(e){}
+  drawThumbs(); renderPhotoUI(); savePhotos(); }   // anything the user loads or removes by hand becomes "My photos"
 
 Object.entries(PHOTO_URLS).forEach(([k,u])=>{ if(u) applyPhoto(k,u).then(drawThumbs,()=>{}); });
-photoDB("readonly",st=>st.get("theme")).then(async rec=>{
-  if(!rec||!rec.photos) return;
-  for(const [slot,b] of Object.entries(rec.photos)) await applyPhoto(slot,b).catch(()=>{});
-  themeName=rec.name||""; drawThumbs(); renderPhotoUI(); });
+/* theme menu: built-in zips, none (generated surfaces), or the user's own photos from IndexedDB */
+const BUILTIN_THEMES={ theme1:"real-parts.zip", theme2:"theme2.zip" };
+const themeSel=document.getElementById("themeSel");
+let themeChoice="theme1", hasCustom=false;
+try{ themeChoice=localStorage.getItem("pcLabTheme")||"theme1"; }catch(e){}
+function renderThemeSel(){
+  themeSel.innerHTML=[...Object.keys(BUILTIN_THEMES),"none",...(hasCustom?["custom"]:[])].map(id=>`<option value="${id}">${t("th_"+id)}</option>`).join("");
+  themeSel.value=themeChoice;
+}
+// fetch() works over http(s); a page opened from a file gets the zip from themes/<file>.js instead (see CLAUDE.md)
+function themeZip(file){
+  return fetch("themes/"+file).then(r=>{ if(!r.ok) throw new Error("missing"); return r.blob(); }).catch(()=>new Promise((ok,err)=>{
+    const have=()=>window.THEME_ZIPS&&THEME_ZIPS[file]; if(have()) return ok(have());
+    const s=document.createElement("script"); s.src="themes/"+file+".js";
+    s.onload=()=>have()?ok(have()):err(new Error("missing")); s.onerror=()=>err(new Error("missing")); document.head.appendChild(s); }));
+}
+async function pickTheme(id,quiet){
+  themeSel.disabled=true;
+  try{
+    if(id==="none") clearPhotos();
+    else if(id==="custom"){ const rec=await photoDB("readonly",st=>st.get("theme")); clearPhotos();
+      for(const [slot,b] of Object.entries(rec&&rec.photos||{})) await applyPhoto(slot,b).catch(()=>{});
+      themeName=rec&&rec.name||""; }
+    else await loadTheme(await themeZip(BUILTIN_THEMES[id]),BUILTIN_THEMES[id]);
+    themeChoice=id; try{ localStorage.setItem("pcLabTheme",id); }catch(e){}
+    drawThumbs(); renderPhotoUI();
+    if(!quiet) toast(id==="none"?t("ok_photoClear"):t("ok_theme",{n:themeName||t("themeCustom"),c:Object.keys(photoBlobs).length}),"ok");
+  }catch(e){ if(!quiet) toast(t(e.message==="nozip"?"e_themeLib":"e_themeMissing"),"err"); renderThemeSel(); }
+  themeSel.disabled=false;
+}
+themeSel.onchange=()=>pickTheme(themeSel.value);
+photoDB("readonly",st=>st.get("theme")).then(rec=>{
+  hasCustom=!!(rec&&rec.photos&&Object.keys(rec.photos).length);
+  if(themeChoice==="custom"&&!hasCustom) themeChoice="theme1";
+  renderThemeSel(); pickTheme(themeChoice,true); });
 document.querySelectorAll("[data-photo]").forEach(inp=>inp.addEventListener("change",async()=>{ const f=inp.files&&inp.files[0]; inp.value=""; if(!f) return;
   try{ await applyPhoto(inp.dataset.photo,f); photosChanged(); toast(t("ok_photo"),"ok"); }catch(e){ toast(t("e_photo"),"err"); } }));
 document.getElementById("themeFile").addEventListener("change",async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f) return;
-  try{ const c=await loadTheme(f); photosChanged(); toast(t("ok_theme",{n:themeName,c}),"ok"); }
+  try{ const c=await loadTheme(f,f.name); photosChanged(); toast(t("ok_theme",{n:themeName,c}),"ok"); }
   catch(err){ toast(t(err.message==="nozip"?"e_themeLib":err.message==="empty"?"e_themeEmpty":"e_theme"),"err"); } });
 document.getElementById("themeSave").onclick=()=>{ if(typeof JSZip==="undefined") toast(t("e_themeLib"),"err"); else downloadTheme(); };
 document.getElementById("photoClear").onclick=()=>{ clearPhotos(); photosChanged(); toast(t("ok_photoClear"),"ok"); };

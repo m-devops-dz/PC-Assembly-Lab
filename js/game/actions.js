@@ -39,7 +39,7 @@ function clickM2Screw(){
 }
 function rotate(dir){
   if(!canManipulate()) return; if(S.held==="conn"){ rollConn(dir); return; } const type=S.held, h=HELD[type]; if(!h.step) return;
-  S.rot[type]+=dir; S.busy=true; animTo(h.obj().rotation,"y",S.rot[type]*h.step,type==="board"?700:400,()=>{ S.busy=false; });
+  S.rot[type]+=dir; S.busy=true; renderKeyView(); animTo(h.obj().rotation,"y",S.rot[type]*h.step,type==="board"?700:400,()=>{ S.busy=false; });
 }
 function flip(){
   if(!canManipulate()) return;

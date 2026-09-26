@@ -67,8 +67,12 @@
           <button class="tool" id="rotR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></svg></button>
           <button class="tool" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7L3 17h5z"/><path d="M16 7l5 10h-5z" fill="currentColor"/></svg></button>
         </div>
-        <div class="view-btns"><label class="bright"><span id="brightLbl"></span><input type="range" id="bright" min="0.5" max="1.8" step="0.05"></label><button id="glowBtn" aria-pressed="true"></button><button id="topBtn" data-i18n="topView"></button><button id="viewBtn" data-i18n="resetView"></button></div>
+        <div class="view-btns"><label class="bright"><span id="brightLbl"></span><input type="range" id="bright" min="0.5" max="1.8" step="0.05"></label><label class="bright"><span data-i18n="themePick"></span><select id="themeSel"></select></label><button id="glowBtn" aria-pressed="true"></button><button id="topBtn" data-i18n="topView"></button><button id="viewBtn" data-i18n="resetView"></button></div>
         <div class="toast" id="toast" role="status"></div>
+        <div class="keyview" id="keyView" hidden>
+          <div class="kv-faces"></div>
+          <p class="kv-msg" aria-live="polite"></p>
+        </div>
         <div class="loadmsg" id="loadMsg"><div><b>Loading the 3D workbench…</b></div></div>
         <div class="done" id="done">
           <div class="done-card">
@@ -125,6 +129,7 @@
 <script src="js/game/actions.js"></script>
 <script src="js/game/drop.js"></script>
 <script src="js/game/connectors.js"></script>
+<script src="js/game/key-view.js"></script>
 <script src="js/game/paste.js"></script>
 <script src="js/game/skip.js"></script>
 <script src="js/game/input.js"></script>

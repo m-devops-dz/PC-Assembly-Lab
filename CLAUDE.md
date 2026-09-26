@@ -16,7 +16,9 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 
 ## File map
 - `css/style.css`: all styling
-- `themes/real-parts.zip`: sample photo theme (photos named after `PHOTO_SLOTS`, plus `theme.json` and `CREDITS.txt`)
+- `themes/real-parts.zip`: built-in photo theme 1, loaded by default (photos named after `PHOTO_SLOTS`, plus `theme.json` and `CREDITS.txt`). Theme 2 is `themes/theme2.zip`. The list is `BUILTIN_THEMES` in `photos.js`.
+- `themes/<name>.zip.js`: the same zip as base64, for when the page is opened from a file (`fetch()` is blocked on `file://`). Regenerate it whenever a theme zip changes:
+  `python -c "import base64,sys;f=sys.argv[1];open(f+'.js','w').write('(window.THEME_ZIPS=window.THEME_ZIPS||{})[\"'+f.split('/')[-1]+'\"]=\"'+base64.b64encode(open(f,'rb').read()).decode()+'\";\n')" themes/theme2.zip`
 - `js/core/`
   - `config.js`: `PHOTO_URLS`
   - `i18n.js`: all UI text, English and Arabic (`I18N.en` / `I18N.ar`), plus `t()`
@@ -35,6 +37,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `actions.js`: lever, slot, bracket and screw clicks, plus `rotate`/`flip`/`seat`
   - `drop.js`: placement rules per part (`drop()`), `finish`, `persist`
   - `connectors.js`: the SATA / 24-pin / CPU-power plug steps
+  - `key-view.js`: small window that shows how a held keyed part lines up (SATA plug vs port L, RAM notch vs slot key)
   - `paste.js`: thermal-paste animation
   - `skip.js`: hold Ctrl+H to skip a step (`finishStep`, `skipStep`)
   - `photos.js`: user photo textures and .zip photo themes (`PHOTO_SLOTS`, `loadTheme`, kept in IndexedDB; zip via JSZip from CDN)

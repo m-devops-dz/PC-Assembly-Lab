@@ -101,6 +101,24 @@ details.photos p.theme-name:empty{ display:none; }
 .toast.show{ opacity:1; transform:translate(-50%,0); }
 .toast.err{ border-inline-start-color:var(--err); }
 .toast.ok{ border-inline-start-color:var(--ok); }
+/* key view: SATA plug and port faces side by side while a plug is held */
+.keyview{ position:absolute; bottom:14px; inset-inline-end:14px; width:260px; padding:10px 12px; border-radius:10px; background:var(--panel); color:var(--ink); box-shadow:0 8px 28px rgba(0,0,0,.3); border:2px solid var(--err); display:grid; gap:6px; }
+.keyview[hidden]{ display:none; }
+.keyview.ok{ border-color:var(--ok); }
+.kv-faces{ display:grid; grid-template-columns:1fr 1fr; gap:8px; direction:ltr; }
+.kv-faces figure{ margin:0; display:grid; gap:2px; text-align:center; }
+.kv-faces svg{ width:100%; height:auto; background:var(--paper); border-radius:6px; }
+.kv-faces figcaption{ font-family:var(--display); font-weight:600; font-size:14px; }
+.kv-faces.one{ grid-template-columns:1fr; }
+.kv-turn{ transition:transform .3s; }
+.kv-pcb{ fill:#17563a; } .kv-gold{ fill:#c9a24a; } .kv-slotbody{ fill:#8f141c; } .kv-groove{ fill:#040404; }
+.kv-guide{ stroke:var(--gold); stroke-width:2; stroke-dasharray:4 3; }
+.kv-lbl{ font:600 11px var(--display); fill:#fff; } .kv-lbl.light{ fill:#fff; }
+.kv-body.data{ fill:#c0212c; } .kv-body.power{ fill:#141518; stroke:#6b7478; stroke-width:1; }
+.kv-slot.data{ fill:#111; } .kv-slot.power{ fill:#ddd; }
+.kv-housing{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; } .kv-tongue{ fill:#9aa0a8; }
+.kv-msg{ margin:0; font-size:13px; font-weight:500; color:var(--err); }
+.keyview.ok .kv-msg{ color:var(--ok); }
 .done{ position:absolute; inset:0; display:none; place-items:center; background:rgba(10,20,22,.45); }
 .done.show{ display:grid; }
 .done-card{ background:var(--panel); color:var(--ink); border-radius:14px; padding:26px 28px; width:min(380px, 90%); text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.4); }
@@ -129,13 +147,16 @@ details.photos p.theme-name:empty{ display:none; }
   .tool{ width:46px; height:46px; } .tool.drop{ width:54px; height:54px; }
   .toast{ max-width:calc(100% - 90px); left:auto; inset-inline-end:10px; transform:none; top:56px; }
   .toast.show{ transform:none; }
+  .keyview{ width:210px; bottom:10px; inset-inline-end:10px; padding:8px; }
 }
-@media (prefers-reduced-motion: reduce){ .part.pulse{ animation:none; } .tool,.toast{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .part.pulse{ animation:none; } .tool,.toast,.kv-turn{ transition:none; } }
 .steps li.group{ display:block; padding:12px 0 2px; font-family:var(--display); font-weight:700; font-size:14px; color:var(--muted); }
 .steps li.group::after{ content:none; }
 .view-btns{ flex-wrap:wrap; justify-content:flex-end; }
 .view-btns .bright{ display:flex; align-items:center; gap:6px; background:rgba(0,0,0,.35); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:4px 12px; font-size:13px; }
 .view-btns .bright input{ width:90px; accent-color:var(--gold); }
+.view-btns .bright select{ background:transparent; color:#fff; border:0; font:inherit; cursor:pointer; }
+.view-btns .bright select option{ background:#263b40; color:#fff; }
 #glowBtn.off{ background:rgba(0,0,0,.6); text-decoration:line-through; }
 .loadmsg{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; color:#fff; background:var(--mat); z-index:5; }
 .loadmsg.err{ background:rgba(20,10,10,.85); }
