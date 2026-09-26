@@ -109,12 +109,12 @@ details.photos p.theme-name:empty{ display:none; }
 .done-card p{ margin:0 0 16px; color:var(--muted); }
 .primary{ background:var(--gold); color:var(--gold-ink); border:0; border-radius:999px; padding:10px 22px; font-weight:700; cursor:pointer; }
 
-.tray{ background:var(--tray); padding:10px 14px 14px; border-top:3px solid var(--mat-edge); }
+.tray{ background:var(--tray); padding:8px 14px; border-top:3px solid var(--mat-edge); }
 .tray h3{ margin:0 0 8px; color:#dfe8e8; font-family:var(--display); font-weight:600; font-size:15px; }
-.tray-items{ display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+.tray-items{ position:relative; display:flex; flex-wrap:wrap; gap:10px; max-height:100px; overflow-x:hidden; overflow-y:auto; padding:2px; scrollbar-width:thin; }   /* one row visible; scrolls to the part the step needs */
 .part{ flex:none; width:118px; height:96px; border-radius:10px; background:var(--tray-card); color:var(--tray-ink); border:2px solid transparent; display:grid; grid-template-rows:1fr auto; place-items:center; padding:6px; cursor:pointer; position:relative; }
 .part img, .part svg{ max-width:96px; max-height:54px; }
-.part span{ font-size:13px; font-weight:600; }
+.part span{ font-size:13px; font-weight:600; text-align:center; line-height:1.15; }
 .part.locked{ opacity:.45; cursor:not-allowed; }
 .part.used{ opacity:.3; }
 .part.pulse{ border-color:var(--gold); animation:pulse 1.4s infinite; }

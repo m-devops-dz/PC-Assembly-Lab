@@ -21,7 +21,7 @@ function drawThumbs(){
   updateTray();
 }
 function updateTray(){
-  const el=document.getElementById("tray"); el.innerHTML="";
+  const el=document.getElementById("tray"), keep=el.scrollTop; el.innerHTML="";
   const free=!S.held&&!S.busy;
   const items=[
     {id:"cpu",label:t("p_cpu"),img:`<img alt="" src="${cpuThumb}">`,on:S.step===ST.takeCpu,fn:takeCPU},
@@ -35,8 +35,11 @@ function updateTray(){
     {id:"screws",label:t("p_screws"),img:SVG.screws,on:S.step===ST.boardScrews,fn:takeScrews},
     {id:"gpu",label:t("p_gpu"),img:SVG.gpu,on:S.step===ST.gpu,fn:takeGPU},
     {id:"sata",label:t("p_sata"),img:SVG.sata,on:S.step===ST.sata,fn:takeSata}];
+  let want=null;
   items.forEach(it=>{ const used=!!S.used[it.id]; const b=document.createElement("button");
-    b.className="part"+(used?" used":"")+(!used&&it.on&&free&&S.glow?" pulse":""); b.innerHTML=it.img+`<span>${it.label}</span>`; b.setAttribute("aria-label",it.label); b.onclick=it.fn; el.appendChild(b); });
+    b.className="part"+(used?" used":"")+(!used&&it.on&&free&&S.glow?" pulse":""); b.innerHTML=it.img+`<span>${it.label}</span>`; b.setAttribute("aria-label",it.label); b.onclick=it.fn; el.appendChild(b); if(!used&&it.on&&!want) want=b; });
+  el.scrollTop=keep;                                      // rebuilding the buttons would otherwise jump back to the first row
+  if(want&&(want.offsetTop<el.scrollTop||want.offsetTop+want.offsetHeight>el.scrollTop+el.clientHeight)) el.scrollTo({top:want.offsetTop-2,behavior:"smooth"});
 }
 function renderSteps(){
   const ol=document.getElementById("steps"); ol.innerHTML="";
