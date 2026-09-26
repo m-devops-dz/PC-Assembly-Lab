@@ -45,9 +45,17 @@
       <details class="photos">
         <summary data-i18n="photos"></summary>
         <p data-i18n="photosHelp"></p>
+        <label class="theme-in"><span data-i18n="photoTheme"></span><input type="file" accept=".zip,application/zip" id="themeFile"></label>
+        <p class="theme-name" id="themeName"></p>
+        <div class="photo-btns"><button class="chip-btn" id="themeSave" data-i18n="themeSave" disabled></button><button class="chip-btn" id="photoClear" data-i18n="photoClear" disabled></button></div>
+        <p data-i18n="photosOne"></p>
+        <label><span data-i18n="photoBoard"></span><input type="file" accept="image/*" data-photo="board"></label>
         <label><span data-i18n="photoLid"></span><input type="file" accept="image/*" data-photo="cpuTop"></label>
         <label><span data-i18n="photoRam"></span><input type="file" accept="image/*" data-photo="ram"></label>
-        <label><span data-i18n="photoBoard"></span><input type="file" accept="image/*" data-photo="board"></label>
+        <label><span data-i18n="photoM2"></span><input type="file" accept="image/*" data-photo="m2"></label>
+        <label><span data-i18n="photoSata"></span><input type="file" accept="image/*" data-photo="sata"></label>
+        <label><span data-i18n="photoGpu"></span><input type="file" accept="image/*" data-photo="gpu"></label>
+        <label><span data-i18n="photoPsu"></span><input type="file" accept="image/*" data-photo="psu"></label>
       </details>
     </aside>
 
@@ -111,6 +119,7 @@
 <script src="js/parts/connector-cables.js"></script>
 <script src="js/parts/front-panel.js"></script>
 <script src="js/parts/peripherals.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="js/game/photos.js"></script>
 <script src="js/game/state.js"></script>
 <script src="js/game/take-parts.js"></script>

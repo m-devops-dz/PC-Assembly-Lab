@@ -75,6 +75,12 @@ details.photos summary{ cursor:pointer; font-weight:600; }
 details.photos p{ color:var(--muted); font-size:13px; margin:6px 0 10px; }
 details.photos label{ display:grid; gap:3px; font-size:13px; margin-bottom:10px; }
 details.photos input{ font-size:12px; max-width:100%; }
+details.photos .theme-in{ font-weight:600; }
+details.photos p.theme-name{ color:var(--ink); font-weight:500; margin:0 0 8px; }
+details.photos p.theme-name:empty{ display:none; }
+.photo-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.photo-btns .chip-btn{ font-size:13px; padding:5px 12px; }
+.chip-btn:disabled{ opacity:.45; cursor:default; }
 
 .stage{ display:grid; grid-template-rows:1fr auto; min-height:0; min-width:0; }
 .viewport{ position:relative; min-height:0; overflow:hidden; touch-action:none;

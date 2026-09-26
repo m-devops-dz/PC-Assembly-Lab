@@ -37,13 +37,17 @@ function hintSprite(){
 addMarker(socket,-2.4,.452,2.4,.72);
 const socketHint=hintSprite(); socketHint.position.set(SX-2.15,1.3,SZ+2.15); boardRoot.add(socketHint);
 const leverMat=new T.MeshStandardMaterial({color:0x2f6bff,metalness:.25,roughness:.35});
-const leverPivot=new T.Group(); leverPivot.position.set(2.58,.5,2.3); socket.add(leverPivot);
-const rod=mesh(new T.CylinderGeometry(.1,.1,4.4,16),leverMat,[0,0,-2.2],leverPivot); rod.rotation.x=Math.PI/2;
-const hnd=mesh(new T.CylinderGeometry(.12,.12,.7,16),leverMat,[.35,0,-4.4],leverPivot); hnd.rotation.z=Math.PI/2;
-const grip=mesh(new T.SphereGeometry(.2,20,14),leverMat,[.72,0,-4.4],leverPivot);
-const leverHit=mesh(box(1.2,.8,4.9),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[.25,0,-2.3],leverPivot,{cast:false});
-[rod,hnd,grip,leverHit].forEach(m=>m.userData.part="lever");
-mesh(box(.3,.2,.3),cream,[2.85,.45,-2.2],socket);                                                 // lever hook
+/* lever: like the real board, it lies along the bottom edge (+z) with the handle at the left; the bent end at the
+   bottom-right corner is the axle going into the cam housing, so it lifts in the x-y plane (rotation.z → LEVER_UP) */
+const LEVER_UP=-Math.PI/2;
+const leverPivot=new T.Group(); leverPivot.position.set(2.62,.5,2.62); socket.add(leverPivot);
+const rod=mesh(new T.CylinderGeometry(.1,.1,5.0,16),leverMat,[-2.5,0,0],leverPivot); rod.rotation.z=Math.PI/2;
+const axle=mesh(new T.CylinderGeometry(.1,.1,.5,16),leverMat,[0,0,-.25],leverPivot); axle.rotation.x=Math.PI/2;
+const hnd=mesh(new T.CylinderGeometry(.12,.12,.45,16),leverMat,[-5.0,0,.2],leverPivot); hnd.rotation.x=Math.PI/2;
+const grip=mesh(new T.SphereGeometry(.2,20,14),leverMat,[-5.0,0,.45],leverPivot);
+const leverHit=mesh(box(5.6,.8,1.3),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[-2.6,0,.15],leverPivot,{cast:false});
+[rod,axle,hnd,grip,leverHit].forEach(m=>m.userData.part="lever");
+mesh(box(.3,.2,.3),cream,[-1.9,.45,2.85],socket);                                                 // lever hook
 const targetMat=new T.MeshBasicMaterial({color:0xe8b33a,transparent:true,opacity:0,depthWrite:false});
 (function(){ const s=new T.Shape(); s.moveTo(-2.6,-2.6); s.lineTo(2.6,-2.6); s.lineTo(2.6,2.6); s.lineTo(-2.6,2.6); const h=new T.Path(); h.moveTo(-2.3,-2.3); h.lineTo(-2.3,2.3); h.lineTo(2.3,2.3); h.lineTo(2.3,-2.3); s.holes.push(h);
   const m=new T.Mesh(new T.ShapeGeometry(s),targetMat); m.rotation.x=-Math.PI/2; m.position.y=.47; socket.add(m); })();

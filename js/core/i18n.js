@@ -9,8 +9,11 @@ const I18N = {
     spec_cpu:"6 cores, 12 threads, 3.9 GHz base, up to 4.4 GHz boost, 65 W. Built-in Radeon graphics. AM4 PGA: the pins are on the CPU.",
     spec_ram:"288-pin DDR4 desktop module, 3200 MT/s, with aluminium heatsink. Two sticks give dual channel.",
     spec_cool:"Low-profile stock cooler that comes in the box with the 5600G. It screws into the AM4 backplate and ships with thermal paste already applied.",
-    photos:"Use real photos", photosHelp:"Choose photos taken straight from above (or straight from the side for the RAM). They replace the generated surfaces on the 3D parts.",
+    photos:"Use real photos", photosHelp:"Photos taken straight on, cropped to the part, replace the generated surfaces on the 3D parts. A theme is a .zip of them; it is remembered in this browser.",
     photoLid:"CPU lid (top)", photoRam:"RAM heatsink (side)", photoBoard:"Motherboard (top)",
+    photoM2:"M.2 SSD label (top)", photoSata:"SATA SSD (top)", photoGpu:"Graphics card fan side", photoPsu:"Power supply label side",
+    photoTheme:"Load a photo theme (.zip)", photosOne:"Or replace one part at a time:", themeSave:"Download as theme", photoClear:"Remove photos",
+    themeActive:"Theme: {n} ({c} photos)", themeCustom:"custom",
     rotL:"Rotate left", rotR:"Rotate right", drop:"Lower into place", flip:"Flip over",
     m_mobo:"Motherboard: CPU, RAM, cooler, M.2", m_case:"Case: PSU, motherboard, GPU, SATA", m_pwr:"Cables: SATA, 24-pin, 8-pin CPU, GPU power", m_cab:"Front panel, closing up, peripherals, power cord",
     s_leverUp:"Lift the socket lever", s_leverUpd:"Push the lever slightly out from its hook, then lift it all the way to 90°. This opens the holes in the socket. AM4 has no load plate: the pins are on the CPU itself. Click the lever.",
@@ -111,7 +114,7 @@ const I18N = {
     ok_snapBoard:"Above the standoffs.", ok_board:"Motherboard resting on the 9 standoffs. Now screw it down.",
     ok_snapGpu:"Above {s}.", ok_gpu:"Click. The card is seated in PCI_E1 and the latch has closed on it.",
     ok_snapSata:"Above the drive mount.", ok_sata:"SSD mounted.", ok_sataData:"Data cable connected to {s}.", ok_sataPower:"SATA power connected.",
-    ok_photo:"Photo applied.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"Thermal paste", p_cooler:"Stock cooler", p_m2:"M.2 SSD", p_psu:"Power supply", p_gpu:"Graphics card", p_sata:"SATA SSD"
+    ok_photo:"Photo applied.", ok_photoClear:"Back to the generated surfaces.", ok_theme:"Theme \"{n}\" applied: {c} photos.", e_photo:"That image could not be opened.", e_theme:"That file is not a readable .zip theme.", e_themeEmpty:"No photos found in the zip. Name them board, cpuTop, ram, m2, sata, gpu, psu (.jpg/.png/.webp), or list them in theme.json.", e_themeLib:"The zip library did not load (no internet?). Themes need it; single photos still work.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"Thermal paste", p_cooler:"Stock cooler", p_m2:"M.2 SSD", p_psu:"Power supply", p_gpu:"Graphics card", p_sata:"SATA SSD"
   },
   ar:{
     title:"مختبر تركيب الحاسوب", subtitle:"MSI B450 Gaming Plus Max، Ryzen 5 5600G، Asgard 8 GB DDR4", reset:"ابدأ من جديد", lessons:"الدروس",
@@ -122,8 +125,11 @@ const I18N = {
     spec_cpu:"6 أنوية، 12 خيطًا، 3.9 GHz أساسي وحتى 4.4 GHz، 65 واط. رسوميات Radeon مدمجة. نوع AM4 PGA: الأسنان موجودة على المعالج.",
     spec_ram:"شريحة DDR4 مكتبية بـ 288 سنًا، 3200 MT/s، مع مشتت حراري من الألمنيوم. شريحتان تعطيان قناة مزدوجة.",
     spec_cool:"مبرد أصلي منخفض يأتي في علبة المعالج 5600G. يُثبّت بالبراغي في الصفيحة الخلفية لمقبس AM4 ويأتي مع معجون حراري موضوع مسبقًا.",
-    photos:"استخدام صور حقيقية", photosHelp:"اختر صورًا ملتقطة من الأعلى مباشرة (أو من الجانب مباشرة للذاكرة). ستحل محل الأسطح المولّدة على القطع ثلاثية الأبعاد.",
+    photos:"استخدام صور حقيقية", photosHelp:"صور ملتقطة بشكل مستقيم ومقصوصة على حدود القطعة تحل محل الأسطح المولّدة على القطع ثلاثية الأبعاد. السمة ملف .zip يضمها، ويحفظها هذا المتصفح.",
     photoLid:"غطاء المعالج (الأعلى)", photoRam:"مشتت الذاكرة (الجانب)", photoBoard:"اللوحة الأم (الأعلى)",
+    photoM2:"ملصق قرص M.2 (الأعلى)", photoSata:"قرص SATA (الأعلى)", photoGpu:"بطاقة الرسوميات (جهة المراوح)", photoPsu:"وحدة التغذية (جهة الملصق)",
+    photoTheme:"تحميل سمة صور (.zip)", photosOne:"أو استبدل قطعة واحدة في كل مرة:", themeSave:"تنزيل كسمة", photoClear:"إزالة الصور",
+    themeActive:"السمة: {n} ({c} صور)", themeCustom:"مخصصة",
     rotL:"تدوير لليسار", rotR:"تدوير لليمين", drop:"إنزال في مكانه", flip:"قلب",
     m_mobo:"اللوحة الأم: المعالج، الذاكرة، المبرد، M.2", m_case:"الصندوق: التغذية، اللوحة الأم، بطاقة الرسوميات، SATA", m_pwr:"الأسلاك: SATA، 24 سنًا، 8 سنون للمعالج، طاقة بطاقة الرسوميات", m_cab:"اللوحة الأمامية، الإغلاق، الملحقات، سلك الكهرباء",
     s_leverUp:"ارفع ذراع المقبس", s_leverUpd:"ادفع الذراع قليلًا للخارج من مشبكه، ثم ارفعه حتى 90°. هذا يفتح ثقوب المقبس. مقبس AM4 بلا صفيحة ضغط: الأسنان موجودة على المعالج نفسه. انقر على الذراع.",
@@ -224,7 +230,7 @@ const I18N = {
     ok_snapBoard:"فوق القواعد.", ok_board:"اللوحة الأم موضوعة على القواعد التسع. ثبّتها الآن بالبراغي.",
     ok_snapGpu:"فوق {s}.", ok_gpu:"طق. البطاقة مثبتة في PCI_E1 وأُغلق المشبك عليها.",
     ok_snapSata:"فوق مكان الأقراص.", ok_sata:"تم تثبيت القرص.", ok_sataData:"تم توصيل سلك البيانات بـ {s}.", ok_sataPower:"تم توصيل طاقة SATA.",
-    ok_photo:"تم تطبيق الصورة.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"المعجون الحراري", p_cooler:"المشتت الحراري", p_m2:"قرص M.2", p_psu:"وحدة التغذية", p_gpu:"بطاقة الرسوميات", p_sata:"قرص SATA"
+    ok_photo:"تم تطبيق الصورة.", ok_photoClear:"تمت العودة إلى الأسطح المولّدة.", ok_theme:"تم تطبيق السمة \"{n}\": {c} صور.", e_photo:"تعذر فتح هذه الصورة.", e_theme:"هذا الملف ليس سمة .zip قابلة للقراءة.", e_themeEmpty:"لا توجد صور في الملف المضغوط. سمّها board و cpuTop و ram و m2 و sata و gpu و psu (.jpg/.png/.webp) أو اذكرها في theme.json.", e_themeLib:"لم تُحمَّل مكتبة الضغط (لا يوجد إنترنت؟). السمات تحتاجها، أما الصور المفردة فتعمل.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"المعجون الحراري", p_cooler:"المشتت الحراري", p_m2:"قرص M.2", p_psu:"وحدة التغذية", p_gpu:"بطاقة الرسوميات", p_sata:"قرص SATA"
   }
 };
 let lang="en";

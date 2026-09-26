@@ -16,10 +16,10 @@ function seatConnNow(){
 }
 function takeCpuNow(){ S.used.cpu=true; S.rot.cpu=0; S.flips=0; cpuYaw.visible=true; cpuYaw.position.set(-7.5,CPU_HOVER,1.2); cpuYaw.rotation.y=0; cpuFlip.rotation.z=0; }
 const finishStep={
-  leverUp:()=>{ leverPivot.rotation.x=Math.PI/2; },
+  leverUp:()=>{ leverPivot.rotation.z=LEVER_UP; },
   takeCpu:takeCpuNow,
   placeCpu:()=>{ takeCpuNow(); cpuYaw.position.set(SX,CPU_SEAT,SZ); targetMat.opacity=0; },
-  leverDown:()=>{ leverPivot.rotation.x=0; },
+  leverDown:()=>{ leverPivot.rotation.z=0; },
   clips:()=>GOOD.forEach(i=>{ if(!slots[i].open) setLatches(i,true,1); }),
   ram1:seatRamNow, ram2:seatRamNow,
   bracket:()=>{ bracketGroup.visible=false; },

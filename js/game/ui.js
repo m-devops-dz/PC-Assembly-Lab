@@ -72,7 +72,7 @@ function applyLang(){
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };

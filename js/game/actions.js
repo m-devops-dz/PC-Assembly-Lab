@@ -1,7 +1,7 @@
 function clickLever(){
   if(S.busy) return; startClock();
-  if(S.step===ST.leverUp){ S.busy=true; animTo(leverPivot.rotation,"x",Math.PI/2,900,()=>{ S.busy=false; setStep(ST.takeCpu); }); }
-  else if(S.step===ST.leverDown){ S.busy=true; animTo(leverPivot.rotation,"x",0,800,()=>{ S.busy=false; setStep(ST.clips); }); }
+  if(S.step===ST.leverUp){ S.busy=true; animTo(leverPivot.rotation,"z",LEVER_UP,900,()=>{ S.busy=false; setStep(ST.takeCpu); }); }
+  else if(S.step===ST.leverDown){ S.busy=true; animTo(leverPivot.rotation,"z",0,800,()=>{ S.busy=false; setStep(ST.clips); }); }
   else if(S.step===ST.takeCpu||S.step===ST.placeCpu){ mistake(); toast(t("e_leverUp"),"err"); }
   else toast(t("e_notNow"));
 }

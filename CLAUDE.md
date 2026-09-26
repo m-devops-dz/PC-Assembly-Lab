@@ -16,6 +16,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 
 ## File map
 - `css/style.css`: all styling
+- `themes/real-parts.zip`: sample photo theme (photos named after `PHOTO_SLOTS`, plus `theme.json` and `CREDITS.txt`)
 - `js/core/`
   - `config.js`: `PHOTO_URLS`
   - `i18n.js`: all UI text, English and Arabic (`I18N.en` / `I18N.ar`), plus `t()`
@@ -36,7 +37,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `connectors.js`: the SATA / 24-pin / CPU-power plug steps
   - `paste.js`: thermal-paste animation
   - `skip.js`: hold Ctrl+H to skip a step (`finishStep`, `skipStep`)
-  - `photos.js`: user photo textures
+  - `photos.js`: user photo textures and .zip photo themes (`PHOTO_SLOTS`, `loadTheme`, kept in IndexedDB; zip via JSZip from CDN)
   - `input.js`: raycast picking and dragging
   - `ui.js`: sidebar, tray, buttons, keyboard
   - `loop.js`: render loop, glow hints, startup (`applyLang(); setStep(0)`)
