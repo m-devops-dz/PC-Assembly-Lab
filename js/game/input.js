@@ -6,6 +6,8 @@ const plane=new T.Plane(V3(0,1,0),0), dragOff=V3(0,0,0), hitP=V3(0,0,0);
 let dragging=false, downXY=null, moved=false;
 function setNDC(e){ const r=renderer.domElement.getBoundingClientRect(); ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1); ray.setFromCamera(ndc,camera); }
 function pick(e){ setNDC(e); const hits=ray.intersectObjects(scene.children,true);
+  // choosing a port: plugs already seated next to it (USB above the board's HDMI) must not swallow the click
+  if(S.connPick){ const h=hits.find(h=>h.object.userData.part==="rport"&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }
   for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
   return null; }
 function grabbable(p){

@@ -8,7 +8,7 @@ const plugMetal=new T.MeshStandardMaterial({color:0xc4c9cf,metalness:.9,roughnes
 
 /* keyboard (behind the case, clear of the desk space where its plug lies) and mouse (beyond the bottom).
    1 unit = 1 cm. The keyboard's long side runs along z; the typist sits at −x, so its back (F-row, cable) faces +x and the case. */
-const KB_POS=V3(-44,0,L.z-20), MOUSE_POS=V3(-25,0,L.z+31), MOUSE_YAW=.12;
+const KB_POS=V3(-44,0,L.z-20), MOUSE_POS=V3(-43,0,L.z+10), MOUSE_YAW=.12;   // mouse on the typist's right (+z), beside the number pad
 const KB_U=1.905, KB_W=45.4, KB_D=15.4, KB_PLATE=1.06, KB_TILT=.05;         // key pitch, body length (z) and depth (x), plate top, back-up tilt
 // full-size ANSI layout, rows back to front. A string is a 1u key; [label,w,h] a wider/taller key; [null,w] a gap.
 const KB_ROWS=(()=>{ const k=s=>s.split(" ");
@@ -142,11 +142,14 @@ function makeIecPlug(id){
   return {outer,inner,roll:0,back:-3.6};
 }
 const periCable=(c)=>new T.MeshStandardMaterial({color:c,roughness:.6});
+// slack: the cable snakes along the desk (two side-to-side bends) instead of running straight to the plug
+const slack=(amp)=>(a,b)=>{ const d=b.clone().sub(a), n=V3(-d.z,0,d.x).normalize().multiplyScalar(amp);
+  return [a.clone().addScaledVector(d,.3).add(n).setY(.3),a.clone().addScaledVector(d,.65).sub(n).setY(.3)]; };
 Object.assign(CONN,{
   usbKb:{id:"usbKb",mat:periCable(0x1b1c1f),radius:.18,mesh:null,a:makeUsbPlug("usbKb"),outside:true,
-    anchor:()=>V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13), anchorDir:()=>V3(1,0,0)},
+    anchor:()=>V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13), anchorDir:()=>V3(1,0,0), via:slack(4)},
   usbMouse:{id:"usbMouse",mat:periCable(0x1b1c1f),radius:.14,mesh:null,a:makeUsbPlug("usbMouse"),outside:true,
-    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW))},
+    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)), via:slack(3)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
     anchor:()=>(monG.updateMatrixWorld(true),monG.localToWorld(V3(-2.1,12,0))), anchorDir:()=>V3(0,-1,0),
     via:()=>[monG.localToWorld(V3(-6,.3,6)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, then along the desk around the top of the case

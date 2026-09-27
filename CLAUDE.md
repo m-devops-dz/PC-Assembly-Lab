@@ -43,4 +43,5 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `photos.js`: user photo textures and .zip photo themes (`PHOTO_SLOTS`, `loadTheme`, kept in IndexedDB; zip via JSZip from CDN)
   - `input.js`: raycast picking and dragging
   - `ui.js`: sidebar, tray, buttons, keyboard
+  - `hints.js`: help: pointer arrow (always on the socket lever), first-part coach card (lever + CPU flip/rotate/drag/lower), Hint button (5 per build, H key; points at the next target, demos the move with a held part then puts it back)
   - `loop.js`: render loop, glow hints, startup (`applyLang(); setStep(0)`)

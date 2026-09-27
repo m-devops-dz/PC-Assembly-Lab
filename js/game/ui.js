@@ -37,19 +37,22 @@ function updateTray(){
     {id:"sata",label:t("p_sata"),img:SVG.sata,on:S.step===ST.sata,fn:takeSata}];
   let want=null;
   items.forEach(it=>{ const used=!!S.used[it.id]; const b=document.createElement("button");
-    b.className="part"+(used?" used":"")+(!used&&it.on&&free&&S.glow?" pulse":""); b.innerHTML=it.img+`<span>${it.label}</span>`; b.setAttribute("aria-label",it.label); b.onclick=it.fn; el.appendChild(b); if(!used&&it.on&&!want) want=b; });
+    b.className="part"+(used?" used":"")+(!used&&it.on&&free&&S.glow?" pulse":""); b.innerHTML=it.img+`<span>${it.label}</span>`; b.setAttribute("aria-label",it.label); b.dataset.id=it.id; b.onclick=it.fn; el.appendChild(b); if(!used&&it.on&&!want) want=b; });
   el.scrollTop=keep;                                      // rebuilding the buttons would otherwise jump back to the first row
   if(want&&(want.offsetTop<el.scrollTop||want.offsetTop+want.offsetHeight>el.scrollTop+el.clientHeight)) el.scrollTo({top:want.offsetTop-2,behavior:"smooth"});
 }
 function renderSteps(){
-  const ol=document.getElementById("steps"); ol.innerHTML="";
+  const ol=document.getElementById("steps"), exp=renderSteps.exp||(renderSteps.exp=document.querySelector(".explain"));
+  const box=document.createElement("li"); box.className="exp"; box.appendChild(exp);   // the explanation sits right under the current step
+  ol.innerHTML="";
   for(let i=0;i<STEPS;i++){
     const grp=STEP_GROUPS.find(([at])=>at===i); if(grp){ const g=document.createElement("li"); g.className="group"; g.textContent=t(grp[1]); ol.appendChild(g); }
-    const li=document.createElement("li"); li.className=i<S.step?"done":i===S.step?"current":"todo"; li.innerHTML=`<span>${t("s_"+STEP_IDS[i])}</span>`; ol.appendChild(li); }
-  const fin=S.step>=STEPS;
+    const li=document.createElement("li"); li.className=i<S.step?"done":i===S.step?"current":"todo"; li.innerHTML=`<span>${t("s_"+STEP_IDS[i])}</span>`; ol.appendChild(li);
+    if(i===S.step) ol.appendChild(box); }
+  const fin=S.step>=STEPS; if(fin) ol.appendChild(box);
   document.getElementById("expTitle").textContent=fin?t("doneTitle"):t("s_"+STEP_IDS[S.step]);
   document.getElementById("expText").textContent=fin?t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}):t("s_"+STEP_IDS[S.step]+"d");
-  const cur=ol.querySelector(".current"); if(cur&&window.innerWidth>860) cur.scrollIntoView({block:"nearest"});
+  if(window.innerWidth>860) box.scrollIntoView({block:"center"});
 }
 function renderModules(){
   const lock='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 7V5a4 4 0 1 1 8 0v2h1v8H3V7zm2 0h4V5a2 2 0 1 0-4 0z"/></svg>', play='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6z"/></svg>', check='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8l3 3 7-7"/></svg>';
@@ -67,7 +70,10 @@ function updateTools(){
   renderKeyView();
 }
 let toastTimer=0;
-function toast(msg,type){ const el=document.getElementById("toast"); el.textContent=msg; el.className="toast show"+(type?" "+type:""); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),type==="err"?5500:3200); }
+// sticky: stays up with an OK button (long warnings); otherwise it hides after a time that grows with the text
+function toast(msg,type,sticky){ const el=document.getElementById("toast"); el.textContent=msg; el.className="toast show"+(type?" "+type:"")+(sticky?" sticky":""); clearTimeout(toastTimer);
+  if(sticky){ const b=document.createElement("button"); b.className="primary"; b.textContent=t("ok"); b.onclick=()=>el.classList.remove("show"); el.appendChild(b); return; }
+  toastTimer=setTimeout(()=>el.classList.remove("show"),Math.max(type==="err"?5500:3200,msg.length*65)); }
 function fmtTime(ms){ const s=Math.max(0,Math.floor(ms/1000)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 function applyLang(){
   const root=document.documentElement; root.lang=lang; root.dir=lang==="ar"?"rtl":"ltr";
@@ -76,7 +82,7 @@ function applyLang(){
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };

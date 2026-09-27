@@ -3,7 +3,7 @@ function takeCPU(){
   if(S.step===ST.leverUp){ mistake(); toast(t("e_leverFirst"),"err"); return; }
   if(S.used.cpu){ toast(t("e_taken")); return; }
   if(!gate(ST.takeCpu)) return;
-  S.used.cpu=true; S.rot.cpu=1+Math.floor(Math.random()*3); S.flips=Math.random()<.5?1:0;
+  S.used.cpu=true; S.rot.cpu=1+Math.floor(Math.random()*3); S.flips=1;   // always upside down at first, so the user learns the flip button
   cpuYaw.visible=true; cpuYaw.position.set(-9,8,10); const fy=S.rot.cpu*Math.PI/2; cpuYaw.rotation.y=fy+Math.PI; cpuFlip.rotation.z=S.flips*Math.PI;
   S.busy=true; const from=cpuYaw.position.clone(), to=V3(-7.5,CPU_HOVER,1.2);
   tween(900,k=>{ cpuYaw.position.lerpVectors(from,to,k); cpuYaw.rotation.y=fy+Math.PI*(1-k); },()=>{ S.busy=false; S.held="cpu"; S.snap=null; setStep(ST.placeCpu); },easeOut);

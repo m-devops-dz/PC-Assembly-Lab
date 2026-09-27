@@ -53,7 +53,7 @@ function drawConn(c){
   const mid=a.clone().lerp(b,.5); mid.y=c.overY??Math.max(Math.min(a.y,b.y)-1,.7);   // overY: arch over the GPU instead of sagging
   if(c.a.pins) return drawBundle(c,a,da,mid,db);
   const keep=c.outside?(p=>p):inCase;                                     // desk cables (keyboard, mouse, monitor) run outside the case
-  const pts=[a,keep(a.clone().addScaledVector(da,1.2)),...(c.via?c.via():[keep(mid)]),keep(b.clone().addScaledVector(db,1.2)),b];   // via: route around the case
+  const pts=[a,keep(a.clone().addScaledVector(da,1.2)),...(c.via?c.via(a,b):[keep(mid)]),keep(b.clone().addScaledVector(db,1.2)),b];   // via: route around the case
   const geo=new T.TubeGeometry(new T.CatmullRomCurve3(pts),64,c.radius,8,false);
   if(!c.mesh){ c.mesh=new T.Mesh(geo,c.mat); c.mesh.castShadow=true; c.mesh.userData={part:"conn",conn:c.id}; scene.add(c.mesh); } else { c.mesh.geometry.dispose(); c.mesh.geometry=geo; }
 }

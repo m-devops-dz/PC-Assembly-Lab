@@ -7,7 +7,7 @@ function clickConn(id){
   const w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), P=job.plug;
   const p0=P.outer.position.clone(), q0=P.outer.quaternion.clone(), r0=P.inner.rotation.x;
   S.roll=1+Math.floor(Math.random()*3); S.job=job; S.busy=true;
-  const side=V3(0,0,1).applyQuaternion(w.q), hold=isLJob(job)?lHold(job):null, end=hold?hold.pos:pre, qEnd=hold?hold.q:w.q;
+  const side=V3(0,0,1).applyQuaternion(w.q), hold=holdFor(job), end=hold?hold.pos:pre, qEnd=hold?hold.q:w.q;
   if(hold) focusPoint(hold.cam,hold.tgt,1000);
   else if(job.c.id==="gpu8"){ const v=VIEWS.gpuPwrPlug; focusPoint(V3(...v.pos),V3(...v.tgt),1000); }   // step back: the whole card and the socket at its end
   else if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header: look down from the latch side
@@ -20,7 +20,7 @@ function clickConn(id){
 function rollConn(dir){ const job=S.job, P=job.plug, r0=P.inner.rotation.x, r1=(S.roll+=dir)*Math.PI/2; S.busy=true; renderKeyView();
   tween(300,k=>{ P.inner.rotation.x=r0+(r1-r0)*k; drawConn(job.c); },()=>{ S.busy=false; drawConn(job.c); }); }   // the wires follow the plug as it turns
 function insertConn(){
-  const job=S.job, P=job.plug, w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), hold=isLJob(job)?lHold(job):null;
+  const job=S.job, P=job.plug, w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), hold=holdFor(job);
   S.busy=true;
   if(hold) swingPlug(P,job.c,hold.pos,pre,hold.q,w.q,()=>seatConn(job,w,pre,hold)); else seatConn(job,w,pre,null);
 }
@@ -45,6 +45,13 @@ function lHold(job){ const w=portWorld(job.port), side=V3(0,0,1).applyQuaternion
   const q=new T.Quaternion().setFromUnitVectors(w.out.clone().negate(),h).multiply(w.q);   // plug face (+x) turned from the port toward the camera
   const tgt=w.p.clone().lerp(pos,.5);
   return {pos,q,tgt,cam:tgt.clone().addScaledVector(h,6).add(V3(0,6,0))}; }
+// HDMI: the plug waits out in front of the port, turned 180° so its keyed face looks at the camera beside the port.
+// Turned about the port's own up axis, so the plug's cut corners point the same way as the port's.
+function faceHold(job){ const w=portWorld(job.port), up=V3(0,1,0).applyQuaternion(w.q), s=V3(0,0,0).crossVectors(w.out,V3(0,1,0)).normalize();
+  const pos=w.p.clone().addScaledVector(w.out,5.6).addScaledVector(s,2.6), q=new T.Quaternion().setFromAxisAngle(up,Math.PI).multiply(w.q);
+  const tgt=w.p.clone().lerp(pos,.5);
+  return {pos,q,tgt,cam:tgt.clone().addScaledVector(w.out,11).add(V3(0,2.5,0))}; }
+const holdFor=job=>isLJob(job)?lHold(job):job.c.id==="hdmi"?faceHold(job):null;
 // SATA data cable: frame the port and the other end, which is already plugged in or lying loose
 function dataView(job){ const w=portWorld(job.port), o=portWorld(job.key==="A"?mbSata[0]:ssdData).p, c=w.p.clone().lerp(o,.5);
   return {pos:c.clone().add(V3(0,11,11)).addScaledVector(w.out,3.5),tgt:c}; }
@@ -67,7 +74,7 @@ function clickRearPort(id){
   if(job.choose==="usb"&&p.kind!=="usb"){ mistake(); toast(t("e_notUsb"),"err"); return; }
   if(job.choose==="hdmi"){
     // motherboard HDMI: a warning, not a mistake (it would work, on the iGPU). Point them at the card's ports.
-    if(p.kind==="hdmiMb"){ S.hdmiWarned=true; toast(t("e_hdmiBoard"),"err"); GPU_HDMI_VIEW(); return; }
+    if(p.kind==="hdmiMb"){ S.hdmiWarned=true; toast(t("e_hdmiBoard"),"err",true); GPU_HDMI_VIEW(); return; }
     if(p.kind==="dp"){ mistake(); toast(t("e_hdmiDp"),"err"); return; }
     if(p.kind!=="hdmiGpu"){ mistake(); toast(t("e_notHdmi"),"err"); return; }
   }

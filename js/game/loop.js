@@ -73,6 +73,7 @@ function frame(now){
   if(S.caseFanOn) rearBlades.rotation.x-=dt*10;
   if(S.step>=STEPS) gpuFans.forEach(r=>r.rotation.z-=dt*9);
   if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); }
+  updateHints(now);
   controls.update(); renderer.render(scene,camera);
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);
