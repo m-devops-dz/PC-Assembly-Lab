@@ -36,6 +36,8 @@ function takeM2(){
 }
 function takePSU(){ if(S.used.psu){ toast(t("e_taken")); return; } if(!gate(ST.psu)) return; S.used.psu=true; spawn("psu",psuG,V3(-10,40,-10),V3(-6,PSU_HOVER,L.z+10),1+Math.floor(Math.random()*3)); }
 function takeGPU(){ if(S.used.gpu){ toast(t("e_taken")); return; } if(!gate(ST.gpu)) return; S.used.gpu=true; spawn("gpu",gpuG,V3(-4,30,-14),V3(-2,GPU_HOVER,L.z+6),1); }
+function takeAntennas(){ if(S.used.antennas){ toast(t("e_taken")); return; } if(!gate(ST.antennas)) return; S.used.antennas=true; updateTray(); fitAntennas(); }
+function takeWifi(){ if(S.used.wifi){ toast(t("e_taken")); return; } if(!gate(ST.wifi)) return; S.used.wifi=true; spawn("wifi",wifiG,V3(-4,30,-14),V3(-3,WIFI_HOVER,L.z+10),1); }
 function takeSata(){ if(S.used.sata){ toast(t("e_taken")); return; } if(!gate(ST.sata)) return; S.used.sata=true; spawn("sata",sataG,V3(30,30,-14),V3(22,SATA_HOVER,L.z+14),1+Math.floor(Math.random()*3)); }
 function takeBattery(){ if(S.used.battery){ toast(t("e_taken")); return; } if(!gate(ST.battery)) return; S.used.battery=true;
   S.batFlip=Math.random()<.5?1:0; batFlip.rotation.z=S.batFlip*Math.PI; spawn("battery",batG,V3(-6,8,14),V3(-4,BAT_HOVER,12.5),0); }

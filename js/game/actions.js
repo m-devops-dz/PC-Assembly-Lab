@@ -18,7 +18,7 @@ function clickBracket(){
   if(S.busy) return;
   if(S.step!==ST.bracket){ toast(t(S.step<ST.clips?"e_cpuFirst":S.step<ST.bracket?"e_ramFirst":"e_notNow")); return; }
   S.busy=true;
-  tween(900,k=>{ bracketScrews.forEach(s=>{ s.position.y=.71+k*.7; s.rotation.y=k*Math.PI*6; }); },()=>{
+  tween(900,k=>{ bracketScrews.forEach(s=>{ s.position.y=BRACKET_SCREW_Y+.05+k*.7; s.rotation.y=k*Math.PI*6; }); },()=>{
     tween(700,k=>{ bracketGroup.position.y=k*4; bracketGroup.position.x=k*-3; },()=>{ bracketGroup.visible=false; S.busy=false; toast(t("ok_bracket"),"ok"); setStep(ST.paste); }); });
 }
 function clickScrew(i){
@@ -26,14 +26,14 @@ function clickScrew(i){
   const sc=coolerScrews[i]; if(sc.tight) return;
   const o=S.tightOrder;
   if(o.length%2===1&&i!==(o[o.length-1]+2)%4){ mistake(); toast(t("e_diag"),"err"); return; }
-  sc.tight=true; o.push(i); S.busy=true; const y0=sc.g.position.y;
-  tween(600,k=>{ sc.g.position.y=y0-.45*k; },()=>{ S.busy=false; toast(t("ok_screw"),"ok"); if(o.length===4) setTimeout(()=>setStep(ST.fanCable),300); });
+  sc.tight=true; o.push(i); S.busy=true;
+  tween(700,k=>coolerScrewDepth(sc,k),()=>{ S.busy=false; toast(t("ok_screw"),"ok"); if(o.length===4) setTimeout(()=>setStep(ST.fanCable),300); });
 }
 function clickM2Screw(){
   if(S.busy) return;
   if(S.step===ST.m2Out){ S.busy=true; const p0=m2Screw.position.clone();
     tween(900,k=>{ m2Screw.position.lerpVectors(p0,M2_PARK,k); m2Screw.position.y+=Math.sin(k*Math.PI)*1.5; m2Screw.rotation.y=k*12; },()=>{ S.busy=false; S.m2screw="parked"; toast(t("ok_m2out"),"ok"); setStep(ST.m2In); }); }
-  else if(S.step===ST.m2Screw){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,.55,M2Z);
+  else if(S.step===ST.m2Screw){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,M2_SCREW_Y.fastened,M2Z);
     tween(900,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*1.5; m2Screw.rotation.y=-k*12; },()=>{ S.busy=false; S.m2screw="fastened"; toast(t("ok_m2screw"),"ok"); setStep(ST.battery); }); }
   else toast(t("e_notNow"));
 }
@@ -62,6 +62,13 @@ function screwAllBoard(){
   boardScrews.forEach((m,i)=>setTimeout(()=>{ mbHoleHints[i].visible=false; m.visible=true; m.position.y=1.2;
     tween(420,k=>{ m.position.y=1.2-(1.2-MB_SCREW_Y)*k; m.rotation.y=k*Math.PI*6; },()=>{ S.mbScrews=i+1; }); },i*gap));
   setTimeout(()=>{ S.busy=false; mbScrewHints.visible=false; toast(t("ok_boardScrews"),"ok"); setStep(ST.pcieLatch); },(n-1)*gap+520);
+}
+// antennas: each one comes in along its jack's axis, turning (screwed on), then swings up
+function fitAntennas(){
+  S.busy=true;
+  WIFI_ANTENNAS.forEach((a,i)=>setTimeout(()=>{ a.g.visible=true;
+    tween(900,k=>antennaAt(a,6*(1-k),k*Math.PI*8),()=>tween(600,k=>antennaPose(a,k))); },i*700));
+  setTimeout(()=>{ S.busy=false; toast(t("ok_antennas"),"ok"); setStep(S.step+1); },700+1500+200);
 }
 function clickPcieLatch(){
   if(S.busy) return;

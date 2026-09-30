@@ -5,10 +5,11 @@ const isDesc=(o,root)=>{ while(o){ if(o===root) return true; o=o.parent; } retur
 const plane=new T.Plane(V3(0,1,0),0), dragOff=V3(0,0,0), hitP=V3(0,0,0);
 let dragging=false, downXY=null, moved=false;
 function setNDC(e){ const r=renderer.domElement.getBoundingClientRect(); ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1); ray.setFromCamera(ndc,camera); }
+// (in troubleshooting mode the case is closed: clicks go through the glass side panel)
 function pick(e){ setNDC(e); const hits=ray.intersectObjects(scene.children,true);
   // choosing a port: plugs already seated next to it (USB above the board's HDMI) must not swallow the click
   if(S.connPick){ const h=hits.find(h=>h.object.userData.part==="rport"&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }
-  for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
+  for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(TS.on&&o.userData.part==="sidePanel") continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
   return null; }
 function grabbable(p){
   if(!p||!S.held||S.held==="conn") return false;
@@ -46,11 +47,12 @@ window.addEventListener("pointerup",e=>{
   if(downXY&&!moved&&e.target===renderer.domElement){
     const p=pick(e);
     if(S.step===ST.board&&!S.held&&!S.busy){ setNDC(e); const hits=ray.intersectObjects([boardRoot],true).filter(h=>visible(h.object)); if(hits.length){ pickBoard(); downXY=null; return; } }
+    if(p&&TS.on){ tsClick(p.d); downXY=null; return; }
     if(p){ const d=p.d;
       if(d.part==="lever") clickLever(); else if(d.part==="slot") clickSlot(d.slot); else if(d.part==="bracket") clickBracket();
       else if(d.part==="screw") clickScrew(d.screw); else if(d.part==="m2screw") clickM2Screw(); else if(d.part==="conn") clickConn(d.conn);
       else if(d.part==="mbscrew") clickBoardScrew(d.screw); else if(d.part==="pcieLatch") clickPcieLatch(); else if(d.part==="sidePanel") clickSidePanel();
-      else if(d.part==="rport") clickRearPort(d.port); }
+      else if(d.part==="rport") clickRearPort(d.port); else if(d.part==="powerBtn") clickPowerBtn(); }
   }
   downXY=null;
 });

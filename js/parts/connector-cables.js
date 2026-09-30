@@ -22,7 +22,7 @@ function makePinPlug(rows,cols,id){
   tag(mesh(box(.18,.16,.46),bm,[-1.06,H/2+.07,0],inner));                             // lever hinge
   tag(mesh(box(.14,.2,.46),bm,[-.14,H/2+.1,0],inner));                                // hook that catches the header tab
   tag(mesh(box(2.2,H+1,W+.8),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[-.8,0,0],inner,{cast:false}));
-  return {outer,inner,roll:0,pins,rows,cols};
+  return {outer,inner,roll:0,pins,rows,cols,bm};
 }
 const CONN={
   data:{id:"data",mat:new T.MeshStandardMaterial({color:0xc0212c,roughness:.55}),radius:.1,mesh:null,

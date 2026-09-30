@@ -6,6 +6,6 @@ const blackPlastic=new T.MeshStandardMaterial({color:0x151518,roughness:.55});
 const hsSide=new T.MeshStandardMaterial({map:heatsinkTexture(51,false),metalness:.6,roughness:.45});
 const hsTop=new T.MeshStandardMaterial({map:heatsinkTexture(52,true),metalness:.6,roughness:.4});
 mesh(box(1.9,2.1,7.2),[hsSide,hsSide,hsTop,hsSide,hsSide,hsSide],[-9,1.15,-5]);               // left VRM heatsink
-mesh(box(7.4,2.1,1.8),[hsSide,hsSide,hsTop,hsSide,hsSide,hsSide],[-2.6,1.15,-11.2]);          // top VRM heatsink
+mesh(box(6.4,2.1,1.8),[hsSide,hsSide,hsTop,hsSide,hsSide,hsSide],[-3.1,1.15,-11.2]);          // top VRM heatsink (ends at x 0.1, clear of the CPU_FAN1 label)
 const shroudMat=new T.MeshStandardMaterial({map:shroudTexture(),roughness:.5});
 mesh(box(2.4,3.3,9.6),[shroudMat,blackPlastic,blackPlastic,blackPlastic,shroudMat,blackPlastic],[-12.7,1.75,-7.1]);

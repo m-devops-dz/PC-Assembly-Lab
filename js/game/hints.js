@@ -16,7 +16,7 @@ const hintRing=hintSprite2((g,W)=>{ g.beginPath(); g.arc(W/2,W/2,W*.4,0,7); g.li
 
 S.hintsLeft=5;
 let hintUntil=0, hintStep=-1, coachOff=false, coachKey="", glowEls=[];
-const HINT_PERIOD={cpu:4,cooler:4,psu:4,sata:4,ram:2,m2:2,board:2,gpu:2};
+const HINT_PERIOD={cpu:4,cooler:4,psu:4,sata:4,ram:2,m2:2,board:2,gpu:2,wifi:2};
 const wpos=(o,dy=0)=>o.getWorldPosition(V3(0,0,0)).add(V3(0,dy,0));
 // which way to turn (rotate(1) is the left button): r turns away from correct
 function turnFix(r,period){ const m=mod(r,period); if(!m) return null;
@@ -32,12 +32,13 @@ function heldTarget(type){
   if(type==="board") return L.clone();
   if(type==="gpu"){ const s=GPU_SLOTS.find(s=>s.ok); return V3(GPU_X,L.y+1,L.z+s.z); }
   if(type==="sata") return SATA_POS.clone();
+  if(type==="wifi") return V3(WIFI_X,L.y+1,L.z+10.2);                     // PCI_E5: well clear of the graphics card
   if(type==="cable"){ const tg=S.cable.tgts.find(x=>x.ok); return V3(tg.x,tg.seatY,tg.z); }
   return null;
 }
 function snapOk(type){ const sn=S.snap; if(!sn) return false;
   if(type==="ram") return GOOD.includes(sn.key)&&!slots[sn.key].used;
-  if(type==="gpu") return sn.slot.ok;
+  if(type==="gpu"||type==="wifi") return sn.slot.ok;
   if(type==="cable") return sn.tg.ok;
   return true; }
 const trayBtn=id=>document.querySelector(`#tray [data-id="${id}"]`);
@@ -53,7 +54,7 @@ function hintInfo(){
     return {el:el("dropBtn"),msg:"h_drop"};
   }
   const tray={[ST.takeCpu]:"cpu",[ST.ram1]:"ram"+(S.used.ram0?1:0),[ST.ram2]:"ram"+(S.used.ram0?1:0),[ST.paste]:"paste",[ST.cooler]:"cooler",[ST.m2In]:"m2",
-    [ST.battery]:"battery",[ST.psu]:"psu",[ST.boardScrews]:"screws",[ST.gpu]:"gpu",[ST.sata]:"sata"}[st];
+    [ST.battery]:"battery",[ST.psu]:"psu",[ST.boardScrews]:"screws",[ST.gpu]:"gpu",[ST.sata]:"sata",[ST.wifi]:"wifi",[ST.antennas]:"antennas"}[st];
   if(tray) return {el:trayBtn(tray),msg:"h_tray"};
   if(st===ST.leverUp||st===ST.leverDown) return {pos:wpos(grip),msg:"h_click"};
   if(st===ST.clips){ const i=GOOD.find(i=>!slots[i].open); if(i==null) return null;   // point at the clip (latch) nearer the camera, not the slot's middle
@@ -64,6 +65,7 @@ function hintInfo(){
   if(st===ST.board) return {pos:wpos(boardRoot,1),msg:"h_click"};
   if(st===ST.pcieLatch) return {pos:wpos(pcieLatch,.3),msg:"h_click"};
   if(st===ST.closeCase) return {pos:wpos(sideG,.3),msg:"h_click"};
+  if(st===ST.powerOn) return {pos:wpos(powerBtn),msg:"h_click"};
   const job=connJob(st);
   if(job){
     if(job.choose&&S.connPick){ const p=RPORTS.find(p=>S.connPick==="usb"?p.kind==="usb"&&!p.used:p.kind==="hdmiGpu"); if(p) return {pos:portWorld(p).p,msg:"h_port"}; }
@@ -87,7 +89,7 @@ function demoHeld(done){
   S.busy=true; tween(1100,go,()=>setTimeout(()=>tween(900,k=>go(1-k),()=>{ go(0); S.busy=false; done(); }),900));
 }
 function useHint(){
-  if(S.step>=STEPS) return;
+  if(S.step>=STEPS||TS.on) return;
   if(S.busy||dragging){ toast(t("e_hintBusy")); return; }
   if(S.hintsLeft<=0){ toast(t("e_noHints"),"err"); return; }
   const info=hintInfo(); if(!info) return;
@@ -124,12 +126,15 @@ function renderCoach(lines){
   const r=S.held==="cpu"?mod(S.rot.cpu,4):0;
   box.querySelector("ol").innerHTML=lines.map(([k,s])=>`<li class="${s}">${t(k)}${k==="co_rot"&&s==="cur"&&r?` <b>${t(r===1?"e_turnR":r===3?"e_turnL":"e_turn2")}</b>`:""}</li>`).join("");
 }
+const gpuCableNag=now=>S.step===ST.gpuPower&&!S.held&&!S.busy&&now-S.stepAt>20000;
 // called every frame from the render loop
 function updateHints(now){
   if(hintUntil&&(now>hintUntil||S.step!==hintStep)) hintUntil=0;
-  const info=hintUntil?hintInfo():null, lines=coachLines();
-  let pos=info&&info.pos;
+  const info=hintUntil&&!TS.on?hintInfo():null, lines=TS.on?null:coachLines();
+  let pos=TS.on?tsArrow():info&&info.pos;
   if(!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
+  if(!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
+  if(!pos&&S.glow&&gpuCableNag(now)){ CONN.gpu8.a.outer.updateMatrixWorld(true); pos=wpos(CONN.gpu8.a.outer); }
   hintArrow.visible=hintRing.visible=!!pos;
   if(pos){ const s=camera.position.distanceTo(pos)*.07, k=(now%1100)/1100;
     hintArrow.scale.set(s*.6,s,1); hintArrow.position.copy(pos); hintArrow.position.y+=s*(.25+.2*Math.abs(Math.sin(now/260)));

@@ -2,9 +2,9 @@
 // step order. Code refers to steps by name (ST.gpu), never by number, so steps can be inserted freely.
 // Step text lives in I18N as s_<id> (title) and s_<id>d (explanation).
 const STEP_IDS=["leverUp","takeCpu","placeCpu","leverDown","clips","ram1","ram2","bracket","paste","cooler","coolerScrews","fanCable","m2Out","m2In","m2Screw","battery",
-  "psu","board","boardScrews","pcieLatch","gpu","sata",
+  "psu","board","boardScrews","pcieLatch","gpu","wifi","sata",
   "dataSsd","dataMb","sataPower","atx24","cpu8","gpuPower",
-  "frontPanel","caseFan","closeCase","usbKeyboard","usbMouse","hdmi","powerCord"];
+  "frontPanel","frontUsb","caseFan","closeCase","usbKeyboard","usbMouse","hdmi","antennas","powerCord","powerOn"];
 const ST={}; STEP_IDS.forEach((id,i)=>ST[id]=i);
 const STEPS=STEP_IDS.length;
 // sidebar groups (first step of each) and lesson modules (first step, and the step that ends them)
@@ -12,9 +12,10 @@ const STEP_GROUPS=[[ST.leverUp,"g_desk"],[ST.psu,"g_case"],[ST.dataSsd,"g_power"
 const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr",ST.dataSsd,ST.frontPanel],["m_cab",ST.frontPanel,STEPS]];
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
 if(saved.lang==="ar") lang="ar";
-const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0,
+let appMode=saved.mode==="trouble"?"trouble":"build";                  // "trouble": troubleshooting mode (trouble.js)
+const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
-  used:{}, tightOrder:[], fanOn:false, caseFanOn:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
+  used:{}, tightOrder:[], fanOn:false, caseFanOn:false, powered:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
 const nearPt=(x,z,px,pz,r)=>Math.hypot(x-px,z-pz)<r;
 function viewFor(n){
@@ -22,9 +23,11 @@ function viewFor(n){
   if(n===ST.board&&S.held==="board") return "caseClose";
   if(n<=ST.leverDown) return "cpu";
   if(n<=ST.ram2) return "ram";
+  if(n===ST.bracket) return "bracket";
   if(n===ST.paste) return "paste";
   if(n===ST.fanCable) return "fan";
-  if(n<=ST.coolerScrews) return "cooler";
+  if(n===ST.cooler) return "coolerTop";
+  if(n===ST.coolerScrews) return "coolerDrop";
   if(n===ST.m2Out||n===ST.m2Screw) return "m2Screw";
   if(n<=ST.m2Screw) return "m2";
   if(n===ST.battery) return "battery";
@@ -33,19 +36,24 @@ function viewFor(n){
   if(n===ST.boardScrews) return "boardTop";
   if(n===ST.pcieLatch) return "pcie";
   if(n===ST.gpu) return "gpu";
+  if(n===ST.wifi) return "wifi";
   if(n===ST.sata) return "sataTop";
   if(n<=ST.sataPower) return "sata";
   if(n===ST.atx24) return "atx24";
   if(n===ST.cpu8) return "cpuPwr";
   if(n===ST.gpuPower) return "gpuPwr";
   if(n===ST.frontPanel) return "frontPanel";
+  if(n===ST.frontUsb) return "frontUsb";
   if(n===ST.caseFan) return "caseFan";
   if(n===ST.closeCase) return "case";
+  if(n===ST.usbKeyboard||n===ST.usbMouse) return "periph";
+  if(n===ST.antennas) return "antennas";
   if(n===ST.powerCord) return "psuBack";
+  if(n===ST.powerOn) return "powerBtn";
   return "rearIO";
 }
 function setStep(n){
-  const prev=viewFor(S.step); S.step=n;
+  const prev=viewFor(S.step); S.step=n; S.stepAt=performance.now();
   if(viewFor(n)!==prev){ const v=nextConnView(n);                  // SATA cable steps: close-up framing instead of a fixed view
     if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
   if(n===ST.fanCable) spawnCable(CABLES.fan);
@@ -53,6 +61,7 @@ function setStep(n){
   if(n===ST.boardScrews) mbScrewHints.visible=true;
   if(n===ST.dataSsd) showConnCables();
   if(n===ST.frontPanel) spawnCable(CABLES.fp);
+  if(n===ST.frontUsb) spawnCable(CABLES.fusb);
   if(n===ST.caseFan) spawnCable(CABLES.caseFan);
   if(n===ST.closeCase) showSidePanel();
   if(n===ST.usbKeyboard) showPeripherals();
@@ -71,6 +80,7 @@ const HELD={
   m2:{obj:()=>m2G,step:Math.PI,hover:M2_HOVER,snap:(x,z)=>nearPt(x,z,M2_SEAT.x-2,M2_SEAT.z,3)?{x:M2_SEAT.x,z:M2_SEAT.z,key:"m",msg:t("ok_snapM2")}:null},
   psu:{obj:()=>psuG,step:Math.PI/2,hover:PSU_HOVER,snap:(x,z)=>nearPt(x,z,PSU_POS.x,PSU_POS.z,3.5)?{x:PSU_POS.x,z:PSU_POS.z,key:"u",msg:t("ok_snapPsu")}:null},
   board:{obj:()=>boardRoot,step:Math.PI,hover:L.y+21,snap:(x,z)=>nearPt(x,z,L.x,L.z,3.5)?{x:L.x,z:L.z,key:"b",msg:t("ok_snapBoard")}:null},
+  wifi:{obj:()=>wifiG,step:Math.PI,hover:WIFI_HOVER,snap:(x,z)=>{ for(const s of WIFI_SLOTS) if(Math.abs(x-WIFI_X-1)<4&&Math.abs(z-(L.z+s.z))<.8) return {x:WIFI_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapWifi",{s:s.name})}; return null; }},
   gpu:{obj:()=>gpuG,step:Math.PI,hover:GPU_HOVER,snap:(x,z)=>{ for(const s of GPU_SLOTS) if(Math.abs(x-GPU_X-5)<7&&Math.abs(z-(L.z+s.z))<1.3) return {x:GPU_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapGpu",{s:s.name})}; return null; }},
   sata:{obj:()=>sataG,step:Math.PI/2,hover:SATA_HOVER,snap:(x,z)=>nearPt(x,z,SATA_POS.x,SATA_POS.z,3)?{x:SATA_POS.x,z:SATA_POS.z,key:"d",msg:t("ok_snapSata")}:null},
   battery:{obj:()=>batG,step:0,hover:BAT_HOVER,snap:(x,z)=>nearPt(x,z,BAT_POS.x,BAT_POS.z,1.3)?{x:BAT_POS.x,z:BAT_POS.z,key:"bat",msg:t("ok_snapBat")}:null},

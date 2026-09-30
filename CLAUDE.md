@@ -1,6 +1,6 @@
 # PC Assembly Lab
 
-Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). Plain HTML + three.js r147 from CDN, no build step. Open `index.html` directly in a browser.
+Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). Plain HTML + three.js r147, no build step. All libraries and fonts are local in `vendor/`, so it runs offline. Open `index.html` directly in a browser.
 
 ## How the code is wired
 - Every file in `js/` is a **classic `<script>`** (not an ES module), loaded in the order listed in `index.html`. They all share one global scope: a `const`/`let`/`function` declared in one file is visible in every later file.
@@ -16,6 +16,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 
 ## File map
 - `css/style.css`: all styling
+- `vendor/`: three.js r147 + OrbitControls, JSZip 3.10.1, and the fonts (`vendor/fonts/fonts.css` + woff2, latin and arabic subsets). Don't link CDNs again: the page must work offline.
 - `themes/real-parts.zip`: built-in photo theme 1, loaded by default (photos named after `PHOTO_SLOTS`, plus `theme.json` and `CREDITS.txt`). Theme 2 is `themes/theme2.zip`. The list is `BUILTIN_THEMES` in `photos.js`.
 - `themes/<name>.zip.js`: the same zip as base64, for when the page is opened from a file (`fetch()` is blocked on `file://`). Regenerate it whenever a theme zip changes:
   `python -c "import base64,sys;f=sys.argv[1];open(f+'.js','w').write('(window.THEME_ZIPS=window.THEME_ZIPS||{})[\"'+f.split('/')[-1]+'\"]=\"'+base64.b64encode(open(f,'rb').read()).decode()+'\";\n')" themes/theme2.zip`
@@ -29,8 +30,8 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 - `js/parts/`: one 3D part per file, in the order the parts are built
   - motherboard, rear-io, board-headers, socket, dimm-slots, pcie-latch
   - cpu, ram, fan-headers, thermal-paste, cooler
-  - cables, m2-ssd, cmos-battery, case, side-panel, psu, gpu
-  - sata-connectors, sata-ssd, connector-cables, front-panel, peripherals (keyboard, mouse, monitor, rear port targets)
+  - cables, m2-ssd, cmos-battery, case, side-panel, psu, gpu, wifi-card
+  - sata-connectors, sata-ssd, connector-cables, front-panel (power button lead, front USB lead to JUSB3, the USB stick used in troubleshooting), peripherals (keyboard, mouse, monitor, rear port targets)
 - `js/game/`
   - `state.js`: step order (`STEP_IDS`, `ST`, `STEPS`, `viewFor`, `setStep`), state `S`, `HELD`
   - `take-parts.js`: picking parts up from the tray (`takeCPU`, `takeRAM`, …)
@@ -39,9 +40,12 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `connectors.js`: the SATA / 24-pin / CPU-power plug steps
   - `key-view.js`: small window that shows how a held keyed part lines up (SATA plug vs port L, RAM notch vs slot key)
   - `paste.js`: thermal-paste animation
+  - `power.js`: last step: power button, fans/keyboard lights on, monitor No signal → MSI logo → BIOS, then the spinning fans (`clickPowerBtn`, `powerOnNow`)
   - `skip.js`: hold Ctrl+H to skip a step (`finishStep`, `skipStep`)
   - `photos.js`: user photo textures and .zip photo themes (`PHOTO_SLOTS`, `loadTheme`, kept in IndexedDB; zip via JSZip from CDN)
   - `input.js`: raycast picking and dragging
   - `ui.js`: sidebar, tray, buttons, keyboard
   - `hints.js`: help: pointer arrow (always on the socket lever), first-part coach card (lever + CPU flip/rotate/drag/lower), Hint button (5 per build, H key; points at the next target, demos the move with a held part then puts it back)
+  - `trouble.js`: troubleshooting mode (header button, remembered in sessionStorage as `mode`): starts fully built with one fault. `TS_CASES` is the numbered case list ([symptom, fault]); `TS_SYMPTOMS` is each symptom's checklist; `TS_CHECKS` has each check's camera, fault and fix. Solved cases are kept in sessionStorage (`tsDone`); a case always starts from a fresh page load (`tsGo` sets `tsNext` and reloads). New case: add it to `TS_CASES`, give the fault a `TS_CHECKS` entry with `fault`/`fix`, and add `ts_c_`/`ts_l_`/`ts_w_`/`ts_fix_` text. Text is `ts_*` in i18n.
+  - `offline.js`: the "Download offline" header button: zips the page and every local file it loads (read from the page's own tags, plus fonts and theme zips)
   - `loop.js`: render loop, glow hints, startup (`applyLang(); setStep(0)`)

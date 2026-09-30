@@ -25,6 +25,7 @@ function drop(){
     const r=mod(S.rot.cooler,4);
     if(r===1||r===3) return wrong("e_holes",coolerYaw,COOLER_HOVER,2.4);
     if(r===2) return wrong("e_cable",coolerYaw,COOLER_HOVER,2.4);
+    focus("coolerDrop",1100);                                              // swing down to 45° to watch it settle
     seat(coolerYaw,COOLER_SEAT,1100,()=>{ pasteDot.scale.set(3.6,.03,3.6); toast(t("ok_cooler"),"ok"); setStep(ST.coolerScrews); });
   } else if(type==="m2"){
     if(!sn){ toast(t("e_m2Above"),"err"); return; }
@@ -47,7 +48,13 @@ function drop(){
     if(!sn){ toast(t("e_gpuAbove"),"err"); return; }
     if(!sn.slot.ok) return wrong("e_gpuSlot",gpuG,GPU_HOVER,L.y+3);
     if(mod(S.rot.gpu,2)) return wrong("e_gpuTurn",gpuG,GPU_HOVER,L.y+3);
-    slotCovers[0].visible=false; seat(gpuG,GPU_SEAT,1000,()=>{ setPcieLatch(false,250); toast(t("ok_gpu"),"ok"); setStep(ST.sata); });
+    slotCovers[0].visible=false; seat(gpuG,GPU_SEAT,1000,()=>{ setPcieLatch(false,250); toast(t("ok_gpu"),"ok"); setStep(S.step+1); });
+  } else if(type==="wifi"){
+    if(!sn){ toast(t("e_wifiAbove"),"err"); return; }
+    if(!sn.slot.ok) return wrong2(t(sn.slot.err,{s:sn.slot.name}),wifiG,WIFI_HOVER,L.y+4);
+    if(mod(S.rot.wifi,2)) return wrong("e_wifiTurn",wifiG,WIFI_HOVER,L.y+3);
+    slotCovers[CASE_SLOTS.indexOf(sn.slot.z)].visible=false;                // its slot cover comes out of the rear wall
+    seat(wifiG,WIFI_SEAT,900,()=>{ toast(t("ok_wifi",{s:sn.slot.name}),"ok"); setStep(S.step+1); });
   } else if(type==="sata"){
     if(!sn){ toast(t("e_sataAbove"),"err"); return; }
     if(mod(S.rot.sata,4)!==0) return wrong("e_sataTurn",sataG,SATA_HOVER,3);
@@ -65,6 +72,6 @@ function drop(){
   }
 }
 function wrong2(msg,obj,hover,low){ mistake(); toast(msg,"err"); refuse(obj,hover,low); }
-function finish(){ S.end=performance.now(); screenBoot(); document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}); setTimeout(()=>document.getElementById("done").classList.add("show"),1800); }
-function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright})); }catch(e){} }
+function finish(){ S.end=performance.now(); renderSteps(); document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}); setTimeout(()=>document.getElementById("done").classList.add("show"),1800); }
+function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,mode:appMode,tsDone:TS.done,tsNext:TS.next})); }catch(e){} }
 function resetAll(){ persist(); location.reload(); }

@@ -7,6 +7,8 @@ const SVG={
  gpu:'<svg viewBox="0 0 96 54"><rect x="6" y="10" width="84" height="30" rx="4" fill="#2a2c31"/><circle cx="30" cy="25" r="12" fill="#0b0b0c"/><circle cx="66" cy="25" r="12" fill="#0b0b0c"/><rect x="14" y="40" width="30" height="5" fill="#e2b95a"/><rect x="4" y="6" width="3" height="40" fill="#c4c9cf"/></svg>',
  battery:'<svg viewBox="0 0 96 54"><circle cx="48" cy="27" r="22" fill="#c4c9cf"/><circle cx="48" cy="27" r="18" fill="#dfe3e7"/><text x="48" y="25" font-size="11" font-weight="700" text-anchor="middle" fill="#2b2e33" font-family="Arial">+</text><text x="48" y="36" font-size="8" font-weight="700" text-anchor="middle" fill="#2b2e33" font-family="Arial">CR2032</text></svg>',
  screws:'<svg viewBox="0 0 96 54"><g fill="#c4c9cf"><circle cx="28" cy="18" r="7"/><circle cx="48" cy="30" r="7"/><circle cx="68" cy="18" r="7"/></g><g stroke="#6a6e75" stroke-width="2"><path d="M24 18h8M28 14v8M44 30h8M48 26v8M64 18h8M68 14v8"/></g><path d="M20 46h56" stroke="#e8b33a" stroke-width="4" stroke-linecap="round"/></svg>',
+ wifi:'<svg viewBox="0 0 96 54"><rect x="30" y="20" width="48" height="26" rx="2" fill="#1b1d22"/><rect x="36" y="23" width="38" height="20" rx="2" fill="#121316"/><path d="M40 28h30M40 32h30M40 36h30M40 40h30" stroke="#34373c" stroke-width="2"/><rect x="36" y="46" width="14" height="4" fill="#e2b95a"/><rect x="24" y="4" width="3" height="46" fill="#c4c9cf"/><circle cx="21" cy="18" r="2.5" fill="#d4af37"/><circle cx="21" cy="34" r="2.5" fill="#d4af37"/></svg>',
+ antennas:'<svg viewBox="0 0 96 54"><path d="M14 20L80 12M14 38L80 30" stroke="#0e0f11" stroke-width="5" stroke-linecap="round"/><rect x="8" y="16" width="8" height="8" rx="1" fill="#d4af37"/><rect x="8" y="34" width="8" height="8" rx="1" fill="#d4af37"/></svg>',
  sata:'<svg viewBox="0 0 96 54"><rect x="12" y="6" width="72" height="42" rx="3" fill="#2e3136"/><rect x="22" y="16" width="52" height="22" rx="3" fill="#e9eaec"/><rect x="6" y="14" width="6" height="8" fill="#111"/><rect x="6" y="26" width="6" height="14" fill="#111"/></svg>'
 };
 let cpuThumb="", ramThumb="";
@@ -34,7 +36,9 @@ function updateTray(){
     {id:"psu",label:t("p_psu"),img:SVG.psu,on:S.step===ST.psu,fn:takePSU},
     {id:"screws",label:t("p_screws"),img:SVG.screws,on:S.step===ST.boardScrews,fn:takeScrews},
     {id:"gpu",label:t("p_gpu"),img:SVG.gpu,on:S.step===ST.gpu,fn:takeGPU},
-    {id:"sata",label:t("p_sata"),img:SVG.sata,on:S.step===ST.sata,fn:takeSata}];
+    {id:"sata",label:t("p_sata"),img:SVG.sata,on:S.step===ST.sata,fn:takeSata},
+    {id:"wifi",label:t("p_wifi"),img:SVG.wifi,on:S.step===ST.wifi,fn:takeWifi},
+    {id:"antennas",label:t("p_antennas"),img:SVG.antennas,on:S.step===ST.antennas,fn:takeAntennas}];
   let want=null;
   items.forEach(it=>{ const used=!!S.used[it.id]; const b=document.createElement("button");
     b.className="part"+(used?" used":"")+(!used&&it.on&&free&&S.glow?" pulse":""); b.innerHTML=it.img+`<span>${it.label}</span>`; b.setAttribute("aria-label",it.label); b.dataset.id=it.id; b.onclick=it.fn; el.appendChild(b); if(!used&&it.on&&!want) want=b; });
@@ -81,6 +85,7 @@ function applyLang(){
   document.getElementById("langBtn").textContent=lang==="ar"?"English":"عربي";
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
+  document.getElementById("modeBtn").textContent=t(appMode==="trouble"?"mode_build":"mode_trouble"); if(typeof TS!=="undefined") renderTS();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
   renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});

@@ -1,11 +1,12 @@
 /* ---------------- M.2 slot + SSD ---------------- */
-const M2Z=5.9, M2_SEAT=V3(3.05,.45,M2Z), M2_SCREW=V3(-4.95,0,M2Z), M2_PARK=V3(-6.4,.2,7.4);
+const M2Z=5.9, M2_SEAT=V3(3.05,.45,M2Z), M2_SCREW=V3(-4.95,0,M2Z), M2_PARK=V3(-6.4,.46,7.4);
+const M2_SCREW_Y={standoff:.42,fastened:.5};   // head underside on the bare standoff, then on top of the SSD
 mesh(box(.5,.4,2.3),blackPlastic,[3.3,.3,M2Z]);
 const brass=new T.MeshStandardMaterial({color:0xc9a54a,metalness:.85,roughness:.35});
 mesh(new T.CylinderGeometry(.22,.22,.31,16),brass,[M2_SCREW.x,.255,M2Z]);
-const m2ScrewMat=screwMetal.clone();
-const m2Screw=new T.Group(); m2Screw.position.set(M2_SCREW.x,.5,M2Z); boardRoot.add(m2Screw);
-mesh(new T.CylinderGeometry(.26,.26,.1,18),m2ScrewMat,[0,0,0],m2Screw).userData.part="m2screw";
+const m2ScrewMat=phillipsMat.clone();
+const m2Screw=new T.Group(); m2Screw.position.set(M2_SCREW.x,M2_SCREW_Y.standoff,M2Z); boardRoot.add(m2Screw);
+(function(){ const s=panScrew(m2Screw,.24,.09,.075,.34,m2ScrewMat); [s.head,s.dome,s.shank].forEach(m=>m.userData.part="m2screw"); })();   // M2×3 pan head
 mesh(new T.CylinderGeometry(.5,.5,.5,10),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[0,.1,0],m2Screw,{cast:false}).userData.part="m2screw";
 // ripple ring that keeps pulsing out from the screw while it's the thing to click (see loop.js)
 const m2Ring=mesh(new T.RingGeometry(.32,.46,32),new T.MeshBasicMaterial({color:0xffc400,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}),null,boardRoot,{cast:false});

@@ -13,15 +13,24 @@ vp.prepend(renderer.domElement);
 const scene=new T.Scene();
 const boardRoot=new T.Group(); scene.add(boardRoot);
 const camera=new T.PerspectiveCamera(36,1,0.5,200);
-const VIEWS={ cpu:{pos:[4,13.5,8.5],tgt:[-2.5,.6,-5]}, ram:{pos:[6.8,31,-3.8],tgt:[6.8,.5,-4.3]}, paste:{pos:[-4.6,23,-2.7],tgt:[-4.6,.5,-3.1]}, cooler:{pos:[6,17,10],tgt:[-2.5,1.2,-5]}, fan:{pos:[9,13,1],tgt:[0,1,-8.5]},
+const VIEWS={ cpu:{pos:[4,13.5,8.5],tgt:[-2.5,.6,-5]}, ram:{pos:[6.8,31,-3.8],tgt:[6.8,.5,-4.3]}, paste:{pos:[-4.6,23,-2.7],tgt:[-4.6,.5,-3.1]},
+  bracket:{pos:[2.5,19,10],tgt:[-2.5,.5,-5]},                          // the whole socket and both bracket pieces, 45° from the front
+  coolerTop:{pos:[-3,36,-2.4],tgt:[-3,1,-3]}, coolerDrop:{pos:[-1,24,19],tgt:[-1,1,-3]},   // placing the cooler: straight down; lowering it and the screws: 45° from the front
+  fan:{pos:[9,13,1],tgt:[0,1,-8.5]},
   m2:{pos:[3,15,19],tgt:[-1,.5,5.5]}, m2Screw:{pos:[-2.6,7.5,12.5],tgt:[-5.4,.4,6.6]},   // close on the M.2 screw and where it gets parked
-  psu:{pos:[12,44,-23],tgt:[-12,7,-33]}, "case":{pos:[58,52,-18],tgt:[0,0,-25]}, caseClose:{pos:[20,52,-6],tgt:[2,4,-47]},
+  psu:{pos:[-54,56,-1],tgt:[4,3,-37]}, "case":{pos:[58,52,-18],tgt:[0,0,-25]}, caseClose:{pos:[20,52,-6],tgt:[2,4,-47]},
   gpu:{pos:[16,34,-20],tgt:[-3,5,-46]}, sata:{pos:[36,28,-16],tgt:[18,2,-40]}, sataTop:{pos:[22.5,34,-34.4],tgt:[22.5,.75,-35]}, all:{pos:[96,46,-24],tgt:[22,10,-70]},
-  atx24:{pos:[28,22,-45],tgt:[12,2,-50]}, cpuPwr:{pos:[-5,22,-58],tgt:[-10,2,-62]},
+  atx24:{pos:[33,40,-45],tgt:[13,2,-52]}, cpuPwr:{pos:[4,34,-48],tgt:[-8,3,-60]},
   battery:{pos:[-1.5,15,18],tgt:[-1.5,.5,9]}, boardTop:{pos:[2,46,-33],tgt:[0,1,-50]}, pcie:{pos:[5,12,-57],tgt:[-5,1,-47]},
-  gpuPwr:{pos:[14,24,-38],tgt:[5,11.5,-46]}, gpuPwrPlug:{pos:[4.5,33,-30.4],tgt:[1,9,-48]}, frontPanel:{pos:[20,26,-30],tgt:[13,1.5,-41]}, caseFan:{pos:[-3.5,40,-43],tgt:[-3.5,3,-56]},
+  gpuPwr:{pos:[16,36,-22],tgt:[12,6,-46]}, gpuPwrPlug:{pos:[5.5,40,-25],tgt:[1,9,-48]}, frontPanel:{pos:[20,26,-30],tgt:[13,1.5,-41]}, caseFan:{pos:[-3.5,40,-43],tgt:[-3.5,3,-56]},
+  frontUsb:{pos:[24,27,-35],tgt:[13.9,1.5,-47.8]},
   rearIO:{pos:[-40,15,-49],tgt:[-16,3,-48]},
-  psuBack:{pos:[-33,14,-19],tgt:[-17,8,-30]} };                    // outside, behind the case: the PSU's power inlet                    // outside, behind the case: board rear I/O and the GPU's outputs
+  periph:{pos:[-70,50,-64],tgt:[-32,0,-63]},                         // the whole keyboard, the mouse and the rear I/O
+  powerBtn:{pos:[48,20,-57],tgt:[29.8,9,-64]}, fansOn:{pos:[24,38,-47],tgt:[-9,8,-57]},   // front power button; through the glass: CPU cooler and rear fan                         // the whole keyboard, the mouse and the rear I/O
+  psuBack:{pos:[-56,25,-4],tgt:[-17,8,-30]},                       // outside, behind the case: the PSU's power inlet
+  wifi:{pos:[-1,44,-23],tgt:[-8,3,-41]},
+  tsFront:{pos:[46,46,-14],tgt:[4,4,-48]},                           // troubleshooting: the built PC from the front, through the glass
+  antennas:{pos:[-40,17,-31],tgt:[-17,8,-40]} };                      // outside, behind the case: the Wi-Fi card's bracket                            // the x1 slots below the graphics card
 let view="cpu";
 camera.position.set(...VIEWS.cpu.pos);
 const controls=new T.OrbitControls(camera,renderer.domElement);

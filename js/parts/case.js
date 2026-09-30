@@ -48,11 +48,17 @@ mesh(box(CX1-CX0,20.3,.8),steel,[(CX0+CX1)/2,10.05,CZ1-.4],caseG);              
 mesh(box(CX1-CX0,.6,.8),new T.MeshStandardMaterial({color:0x2a2c30,metalness:.5,roughness:.4}),[(CX0+CX1)/2,20.35,CZ0+.4],caseG);
 
 /* front I/O panel on the outside of the front: power button, reset, 2× USB-A, USB-C, audio */
+const powerBtnMat=new T.MeshStandardMaterial({color:0xc9ced4,metalness:.9,roughness:.25});
+const powerLedMat=new T.MeshBasicMaterial({color:0x1a2330});                    // LED ring around the button: dark until the PC is on
+const powerBtn=new T.Group(); powerBtn.position.set(CX1+.17,10,L.z-15.3); caseG.add(powerBtn);
+(function(){ const pb=mesh(new T.CylinderGeometry(1.1,1.1,.3,32),powerBtnMat,[0,0,0],powerBtn); pb.rotation.z=Math.PI/2; pb.userData.part="powerBtn";
+  const ring=mesh(new T.TorusGeometry(1.15,.08,8,32),powerLedMat,[.01,0,0],powerBtn); ring.rotation.y=Math.PI/2; ring.userData.part="powerBtn";
+  const sym=mesh(new T.PlaneGeometry(1.1,1.1),new T.MeshBasicMaterial({transparent:true,depthWrite:false,map:canvasTex(128,128,(g,W)=>{ g.strokeStyle="#50555c"; g.lineWidth=10; g.lineCap="round";
+    g.beginPath(); g.arc(W/2,W/2+6,W*.3,-Math.PI*.3,Math.PI*1.3); g.stroke(); g.beginPath(); g.moveTo(W/2,W*.14); g.lineTo(W/2,W*.5); g.stroke(); })}),[.16,0,0],powerBtn,{cast:false});
+  sym.rotation.y=Math.PI/2; sym.userData.part="powerBtn"; })();                 // ⏻ symbol on the button face
 (function frontIO(){
   const x=CX1+.02, y=10, blackP=new T.MeshStandardMaterial({color:0x0d0e10,roughness:.6}), blue=new T.MeshStandardMaterial({color:0x2458d8,roughness:.4});
   mesh(box(.12,6,11.5),new T.MeshStandardMaterial({color:0x2a2c30,metalness:.5,roughness:.4}),[x,y,L.z-11],caseG);
-  const pb=mesh(new T.CylinderGeometry(1.1,1.1,.3,32),new T.MeshStandardMaterial({color:0xc9ced4,metalness:.9,roughness:.25}),[x+.15,y,L.z-15.3],caseG); pb.rotation.z=Math.PI/2;
-  const ring=mesh(new T.TorusGeometry(1.15,.08,8,32),new T.MeshBasicMaterial({color:0x4ea1ff}),[x+.16,y,L.z-15.3],caseG); ring.rotation.y=Math.PI/2;
   const rs=mesh(new T.CylinderGeometry(.35,.35,.2,16),blackP,[x+.1,y,L.z-13.3],caseG); rs.rotation.z=Math.PI/2;
   [L.z-11.6,L.z-10.3].forEach(z=>{ mesh(box(.3,1.35,.6),new T.MeshStandardMaterial({color:0xb9bec5,metalness:.9,roughness:.3}),[x+.1,y,z],caseG); mesh(box(.32,1.15,.42),blackP,[x+.1,y,z],caseG); mesh(box(.33,1.0,.12),blue,[x+.1,y,z-.08],caseG); });
   const c=mesh(box(.3,.95,.36),new T.MeshStandardMaterial({color:0xb9bec5,metalness:.9,roughness:.3}),[x+.1,y,L.z-9.1],caseG); mesh(box(.32,.8,.22),blackP,[x+.1,y,L.z-9.1],caseG);

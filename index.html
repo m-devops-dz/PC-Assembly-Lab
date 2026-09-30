@@ -4,9 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PC Assembly Lab: B450 Gaming Plus Max build</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -17,6 +15,8 @@
       <div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div>
     </div>
     <div class="head-actions">
+      <button class="chip-btn" id="offlineBtn" data-i18n="off_btn"></button>
+      <button class="chip-btn" id="modeBtn"></button>
       <button class="chip-btn" id="langBtn"></button>
       <button class="chip-btn" id="resetBtn" data-i18n="reset"></button>
     </div>
@@ -24,7 +24,8 @@
 
   <div class="work">
     <aside>
-      <div>
+      <div class="ts" id="tsPanel" hidden></div>
+      <div class="lessons">
         <p class="module-title" data-i18n="lessons"></p>
         <ul class="modules" id="modules"></ul>
       </div>
@@ -93,8 +94,8 @@
 </div>
 
 <script src="js/core/boot-errors.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/i18n.js"></script>
 <script src="js/core/helpers.js"></script>
@@ -119,12 +120,13 @@
 <script src="js/parts/side-panel.js"></script>
 <script src="js/parts/psu.js"></script>
 <script src="js/parts/gpu.js"></script>
+<script src="js/parts/wifi-card.js"></script>
 <script src="js/parts/sata-connectors.js"></script>
 <script src="js/parts/sata-ssd.js"></script>
 <script src="js/parts/connector-cables.js"></script>
 <script src="js/parts/front-panel.js"></script>
 <script src="js/parts/peripherals.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
 <script src="js/game/photos.js"></script>
 <script src="js/game/state.js"></script>
 <script src="js/game/take-parts.js"></script>
@@ -133,10 +135,13 @@
 <script src="js/game/connectors.js"></script>
 <script src="js/game/key-view.js"></script>
 <script src="js/game/paste.js"></script>
+<script src="js/game/power.js"></script>
 <script src="js/game/skip.js"></script>
 <script src="js/game/input.js"></script>
 <script src="js/game/ui.js"></script>
 <script src="js/game/hints.js"></script>
+<script src="js/game/trouble.js"></script>
+<script src="js/game/offline.js"></script>
 <script src="js/game/loop.js"></script>
 </body>
 </html>

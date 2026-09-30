@@ -10,9 +10,11 @@ function clickConn(id){
   const side=V3(0,0,1).applyQuaternion(w.q), hold=holdFor(job), end=hold?hold.pos:pre, qEnd=hold?hold.q:w.q;
   if(hold) focusPoint(hold.cam,hold.tgt,1000);
   else if(job.c.id==="gpu8"){ const v=VIEWS.gpuPwrPlug; focusPoint(V3(...v.pos),V3(...v.tgt),1000); }   // step back: the whole card and the socket at its end
-  else if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header: look down from the latch side
-    focusPoint(w.p.clone().add(V3(0,7,0)).addScaledVector(latch,5).addScaledVector(side,2),w.p.clone(),1000); }
-  else { const far=job.c.id==="ac"?2:1;                                      // the power-cord plug is long: step back so plug and socket both fit
+  else if(w.out.y>.9){ const latch=V3(0,1,0).applyQuaternion(w.q);                 // top-entry header (24-pin, CPU 8-pin): look down from the latch side
+    const cam=w.p.clone().add(V3(0,14,0)).addScaledVector(latch,10).addScaledVector(side,4);
+    cam.x=Math.min(Math.max(cam.x,CX0+2.5),CX1-2.5); cam.z=Math.min(Math.max(cam.z,CZ0+2.5),CZ1-2.5);   // stay inside the case walls (CPU_PWR1 is next to the top wall)
+    focusPoint(cam,w.p.clone(),1000); }
+  else { const far=job.c.id==="ac"?5.5:1;                                      // the power-cord plug is long: step back so plug and socket both fit
     focusPoint(w.p.clone().addScaledVector(w.out,5.5*far).add(V3(0,4.2*far,0)).addScaledVector(side,3.2*far),w.p.clone(),1000); }
   tween(1000,k=>{ P.outer.position.lerpVectors(p0,end,k); P.outer.position.y+=Math.sin(k*Math.PI)*2.5; P.outer.quaternion.slerpQuaternions(q0,qEnd,k); P.inner.rotation.x=r0+(S.roll*Math.PI/2-r0)*k; drawConn(job.c); },
     ()=>{ S.busy=false; S.held="conn"; updateTools(); drawConn(job.c); });

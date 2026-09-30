@@ -32,18 +32,22 @@ function frame(now){
   HEADERS.forEach(h=>setGlow(h.mat,S.hints&&(st===ST.fanCable&&h.ok||st===ST.caseFan&&!h.ok),pulse));
   setGlow(m2ScrewMat,st===ST.m2Out||st===ST.m2Screw,pulse);
   m2Ring.visible=S.glow&&(st===ST.m2Out||st===ST.m2Screw)&&!S.busy;
-  if(m2Ring.visible){ const k=(now%900)/900; m2Ring.position.set(m2Screw.position.x,m2Screw.position.y+.07,m2Screw.position.z); m2Ring.scale.setScalar(1+2.2*k); m2Ring.material.opacity=.95*(1-k); }
+  if(m2Ring.visible){ const k=(now%900)/900; m2Ring.position.set(m2Screw.position.x,m2Screw.position.y+.16,m2Screw.position.z); m2Ring.scale.setScalar(1+2.2*k); m2Ring.material.opacity=.95*(1-k); }
   setGlow(boardEdge,st===ST.board&&!S.held,pulse);
   setGlow(psuHoleMat,S.hints&&st===ST.psu,pulse);
   setGlow(mbHoleMat,st===ST.boardScrews&&!S.used.screws,pulse);
   setGlow(pcieLatchMat,st===ST.pcieLatch,pulse);
   setGlow(fpMarkMat,S.hints&&st===ST.frontPanel,pulse);
+  setGlow(jusb3Mat,S.hints&&st===ST.frontUsb,pulse);
   fpRing.visible=S.glow&&st===ST.frontPanel&&!S.busy;
   if(fpRing.visible){ const k=(now%900)/900; fpRing.scale.setScalar(1+2.2*k); fpRing.material.opacity=.95*(1-k); }
   setGlow(panelFrameMat,st===ST.closeCase&&!S.busy,pulse);
+  setGlow(powerBtnMat,TS.on?(TS.phase==="power"||TS.phase==="retry")&&!S.busy:st===ST.powerOn&&!S.powered,pulse);
   // rear ports: glow the ones that fit the cable being plugged in (after a motherboard-HDMI warning, only the card's)
   RPORTS.forEach(p=>{ const fits=S.connPick==="usb"?p.kind==="usb"&&!p.used:S.connPick==="hdmi"?(p.kind==="hdmiGpu"||(p.kind==="hdmiMb"&&!S.hdmiWarned)):false;
     p.mat.opacity=S.glow&&S.hints&&fits&&!S.held?.25+.45*pulse:0; });
+  const gpuNag=gpuCableNag(now);                                          // GPU power cable still not clicked after 20 s: light it up
+  setGlow(CONN.gpu8.a.bm,gpuNag,pulse); setGlow(CONN.gpu8.mat,gpuNag,pulse);
   psuMark.material.opacity=S.glow&&S.hints&&st===ST.psu?.35+.35*pulse:0;
 
   if(S.glow&&S.held&&!S.busy){
@@ -59,7 +63,7 @@ function frame(now){
       const tgtPos={
         cpu:{x:SX,z:SZ}, ram:{x:SLOT_X[1],z:SLOT_Z}, paste:{x:SX,z:SZ},
         cooler:{x:SX,z:SZ}, m2:{x:M2_SEAT.x,z:M2_SEAT.z}, psu:{x:PSU_POS.x,z:PSU_POS.z},
-        board:{x:L.x,z:L.z}, gpu:{x:GPU_X,z:L.z+3.2}, sata:{x:SATA_POS.x,z:SATA_POS.z}, battery:{x:BAT_POS.x,z:BAT_POS.z}
+        board:{x:L.x,z:L.z}, gpu:{x:GPU_X,z:L.z+3.2}, sata:{x:SATA_POS.x,z:SATA_POS.z}, wifi:{x:WIFI_X,z:L.z+10.2}, battery:{x:BAT_POS.x,z:BAT_POS.z}
       }[S.held];
       if(tgtPos){ placeRing(tgtPos.x,tgtPos.z); dropTargetMesh.visible=true; }
       else dropTargetMesh.visible=false;
@@ -69,15 +73,16 @@ function frame(now){
   }
 
   Object.values(CABLES).forEach(c=>{ if(c.plug.visible&&c.state!=="seated") drawCable(c); });
-  if(S.fanOn) fanRot.rotation.y-=dt*14;
-  if(S.caseFanOn) rearBlades.rotation.x-=dt*10;
-  if(S.step>=STEPS) gpuFans.forEach(r=>r.rotation.z-=dt*9);
+  // fans only turn once they're plugged in and the PC is switched on
+  if(S.powered&&S.fanOn) fanRot.rotation.y-=dt*14;
+  if(S.powered&&S.caseFanOn) rearBlades.rotation.x-=dt*10;
+  if(S.powered) gpuFans.forEach(r=>r.rotation.z-=dt*9);
   if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); }
   updateHints(now);
   controls.update(); renderer.render(scene,camera);
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);
 }
-applyLang(); setStep(0);
+applyLang(); setStep(0); if(TS.on) tsStart();
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(drawThumbs);
 requestAnimationFrame(frame);

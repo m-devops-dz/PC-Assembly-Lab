@@ -23,3 +23,21 @@ fpRing.rotation.x=-Math.PI/2; fpRing.visible=false; fpRing.raycast=()=>{};
 const fpMarkMat=new T.MeshStandardMaterial({color:0x3a3c40,roughness:.5});
 (function(){ const g=new T.Group(), pr=FP_PAIRS[0]; g.position.set(JFP1.x+(pr.col-2)*JFP1.p,.42,JFP1.z+(pr.row-.5)*JFP1.p); boardRoot.add(g);
   [[0,.2,.66,.04],[0,-.2,.66,.04],[.31,0,.04,.44],[-.31,0,.04,.44]].forEach(([x,z,w,d])=>mesh(box(w,.03,d),fpMarkMat,[x,0,z],g,{cast:false})); })();
+/* ---------------- front USB lead → JUSB3 ----------------
+   The case's front USB-A ports reach the board through one thick cable with a 19-pin plug. It goes on JUSB3 (the blue
+   header on the right edge); the 9-pin USB 2.0 headers on the bottom edge (JUSB1, JUSB2) are the wrong ones. */
+const USB2_HDRS=[{name:"JUSB1",x:4.9},{name:"JUSB2",x:6.6}];
+makeCable("fusb",{parent:scene,color:0x1f3f9c,radius:.14,plugColor:0x16181c,plugSize:[1.0,.62,2.3],maxLen:40,hoverY:L.y+2.8,floorY:L.y+.8,
+  anchor:()=>V3(CX1-1.2,7,L.z-10), outDir:()=>V3(-1.2,-.6,.3),
+  spawnPos:()=>V3(L.x+JUSB3.x+3.5,L.y+2.8,L.z+JUSB3.z-3),
+  targets:()=>[{name:"JUSB3",x:L.x+JUSB3.x,z:L.z+JUSB3.z,seatY:L.y+JUSB3.top,rot:0,ok:true},
+    ...USB2_HDRS.map(h=>({name:h.name,x:L.x+h.x,z:L.z+11.7,seatY:L.y+.4,rot:0,ok:false,err:"e_usb2Hdr"}))],
+  okMsg:"ok_frontUsb"});
+(function(){ const c=CABLES.fusb;                                         // "USB 3.0" on the plug's top
+  const lbl=new T.MeshBasicMaterial({map:canvasTex(128,256,(g,W,H)=>{ g.fillStyle="#16181c"; g.fillRect(0,0,W,H); g.save(); g.translate(W/2,H/2); g.rotate(-Math.PI/2);
+    g.fillStyle="#6f9bff"; g.font="700 46px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.fillText("USB 3.0",0,16); g.restore(); })});
+  const m=mesh(new T.PlaneGeometry(.9,2.1),lbl,[0,c.plugSize[1]+.002,0],c.plug,{cast:false}); m.rotation.x=-Math.PI/2; m.userData={part:"cable",cable:"fusb"}; })();
+// USB stick in the upper front USB-A port: only in troubleshooting mode (the "front USB" problem)
+const usbStick=new T.Group(); usbStick.position.set(CX1+.25,10,L.z-11.6); usbStick.visible=false; caseG.add(usbStick);
+mesh(box(1.1,1.15,.42),new T.MeshStandardMaterial({color:0xb9bec5,metalness:.9,roughness:.3}),[.3,0,0],usbStick);
+mesh(box(3.2,1.7,.75),new T.MeshStandardMaterial({color:0xc8202a,roughness:.5}),[2.4,0,0],usbStick);
