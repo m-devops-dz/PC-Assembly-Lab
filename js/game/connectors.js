@@ -4,6 +4,7 @@ function clickConn(id){
   if(S.busy) return;
   if(!job||job.c.id!==id||S.held){ toast(t("e_notNow")); return; }
   if(job.choose&&!job.port){ S.connPick=job.choose; toast(t(job.choose==="usb"?"pick_usb":"pick_hdmi")); return; }   // next: click a port
+  if(job.pick&&!S.connPort){ S.connPick="sata"; toast(t(job.c.id==="power"?"pick_sataPower":job.pick==="mb"?"pick_sataMb":"pick_sataSsd")); return; }
   const w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), P=job.plug;
   const p0=P.outer.position.clone(), q0=P.outer.quaternion.clone(), r0=P.inner.rotation.x;
   S.roll=1+Math.floor(Math.random()*3); S.job=job; S.busy=true;
@@ -34,8 +35,10 @@ function seatConn(job,w,pre,hold){
     tween(600,k=>{ P.outer.position.copy(pre).addScaledVector(w.out,-Math.sin(k*Math.PI)*1.9); drawConn(job.c); },
       ()=>{ if(hold) swingPlug(P,job.c,pre,hold.pos,w.q,hold.q,()=>{ S.busy=false; }); else S.busy=false; }); return; }
   const seatP=w.p.clone().addScaledVector(w.out,-.3); S.busy=true; S.held=null; updateTools();
-  tween(700,k=>{ P.outer.position.lerpVectors(pre,seatP,k); drawConn(job.c); },()=>{ S.busy=false; drawConn(job.c); toast(t(job.ok),"ok"); S.job=null;
-    if(job.choose){ job.port.used=true; S.connPort=null; S.connPick=null; }
+  tween(700,k=>{ P.outer.position.lerpVectors(pre,seatP,k); drawConn(job.c); },()=>{ S.busy=false; drawConn(job.c); toast(t(job.ok,{s:job.pick==="mb"?"SATA"+(mbSata.indexOf(job.port)+1):""}),"ok"); S.job=null;
+    if(job.choose) job.port.used=true;
+    if(job.pick) S.connPort.used=true;
+    if(job.choose||job.pick){ S.connPort=null; S.connPick=null; }
     const nx=S.step+1, v=nextConnView(nx); if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(nx),900); setStep(nx); },easeOut);
 }
 // SATA plugs (L-keyed): while held, the plug floats beside the port with its face turned to a 45° camera,
@@ -47,13 +50,13 @@ function lHold(job){ const w=portWorld(job.port), side=V3(0,0,1).applyQuaternion
   const q=new T.Quaternion().setFromUnitVectors(w.out.clone().negate(),h).multiply(w.q);   // plug face (+x) turned from the port toward the camera
   const tgt=w.p.clone().lerp(pos,.5);
   return {pos,q,tgt,cam:tgt.clone().addScaledVector(h,6).add(V3(0,6,0))}; }
-// HDMI: the plug waits out in front of the port, turned 180° so its keyed face looks at the camera beside the port.
+// HDMI and USB: the plug waits out in front of the port, turned 180° so its keyed face looks at the camera beside the port.
 // Turned about the port's own up axis, so the plug's cut corners point the same way as the port's.
 function faceHold(job){ const w=portWorld(job.port), up=V3(0,1,0).applyQuaternion(w.q), s=V3(0,0,0).crossVectors(w.out,V3(0,1,0)).normalize();
   const pos=w.p.clone().addScaledVector(w.out,5.6).addScaledVector(s,2.6), q=new T.Quaternion().setFromAxisAngle(up,Math.PI).multiply(w.q);
   const tgt=w.p.clone().lerp(pos,.5);
   return {pos,q,tgt,cam:tgt.clone().addScaledVector(w.out,11).add(V3(0,2.5,0))}; }
-const holdFor=job=>isLJob(job)?lHold(job):job.c.id==="hdmi"?faceHold(job):null;
+const holdFor=job=>isLJob(job)?lHold(job):job.c.id==="hdmi"||job.choose==="usb"?faceHold(job):null;
 // SATA data cable: frame the port and the other end, which is already plugged in or lying loose
 function dataView(job){ const w=portWorld(job.port), o=portWorld(job.key==="A"?mbSata[0]:ssdData).p, c=w.p.clone().lerp(o,.5);
   return {pos:c.clone().add(V3(0,11,11)).addScaledVector(w.out,3.5),tgt:c}; }
@@ -81,4 +84,16 @@ function clickRearPort(id){
     if(p.kind!=="hdmiGpu"){ mistake(); toast(t("e_notHdmi"),"err"); return; }
   }
   S.connPort=p; clickConn(job.c.id);
+}
+// SATA: after clicking a SATA plug, the user clicks the port it goes in
+function clickSataPort(id){
+  if(S.busy||S.held) return;
+  const s=SPORTS.find(p=>p.id===id), job=connJob(S.step);
+  if(!job||!job.pick){ toast(t("e_notNow")); return; }
+  if(S.connPick!=="sata"){ toast(t(job.c.id==="power"?"e_pickSataPowerFirst":"e_pickSataFirst")); return; }
+  if(s.kind!==job.c.id){ mistake(); toast(t(job.c.id==="power"?"e_sataNotPower":"e_sataNotData"),"err"); return; }
+  if(s.used){ toast(t("e_portUsed"),"err"); return; }
+  if(s.dev!==job.pick){ toast(t(job.pick==="ssd"?"e_sataSsdEnd":"e_sataMbEnd")); return; }   // right kind of port, wrong end of the cable: not a mistake
+  if(S.step===ST.dataMb) S.sataMb=s.port;                                       // any of the board's SATA ports will do
+  S.connPort=s; clickConn(job.c.id);
 }

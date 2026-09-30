@@ -27,14 +27,31 @@ const iecShape=(inset=0)=>portShape(2.4-inset*2,1.4-inset*2,.32,.32);
   mesh(box(.05,2.3,1.3),new T.MeshStandardMaterial({color:0x050506,roughness:.8}),[PSU_INLET.x+.2,PSU_INLET.y,PSU_INLET.z],psuG,{cast:false});   // recess floor
   [[-.5,-.28],[.5,-.28],[0,.3]].forEach(([y,z])=>mesh(box(.5,.14,.07),screwMetal,[PSU_INLET.x,PSU_INLET.y+y,PSU_INLET.z+z],psuG,{cast:false})); })();   // L, N, earth pins
 const psuInlet={frame:(()=>{ const f=new T.Group(); f.position.copy(PSU_INLET); f.position.x-=.18; psuG.add(f); return f; })()};
-/* power switch: an I/O rocker below the inlet. On = the "I" (top) half pressed in. setPsuSwitch(false) is a troubleshooting fault. */
-const PSU_SWITCH=V3(-7.0,-2.55,1.85), PSU_SW_ON=-.22;
-mesh(box(.14,2.3,1.25),new T.MeshStandardMaterial({color:0x0e0f11,roughness:.6}),[PSU_SWITCH.x-.02,PSU_SWITCH.y,PSU_SWITCH.z],psuG);   // bezel
+/* power switch: an I/O rocker below the inlet. On = the "I" (top) half pressed in; the cap lights up red. setPsuSwitch(false) is a troubleshooting fault. */
+const PSU_SW_SLOPE=Math.atan2(.14,.95);   // tilt of each half of the cap; the rocker tilts by exactly this, so the pressed half sits flush
+const PSU_SWITCH=V3(-7.0,-2.55,1.85), PSU_SW_ON=-PSU_SW_SLOPE;
+const psuBezel=new T.MeshStandardMaterial({color:0x0e0f11,roughness:.6});
+mesh(box(.14,2.5,1.4),psuBezel,[PSU_SWITCH.x-.02,PSU_SWITCH.y,PSU_SWITCH.z],psuG);                                                  // bezel plate
+mesh(box(.02,2.3,1.2),new T.MeshStandardMaterial({color:0x020203,roughness:.9}),[PSU_SWITCH.x-.1,PSU_SWITCH.y,PSU_SWITCH.z],psuG,{cast:false});   // dark well behind the cap
+[[1.2,0,.1,1.4],[-1.2,0,.1,1.4],[0,.65,2.3,.1],[0,-.65,2.3,.1]].forEach(([y,z,h,w])=>mesh(box(.3,h,w),psuBezel,[PSU_SWITCH.x-.16,PSU_SWITCH.y+y,PSU_SWITCH.z+z],psuG));   // raised rim
 const psuRocker=new T.Group(); psuRocker.position.copy(PSU_SWITCH); psuRocker.rotation.z=PSU_SW_ON; psuG.add(psuRocker);
-(function(){ const red=new T.MeshStandardMaterial({color:0xb3121e,roughness:.45});
-  const face=new T.MeshStandardMaterial({roughness:.45,map:canvasTex(64,128,(g,W,H)=>{ g.fillStyle="#b3121e"; g.fillRect(0,0,W,H); g.fillStyle="#fff"; g.strokeStyle="#fff";
-    g.fillRect(W/2-3,H*.16,6,H*.24); g.lineWidth=5; g.beginPath(); g.arc(W/2,H*.72,11,0,7); g.stroke(); })});   // "I" on top, "O" below
-  mesh(box(.22,1.9,.95),[red,face,red,red,red,red],[-.12,0,0],psuRocker).userData.part="psuSwitch";
+/* one-piece cap: side profile is two faces meeting in a crest (extruded across the width, soft bevelled edges).
+   "I" (on) on the top face, "O" (off) on the bottom one. Pressing a half in tilts the whole rocker; the other half stands out. */
+const psuSwMat=new T.MeshPhysicalMaterial({color:0xc4101c,roughness:.32,clearcoat:.7,clearcoatRoughness:.25,emissive:0xff1a10,emissiveIntensity:0});
+const psuSwLight=new T.PointLight(0xff2a1a,0,2.6,2); psuSwLight.position.set(-.9,0,0); psuRocker.add(psuSwLight);   // red spill on the PSU back when lit
+(function(){
+  const p=new T.Shape(); p.moveTo(.08,-.95); p.lineTo(.32,-.95); p.lineTo(.46,0); p.lineTo(.32,.95); p.lineTo(.08,.95); p.lineTo(.08,-.95);   // x = out of the PSU, y = up
+  const cg=new T.ExtrudeGeometry(p,{depth:.9,bevelEnabled:true,bevelThickness:.05,bevelSize:.05,bevelSegments:3,curveSegments:4});
+  cg.translate(0,0,-.45); cg.applyMatrix4(new T.Matrix4().makeBasis(V3(-1,0,0),V3(0,1,0),V3(0,0,-1)));   // profile x → -x (the PSU's back faces -x)
+  mesh(cg,psuSwMat,[0,0,0],psuRocker).userData.part="psuSwitch";
+  const sym=s=>new T.MeshBasicMaterial({transparent:true,depthWrite:false,map:canvasTex(128,128,(g,W,H)=>{ g.fillStyle=g.strokeStyle="#f6f6f6"; g.lineWidth=12;
+    if(s==="I") g.fillRect(W/2-6,H*.2,12,H*.6); else { g.beginPath(); g.arc(W/2,H/2,H*.26,0,7); g.stroke(); } })});
+  [[1,"I"],[-1,"O"]].forEach(([k,s])=>{ const d=mesh(new T.PlaneGeometry(.62,.62),sym(s),[-.455,k*.475,0],psuRocker,{cast:false});
+    d.rotation.order="ZYX"; d.rotation.set(0,-Math.PI/2,-k*PSU_SW_SLOPE); d.userData.part="psuSwitch"; });
   mesh(box(.6,2.4,1.4),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),[-.2,0,0],psuRocker,{cast:false}).userData.part="psuSwitch"; })();
-function setPsuSwitch(on,dur,done){ const z=on?PSU_SW_ON:-PSU_SW_ON; if(!dur){ psuRocker.rotation.z=z; if(done) done(); return; } animTo(psuRocker.rotation,"z",z,dur,done); }
+function psuSwitchLit(on){ psuSwMat.emissiveIntensity=on?.55:0; psuSwLight.intensity=on?1.4:0; }
+function setPsuSwitch(on,dur,done){ const z=on?PSU_SW_ON:-PSU_SW_ON; if(!on) psuSwitchLit(false);
+  const end=()=>{ if(on) psuSwitchLit(true); if(done) done(); };
+  if(!dur){ psuRocker.rotation.z=z; end(); return; } animTo(psuRocker.rotation,"z",z,dur,end); }
+psuSwitchLit(true);
 const PSU_HOVER=24;

@@ -1,5 +1,6 @@
 /* ---------------- key view: small window showing how a keyed part lines up ----------------
    SATA plug held: the plug face and the port face, both as seen from in front of the port, so a match looks identical.
+   USB plug held: the same two faces; the plug's plastic insert has to fill the half of the port its tongue leaves empty.
    RAM stick held: the stick's edge above the slot, notch over key. Shown only while the part is in hand. */
 const keyView=document.getElementById("keyView");
 function sataKeySvg(job){
@@ -7,6 +8,14 @@ function sataKeySvg(job){
   const fig=(cap,body)=>`<figure><svg viewBox="-60 -45 120 90" aria-hidden="true">${body}</svg><figcaption>${cap}</figcaption></figure>`;
   return fig(t("kv_plug"),`<g class="kv-turn"><rect class="kv-body ${job.c.id}" x="${-pw/2}" y="${-ph/2}" width="${pw}" height="${ph}" rx="2"/><polygon class="kv-slot ${job.c.id}" points="${pts}"/></g>`)
     +fig(t("kv_port"),`<rect class="kv-housing" x="${-wd*s/2}" y="${-h*s/2}" width="${wd*s}" height="${h*s}" rx="2"/><polygon class="kv-tongue" points="${pts}"/>`);
+}
+// USB-A, face on. Plug: steel shell, insert along the bottom at roll 0. Port: tongue along the top.
+function usbKeySvg(){
+  const fig=(cap,body)=>`<figure><svg viewBox="-60 -45 120 90" aria-hidden="true">${body}</svg><figcaption>${cap}</figcaption></figure>`;
+  const shell=`<rect class="kv-usbshell" x="-42" y="-16" width="84" height="32" rx="2"/><rect class="kv-usbhole" x="-38" y="-12" width="76" height="24"/>`;
+  const pins=y=>[0,1,2,3].map(i=>`<rect class="kv-gold" x="${-27+i*15}" y="${y}" width="9" height="3"/>`).join("");
+  return fig(t("kv_plug"),`<g class="kv-turn">${shell}<rect class="kv-usbins" x="-36" y="0" width="72" height="10"/>${pins(0)}</g>`)
+    +fig(t("kv_port"),`${shell}<rect class="kv-usbins" x="-36" y="-10" width="72" height="10"/>${pins(-3)}`);
 }
 // side view along the slot (screen x = -z, the RAM view turned a quarter clockwise); the stick is drawn at rot 0, then mirrored for odd turns
 function ramKeySvg(){
@@ -19,15 +28,15 @@ function ramKeySvg(){
   return `<figure><svg viewBox="-112 -50 224 90" aria-hidden="true"><line class="kv-guide" x1="${n}" y1="-48" x2="${n}" y2="38"/>${stick}${slot}</svg><figcaption>${t("kv_ram")}</figcaption></figure>`;
 }
 function renderKeyView(){
-  const job=S.job, kind=S.held==="conn"&&job&&isLJob(job)?"sata":S.held==="ram"&&S.ram>=0?"ram":null, was=!keyView.hidden;
+  const job=S.job, kind=S.held==="conn"&&job&&isLJob(job)?"sata":S.held==="conn"&&job&&job.choose==="usb"?"usb":S.held==="ram"&&S.ram>=0?"ram":null, was=!keyView.hidden;
   keyView.hidden=!kind; if(!kind) return;
-  const faces=keyView.querySelector(".kv-faces"), id=(kind==="sata"?job.c.id+job.port.len:"ram")+lang;
-  if(keyView.dataset.id!==id){ keyView.dataset.id=id; faces.innerHTML=kind==="sata"?sataKeySvg(job):ramKeySvg(); faces.classList.toggle("one",kind==="ram"); }
-  const ok=kind==="sata"?mod(S.roll,4)===0:!mod(S.rot.ram,2), g=faces.querySelector(".kv-turn");
+  const faces=keyView.querySelector(".kv-faces"), id=(kind==="sata"?job.c.id+job.port.len:kind)+lang;
+  if(keyView.dataset.id!==id){ keyView.dataset.id=id; faces.innerHTML=kind==="sata"?sataKeySvg(job):kind==="usb"?usbKeySvg():ramKeySvg(); faces.classList.toggle("one",kind==="ram"); }
+  const ok=kind==="ram"?!mod(S.rot.ram,2):mod(S.roll,4)===0, g=faces.querySelector(".kv-turn");
   if(!was) g.style.transition="none";                                          // appear already turned, don't spin in
-  g.style.transform=kind==="sata"?`rotate(${S.roll*90}deg)`:`scaleX(${ok?1:-1})`;
+  g.style.transform=kind==="ram"?`scaleX(${ok?1:-1})`:`rotate(${S.roll*90}deg)`;
   if(!was){ g.getBoundingClientRect(); g.style.transition=""; }
   if(kind==="ram") faces.querySelector(".kv-notchlbl").setAttribute("x",(ok?-1:1)*NOTCH*15.5);
   keyView.classList.toggle("ok",ok);
-  keyView.querySelector(".kv-msg").textContent=t(kind==="sata"?(ok?"kv_ok":"kv_no"):(ok?"kv_ramOk":"kv_ramNo"));
+  keyView.querySelector(".kv-msg").textContent=t({sata:ok?"kv_ok":"kv_no",usb:ok?"kv_usbOk":"kv_usbNo",ram:ok?"kv_ramOk":"kv_ramNo"}[kind]);
 }

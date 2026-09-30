@@ -46,6 +46,8 @@ function frame(now){
   // rear ports: glow the ones that fit the cable being plugged in (after a motherboard-HDMI warning, only the card's)
   RPORTS.forEach(p=>{ const fits=S.connPick==="usb"?p.kind==="usb"&&!p.used:S.connPick==="hdmi"?(p.kind==="hdmiGpu"||(p.kind==="hdmiMb"&&!S.hdmiWarned)):false;
     p.mat.opacity=S.glow&&S.hints&&fits&&!S.held?.25+.45*pulse:0; });
+  const sJob=S.connPick==="sata"&&!S.held?connJob(st):null;             // SATA ports: clickable while choosing one, glow the ones that fit
+  SPORTS.forEach(s=>{ s.hint.visible=!!sJob; s.mat.opacity=S.glow&&S.hints&&sportFits(s,sJob)?.25+.45*pulse:0; });
   const gpuNag=gpuCableNag(now);                                          // GPU power cable still not clicked after 20 s: light it up
   setGlow(CONN.gpu8.a.bm,gpuNag,pulse); setGlow(CONN.gpu8.mat,gpuNag,pulse);
   psuMark.material.opacity=S.glow&&S.hints&&st===ST.psu?.35+.35*pulse:0;

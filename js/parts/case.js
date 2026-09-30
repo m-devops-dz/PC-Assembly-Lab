@@ -18,7 +18,7 @@ const CASE_SLOTS=[3.2,5.0,6.8,8.6,10.2,11.6,13.2];
   const s=new T.Shape(); s.moveTo(CZ0,-.1); s.lineTo(CZ1,-.1); s.lineTo(CZ1,20.2); s.lineTo(CZ0,20.2); s.lineTo(CZ0,-.1);
   const rect=(z0,z1,y0,y1)=>{ const h=new T.Path(); h.moveTo(z0,y0); h.lineTo(z0,y1); h.lineTo(z1,y1); h.lineTo(z1,y0); h.lineTo(z0,y0); s.holes.push(h); };
   rect(L.z-12.2,L.z-0.6,1.0,5.8);                                               // I/O shield opening (fits all ports)
-  CASE_SLOTS.forEach(z=>rect(L.z+z-.45,L.z+z+.45,1.7,13.9));                    // expansion slots
+  CASE_SLOTS.forEach(z=>rect(L.z+z-.62,L.z+z+.62,1.7,13.9));                    // expansion slots: 1.24 wide, a card bracket covers one from inside
   { const h=new T.Path(); h.moveTo(L.z+15.2,1.7);                               // PSU opening, notched out on one side to expose the power socket;
     [[15.2,14.1],[21.2,14.1],[21.2,12.2],[22.0,12.2],[22.0,7.6],[21.2,7.6],[21.2,1.7],[15.2,1.7]].forEach(([z,y])=>h.lineTo(L.z+z,y));
     s.holes.push(h); }                                                           //   the 4 screw holes stay in solid metal
@@ -27,7 +27,7 @@ const CASE_SLOTS=[3.2,5.0,6.8,8.6,10.2,11.6,13.2];
   const m=new T.Mesh(g,steel); m.position.x=CX0+.8; m.castShadow=true; m.receiveShadow=true; caseG.add(m);
 })();
 const ioShieldMat=new T.MeshStandardMaterial({color:0x9a9fa6,metalness:.8,roughness:.35});
-const slotCovers=CASE_SLOTS.map(z=>mesh(box(.05,12.4,1.05),ioShieldMat,[CX0-.03,7.8,L.z+z],caseG));
+const slotCovers=CASE_SLOTS.map(z=>mesh(box(.05,12.4,1.36),ioShieldMat,[CX0-.03,7.8,L.z+z],caseG));
 const fanRing=mesh(new T.TorusGeometry(5.5,.35,10,48),steel,[CX0+1.4,13,L.z-7],caseG); fanRing.rotation.y=Math.PI/2;
 const rearFan=new T.Group(); rearFan.position.set(CX0+1.8,13,L.z-7); caseG.add(rearFan);
 [[-5.4,-5.4],[5.4,-5.4],[-5.4,5.4],[5.4,5.4]].forEach(([y,z])=>mesh(box(2.5,1,1),new T.MeshStandardMaterial({color:0x121316,roughness:.6}),[0,y,z],rearFan));
@@ -37,7 +37,7 @@ for(let i=0;i<7;i++){ const p=new T.Group(); p.rotation.x=i*Math.PI*2/7; rearBla
 // rear fan lead → SYS_FAN1. Targets are WORLD space (the board is in the case at this step); CPU_FAN1 already has the cooler on it.
 makeCable("caseFan",{parent:scene,color:0x1a1a1d,radius:.06,plugColor:0x111214,plugSize:[1.05,.42,.36],maxLen:24,hoverY:L.y+2.6,floorY:L.y+.6,
   anchor:()=>V3(CX0+2.4,7.8,L.z-3.2), outDir:()=>V3(.8,-1,0),
-  spawnPos:()=>V3(L.x-3,L.y+2.6,L.z-12.5),
+  spawnPos:()=>V3(L.x+1,L.y+2.6,L.z-12.8),
   targets:()=>HEADERS.map(h=>({name:h.name,x:L.x+h.x,z:L.z+h.z,seatY:L.y+.3,rot:h.rot,ok:!h.ok,err:"e_caseFanCpu"})),
   okMsg:"ok_caseFan"});
 

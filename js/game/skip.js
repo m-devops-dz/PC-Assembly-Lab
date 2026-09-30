@@ -13,6 +13,7 @@ function seatConnNow(){
   P.outer.visible=true; P.outer.quaternion.copy(w.q); P.outer.position.copy(w.p).addScaledVector(w.out,-.3); P.inner.rotation.x=0;
   S.roll=0; S.job=null; drawConn(job.c);
   if(job.choose){ job.port.used=true; S.connPort=null; S.connPick=null; }
+  if(job.pick){ SPORTS.find(s=>s.port===job.port).used=true; S.connPort=null; S.connPick=null; }
 }
 function takeCpuNow(){ S.used.cpu=true; S.rot.cpu=0; S.flips=0; cpuYaw.visible=true; cpuYaw.position.set(-7.5,CPU_HOVER,1.2); cpuYaw.rotation.y=0; cpuFlip.rotation.z=0; }
 const finishStep={
@@ -37,7 +38,7 @@ const finishStep={
   board:()=>{ boardRoot.position.copy(L); boardRoot.rotation.set(0,0,0); S.rot.board=0; },
   boardScrews:()=>{ S.used.screws=true; boardScrews.forEach(m=>{ m.visible=true; m.position.y=MB_SCREW_Y; }); S.mbScrews=BOARD_HOLES.length; mbScrewHints.visible=false; },
   pcieLatch:()=>{ pcieLatch.rotation.z=PCIE_OPEN; },
-  gpu:()=>{ S.used.gpu=true; S.rot.gpu=0; gpuG.visible=true; gpuG.position.set(GPU_X,GPU_SEAT,L.z+3.2); gpuG.rotation.y=0; slotCovers[0].visible=false; pcieLatch.rotation.z=0; },
+  gpu:()=>{ S.used.gpu=true; S.rot.gpu=0; gpuG.visible=true; gpuG.position.set(GPU_X,GPU_SEAT,L.z+3.2); gpuG.rotation.y=0; slotCovers[0].visible=slotCovers[1].visible=false; pcieLatch.rotation.z=0; },
   sata:()=>{ S.used.sata=true; S.rot.sata=0; sataG.visible=true; sataG.position.copy(SATA_POS); sataG.rotation.y=0; },
   dataSsd:seatConnNow, dataMb:seatConnNow, sataPower:seatConnNow, atx24:seatConnNow, cpu8:seatConnNow, gpuPower:seatConnNow,
   frontPanel:()=>{ const c=CABLES.fp, tg=c.targets().find(x=>x.ok); c.plug.visible=true; c.plug.position.set(tg.x,tg.seatY,tg.z); c.plug.rotation.y=tg.rot; c.state="seated"; drawCable(c); },

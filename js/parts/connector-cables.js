@@ -76,7 +76,7 @@ function drawBundle(c,a,da,mid,db){
 function layLoose(p,pos,yaw,roll){ p.outer.visible=true; p.outer.position.copy(pos); p.outer.rotation.set(0,yaw,0); p.inner.rotation.x=roll; }
 function showConnCables(){
   layLoose(CONN.data.a,V3(19.6,.75,L.z+9.6),2.4,Math.PI/2); layLoose(CONN.data.b,V3(17.2,.75,L.z+11),.4,Math.PI/2);
-  layLoose(CONN.power.a,V3(3.5,.75,L.z+15.5),2.8,Math.PI/2);
+  layLoose(CONN.power.a,V3(9,.75,L.z+15.3),.1,Math.PI/2);   // cable end toward the PSU, so the wire leaves it straight
   layLoose(CONN.atx24.a,V3(18.0,.95,L.z-1.0),Math.PI,0);
   layLoose(CONN.cpu8.a,V3(-5.6,4.6,L.z-9.8),Math.PI/2,0);           // on the corner of the cooler shroud, so it isn't hidden under the cooler
   layLoose(CONN.gpu8.a,V3(19.5,.95,L.z+4.5),Math.PI,0);
@@ -84,9 +84,10 @@ function showConnCables(){
 }
 // where each connection goes: port frame, and which plug
 function connJob(step){
-  if(step===ST.dataSsd) return {c:CONN.data,plug:CONN.data.a,port:ssdData,key:"A",ok:"ok_dataSsd"};
-  if(step===ST.dataMb) return {c:CONN.data,plug:CONN.data.b,port:mbSata[0],key:"B",ok:"ok_dataMb"};
-  if(step===ST.sataPower) return {c:CONN.power,plug:CONN.power.a,port:ssdPower,key:"A",ok:"ok_sataPower"};
+  // SATA: after clicking the plug the user clicks the port (SPORTS); pick says which device's port is wanted
+  if(step===ST.dataSsd) return {c:CONN.data,plug:CONN.data.a,port:ssdData,key:"A",ok:"ok_dataSsd",pick:"ssd"};
+  if(step===ST.dataMb) return {c:CONN.data,plug:CONN.data.b,port:S.sataMb||mbSata[0],key:"B",ok:"ok_dataMb",pick:"mb"};
+  if(step===ST.sataPower) return {c:CONN.power,plug:CONN.power.a,port:ssdPower,key:"A",ok:"ok_sataPower",pick:"ssd"};
   if(step===ST.atx24) return {c:CONN.atx24,plug:CONN.atx24.a,port:mbAtx,key:"A",ok:"ok_atx24",err:"e_latch"};
   if(step===ST.cpu8) return {c:CONN.cpu8,plug:CONN.cpu8.a,port:mbCpuPwr,key:"A",ok:"ok_cpu8",err:"e_latch"};
   if(step===ST.gpuPower) return {c:CONN.gpu8,plug:CONN.gpu8.a,port:gpuPwrPort,key:"A",ok:"ok_gpu8",err:"e_latch"};
@@ -98,3 +99,10 @@ function connJob(step){
   return null;
 }
 function portWorld(port){ const f=port.frame; f.updateMatrixWorld(true); const p=f.getWorldPosition(V3(0,0,0)); const q=f.getWorldQuaternion(new T.Quaternion()); return {p,q,out:V3(-1,0,0).applyQuaternion(q)}; }
+// clickable SATA ports: the SSD's data and power ports and the board's four data ports. Each gets a see-through box
+// over its opening that takes the click and glows when it fits the plug in hand.
+const SPORTS=[{id:"ssdData",kind:"data",dev:"ssd",port:ssdData},{id:"ssdPower",kind:"power",dev:"ssd",port:ssdPower},
+  ...mbSata.map((p,i)=>({id:"sata"+(i+1),kind:"data",dev:"mb",port:p}))];
+SPORTS.forEach(s=>{ const [h,w]=s.port.housing; s.mat=new T.MeshBasicMaterial({color:0xffc400,transparent:true,opacity:0,depthWrite:false}); s.used=false;
+  s.hint=mesh(box(.14,h+.12,w+.12),s.mat,[-.08,0,0],s.port.frame,{cast:false}); s.hint.userData={part:"sport",port:s.id}; s.hint.visible=false; });
+const sportFits=(s,job)=>!!job&&!!job.pick&&!s.used&&s.kind===job.c.id&&s.dev===job.pick;

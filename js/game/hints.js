@@ -68,6 +68,7 @@ function hintInfo(){
   if(st===ST.powerOn) return {pos:wpos(powerBtn),msg:"h_click"};
   const job=connJob(st);
   if(job){
+    if(job.pick&&S.connPick==="sata"){ const p=SPORTS.find(p=>sportFits(p,job)); if(p) return {pos:portWorld(p.port).p,msg:"h_port"}; }
     if(job.choose&&S.connPick){ const p=RPORTS.find(p=>S.connPick==="usb"?p.kind==="usb"&&!p.used:p.kind==="hdmiGpu"); if(p) return {pos:portWorld(p).p,msg:"h_port"}; }
     job.plug.outer.updateMatrixWorld(true); return {pos:wpos(job.plug.outer),msg:"h_cable"};
   }

@@ -117,6 +117,7 @@ details.photos p.theme-name:empty{ display:none; }
 .kv-body.data{ fill:#c0212c; } .kv-body.power{ fill:#141518; stroke:#6b7478; stroke-width:1; }
 .kv-slot.data{ fill:#111; } .kv-slot.power{ fill:#ddd; }
 .kv-housing{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; } .kv-tongue{ fill:#9aa0a8; }
+.kv-usbshell{ fill:#b9bec5; } .kv-usbhole{ fill:#050506; } .kv-usbins{ fill:#1d4fd8; }
 .kv-msg{ margin:0; font-size:13px; font-weight:500; color:var(--err); }
 .keyview.ok .kv-msg{ color:var(--ok); }
 .done{ position:absolute; inset:0; display:none; place-items:center; background:rgba(10,20,22,.45); }

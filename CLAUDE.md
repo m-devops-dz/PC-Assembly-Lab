@@ -37,8 +37,8 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `take-parts.js`: picking parts up from the tray (`takeCPU`, `takeRAM`, …)
   - `actions.js`: lever, slot, bracket and screw clicks, plus `rotate`/`flip`/`seat`
   - `drop.js`: placement rules per part (`drop()`), `finish`, `persist`
-  - `connectors.js`: the SATA / 24-pin / CPU-power plug steps
-  - `key-view.js`: small window that shows how a held keyed part lines up (SATA plug vs port L, RAM notch vs slot key)
+  - `connectors.js`: the SATA / 24-pin / CPU-power plug steps. SATA and peripheral plugs: click the plug, then click the port (`SPORTS` in connector-cables.js for SATA, `RPORTS` in peripherals.js for the rear ports)
+  - `key-view.js`: small window that shows how a held keyed part lines up (SATA plug vs port L, USB-A insert vs port tongue, RAM notch vs slot key)
   - `paste.js`: thermal-paste animation
   - `power.js`: last step: power button, fans/keyboard lights on, monitor No signal → MSI logo → BIOS, then the spinning fans (`clickPowerBtn`, `powerOnNow`)
   - `skip.js`: hold Ctrl+H to skip a step (`finishStep`, `skipStep`)

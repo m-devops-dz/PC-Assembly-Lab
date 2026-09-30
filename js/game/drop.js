@@ -48,7 +48,7 @@ function drop(){
     if(!sn){ toast(t("e_gpuAbove"),"err"); return; }
     if(!sn.slot.ok) return wrong("e_gpuSlot",gpuG,GPU_HOVER,L.y+3);
     if(mod(S.rot.gpu,2)) return wrong("e_gpuTurn",gpuG,GPU_HOVER,L.y+3);
-    slotCovers[0].visible=false; seat(gpuG,GPU_SEAT,1000,()=>{ setPcieLatch(false,250); toast(t("ok_gpu"),"ok"); setStep(S.step+1); });
+    slotCovers[0].visible=slotCovers[1].visible=false; seat(gpuG,GPU_SEAT,1000,()=>{ setPcieLatch(false,250); toast(t("ok_gpu"),"ok"); setStep(S.step+1); });
   } else if(type==="wifi"){
     if(!sn){ toast(t("e_wifiAbove"),"err"); return; }
     if(!sn.slot.ok) return wrong2(t(sn.slot.err,{s:sn.slot.name}),wifiG,WIFI_HOVER,L.y+4);

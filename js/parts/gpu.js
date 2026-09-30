@@ -6,26 +6,27 @@ const gpuShroud=new T.MeshStandardMaterial({map:canvasTex(1024,440,(g,W,H)=>{ br
   GPU_FANS.forEach(x=>{ const cx=(x-6.3+11.5)/23*W, cy=H/2, r=4.45/23*W;                // dark fan wells with a chamfered rim
     g.fillStyle="#08090a"; g.beginPath(); g.arc(cx,cy,r,0,7); g.fill(); g.strokeStyle="#3d4046"; g.lineWidth=5; g.beginPath(); g.arc(cx,cy,r+4,0,7); g.stroke(); }); }),metalness:.5,roughness:.45});
 const gpuPcb=new T.MeshStandardMaterial({color:0x14301f,roughness:.6}), gpuBack=new T.MeshStandardMaterial({color:0x2b2d31,metalness:.6,roughness:.4});
-/* I/O bracket, outside face (-x): slanted exhaust slots away from the PCB, "HDMI"/"DP" labels and a screw beside each port,
-   like a real card. Canvas x runs along +z (0 at the PCB side), canvas top is the screw-tab end (+y). Face: z −0.1…2.1, y 0.2…12.2. */
+/* dual-slot I/O bracket, outside face (-x): the ports, their "HDMI"/"DP" labels and a screw beside each in the first slot
+   (z 0, in line with the PCB), slanted exhaust vents in the second (z 1.8). Canvas x runs along +z, canvas top is the
+   screw-tab end (+y). Face: z GPU_BR_Z0…GPU_BR_Z1, y 0.2…12.2. */
 const GPU_OUTPUTS=[{kind:"hdmi",y:9.4},{kind:"dp",y:7.2},{kind:"hdmi",y:5.0},{kind:"dp",y:2.8}], GPU_PORT_Z=.15;
 const bracketSteel=new T.MeshStandardMaterial({color:0xb9bec5,metalness:.85,roughness:.32});
-const bracketFace=new T.MeshStandardMaterial({metalness:.8,roughness:.35,map:canvasTex(176,960,(g,W,H)=>{
-  const cz=z=>(z+.1)/2.2*W, cy=y=>(12.2-y)/12*H, U=W/2.2;
+const GPU_BR_Z0=-.7, GPU_BR_Z1=2.9;                                                // two slots of 1.8, the first centred on the PCB
+const bracketFace=new T.MeshStandardMaterial({metalness:.8,roughness:.35,map:canvasTex(288,960,(g,W,H)=>{
+  const cz=z=>(z-GPU_BR_Z0)/(GPU_BR_Z1-GPU_BR_Z0)*W, cy=y=>(12.2-y)/12*H, U=W/(GPU_BR_Z1-GPU_BR_Z0);
   brushed(g,W,H,"#b3b8be",91,900);
-  g.fillStyle="#0e0f11";                                                           // slanted vents, between PCB side ports and the cooler side
-  for(let y=.9;y<11.6;y+=.62){ g.beginPath(); g.moveTo(cz(.78),cy(y)); g.lineTo(cz(.78),cy(y+.3)); g.lineTo(cz(2.0),cy(y+.72)); g.lineTo(cz(2.0),cy(y+.42)); g.closePath(); g.fill(); }
-  g.fillStyle="#b3b8be"; g.fillRect(cz(.5),0,cz(.78)-cz(.5),H);                    // solid strip that carries the screws
+  g.fillStyle="#0e0f11";                                                           // slanted vents across the second slot
+  for(let y=.9;y<11.6;y+=.62){ g.beginPath(); g.moveTo(cz(1.3),cy(y)); g.lineTo(cz(1.3),cy(y+.3)); g.lineTo(cz(2.35),cy(y+.72)); g.lineTo(cz(2.35),cy(y+.42)); g.closePath(); g.fill(); }
   GPU_OUTPUTS.forEach(p=>{ const len=p.kind==="hdmi"?1.4:1.6;
-    g.save(); g.translate(cz(.02),cy(p.y+len/2+.12)); g.rotate(-Math.PI/2); g.fillStyle="#3b3e44"; g.font="600 "+Math.round(.24*U)+"px Barlow, Arial"; g.fillText(p.kind==="hdmi"?"HDMI":"DP",0,0); g.restore();
-    const sx=cz(.64), sy=cy(p.y), r=.13*U; g.fillStyle="#8e949b"; g.beginPath(); g.arc(sx,sy,r,0,7); g.fill();          // screw beside the port
+    g.save(); g.translate(cz(-.14),cy(p.y+len/2+.12)); g.rotate(-Math.PI/2); g.fillStyle="#3b3e44"; g.font="600 "+Math.round(.24*U)+"px Barlow, Arial"; g.fillText(p.kind==="hdmi"?"HDMI":"DP",0,0); g.restore();
+    const sx=cz(.52), sy=cy(p.y), r=.11*U; g.fillStyle="#8e949b"; g.beginPath(); g.arc(sx,sy,r,0,7); g.fill();          // screw beside the port
     g.fillStyle="#2b2e33"; g.fillRect(sx-r*.7,sy-r*.14,r*1.4,r*.28); g.fillRect(sx-r*.14,sy-r*.7,r*.28,r*1.4); });
 })});
 const gpuParts=[mesh(box(23.6,10.5,.16),gpuPcb,[6.0,5.25,0],gpuG),
   mesh(box(8.9,.8,.18),new T.MeshStandardMaterial({color:0xe2b95a,metalness:.85,roughness:.3}),[0,.4,0],gpuG),
   mesh(box(23,10,3.3),[gpuBack,gpuBack,gpuBack,gpuBack,gpuShroud,gpuBack],[6.3,5.7,1.85],gpuG),
   mesh(box(23,10,.12),gpuBack,[6.3,5.7,-.16],gpuG),
-  mesh(box(.14,12,2.2),[bracketSteel,bracketFace,bracketSteel,bracketSteel,bracketSteel,bracketSteel],[-5.95,6.2,1.0],gpuG),
+  mesh(box(.14,12,GPU_BR_Z1-GPU_BR_Z0),[bracketSteel,bracketFace,bracketSteel,bracketSteel,bracketSteel,bracketSteel],[-5.95,6.2,(GPU_BR_Z0+GPU_BR_Z1)/2],gpuG),
   mesh(box(1.9,.5,1.1),six(blackPlastic,new T.MeshStandardMaterial({map:holesTexture(4,2),roughness:.6})),[15,10.7,.6],gpuG),  // 8-pin PCIe power socket, opens upward
   mesh(box(.5,.3,.22),blackPlastic,[15,10.8,1.26],gpuG)];                                                                         //   its latch tab
 /* axial fans: 11 swept, pitched blades on a hub, inside a thin frame ring with 3 support struts */

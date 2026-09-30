@@ -13,7 +13,7 @@ const wifiBlack=new T.MeshStandardMaterial({color:0x121316,roughness:.5}), anten
 const wifiParts=[mesh(box(7.6,5.2,.16),new T.MeshStandardMaterial({color:0x1b1d22,roughness:.6}),[1.2,3.0,0],wifiG),                 // PCB
   mesh(box(2.5,.8,.18),new T.MeshStandardMaterial({color:0xe2b95a,metalness:.85,roughness:.3}),[0,.4,0],wifiG),                    // x1 gold finger
   mesh(box(5.8,4.3,.8),[wifiBlack,wifiBlack,wifiBlack,wifiBlack,wifiSink,wifiBlack],[1.7,3.15,.48],wifiG),                         // heatsink
-  mesh(box(.14,12,2.2),bracketSteel,[WIFI_BRACKET,6.2,1.0],wifiG)];                                                                  // full-height bracket
+  mesh(box(.14,12,1.6),bracketSteel,[WIFI_BRACKET,6.2,.1],wifiG)];                                                                   // full-height bracket, centred on its slot
 // two RP-SMA jacks: through the case's slot opening (in line with the PCB, z ±0.45), sticking 0.7 cm out of the rear wall
 const WIFI_JACK_Z=.1, WIFI_JACK_END=WIFI_BRACKET-1.55;
 [3.6,7.8].forEach(y=>{ const jack=mesh(new T.CylinderGeometry(.28,.28,1.5,16),new T.MeshStandardMaterial({color:0xd4af37,metalness:.9,roughness:.3}),[WIFI_BRACKET-.8,y,WIFI_JACK_Z],wifiG);

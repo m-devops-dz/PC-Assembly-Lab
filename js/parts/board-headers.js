@@ -8,7 +8,7 @@ mesh(box(.9,.6,2.2),jusb3Mat,[JUSB3.x,.4,JUSB3.z]);                             
 const chokeMat=new T.MeshStandardMaterial({color:0x3a3c40,metalness:.35,roughness:.55});   // ferrite chokes: dark grey, satin
 [-8,-6.6,-5.2,-3.8,-2.4].forEach(z=>mesh(box(.85,.65,.85),chokeMat,[-7.4,.425,z]));
 const capTop=new T.MeshStandardMaterial({color:0x9ea3a9,metalness:.8,roughness:.4}), capBody=new T.MeshStandardMaterial({color:0x1c1d20,metalness:.3,roughness:.45});   // solid caps: black sleeve, aluminium top
-[[-7.4,-1.1],[-7.4,-.3],[-6.6,-1.1],[1.9,-9],[2.5,-9],[10.5,-9],[11.2,-9],[11.9,-9],[9.8,2.4],[10.5,2.4]].forEach(([x,z])=>mesh(new T.CylinderGeometry(.3,.3,.8,20),[capBody,capTop,capBody],[x,.5,z]));
+[[-7.4,-1.1],[-7.4,-.3],[-6.6,-1.1],[10.5,-9],[11.2,-9],[11.9,-9],[9.8,2.4],[10.5,2.4]].forEach(([x,z])=>mesh(new T.CylinderGeometry(.3,.3,.8,20),[capBody,capTop,capBody],[x,.5,z]));
 // Mini-Fit power headers, plugs go in from above; the latch tab is where the plug's clip hooks on
 const epsHoles=new T.MeshStandardMaterial({map:holesTexture(4,2),roughness:.6});
 mesh(box(1.9,1.3,1.1),six(blackPlastic,epsHoles),[-10.1,.75,-11.4]);                             // 8-pin EPS (CPU_PWR1)
