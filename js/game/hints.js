@@ -55,7 +55,7 @@ function hintInfo(){
   }
   const tray={[ST.takeCpu]:"cpu",[ST.ram1]:"ram"+(S.used.ram0?1:0),[ST.ram2]:"ram"+(S.used.ram0?1:0),[ST.paste]:"paste",[ST.cooler]:"cooler",[ST.m2In]:"m2",
     [ST.battery]:"battery",[ST.psu]:"psu",[ST.boardScrews]:"screws",[ST.gpu]:"gpu",[ST.sata]:"sata",[ST.wifi]:"wifi",[ST.antennas]:"antennas"}[st];
-  if(tray) return {el:trayBtn(tray),msg:"h_tray"};
+  if(tray) return S.tray?{el:trayBtn(tray),msg:"h_tray"}:{pos:tablePos(tray),msg:"h_table"};
   if(st===ST.leverUp||st===ST.leverDown) return {pos:wpos(grip),msg:"h_click"};
   if(st===ST.clips){ const i=GOOD.find(i=>!slots[i].open); if(i==null) return null;   // point at the clip (latch) nearer the camera, not the slot's middle
     const [a,b]=slots[i].latches.map(p=>wpos(p,1.1)); return {pos:a.distanceTo(camera.position)<b.distanceTo(camera.position)?a:b,msg:"h_click"}; }
@@ -110,7 +110,7 @@ function coachLines(){
   const st=S.step; if(coachOff||st>ST.placeCpu) return null;
   const held=S.held==="cpu"&&st===ST.placeCpu, f=held&&S.flips%2===0, r=held&&mod(S.rot.cpu,4)===0, sn=held&&!!S.snap;
   const at=(s,done)=>st>s||done?"done":st===s?"cur":"todo";
-  return [["co_orbit","info"],["co_lever",at(ST.leverUp)],["co_tray",at(ST.takeCpu)],
+  return [["co_orbit","info"],["co_lever",at(ST.leverUp)],[S.tray?"co_tray":"co_table",at(ST.takeCpu)],
     ["co_flip",!held?"todo":f?"done":"cur"],["co_rot",!held?"todo":!f?"todo":r?"done":"cur"],
     ["co_drag",!held?"todo":sn?"done":f&&r?"cur":"todo"],["co_drop",f&&r&&sn?"cur":"todo"]];
 }

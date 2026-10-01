@@ -41,6 +41,19 @@ const plugBack=p=>p.inner.localToWorld(V3(p.back??-1,0,0));
 const plugBackDir=p=>p.inner.localToWorld(V3((p.back??-1)-1,0,0)).sub(plugBack(p)).normalize();
 // keep a cable's control points between the case walls
 const inCase=p=>{ p.x=Math.min(Math.max(p.x,CX0+1.6),CX1-1.4); p.z=Math.min(Math.max(p.z,CZ0+1.4),CZ1-1.4); return p; };
+// a cable's tube: a smooth curve through pts that never sinks into the case floor or the desk.
+// (A plain Catmull-Rom curve overshoots where a cable drops onto the floor, and those stretches vanished under it.)
+const CASE_FLOOR=.4;
+function floorUnder(p){
+  if(caseG.visible&&p.x>CX0&&p.x<CX1&&p.z>CZ0&&p.z<CZ1) return CASE_FLOOR;
+  if(p.x>DESK.x0&&p.x<DESK.x1&&p.z>DESK.z0&&p.z<DESK.z1) return DESK.y;
+  return -Infinity;                                                       // off the desk edge: free to hang down
+}
+function cableGeo(pts,r,segs=64,radial=8){
+  const sm=new T.CatmullRomCurve3(pts,false,"centripetal").getPoints(segs*2);
+  for(let i=2;i<sm.length-2;i++){ const p=sm[i]; p.y=Math.max(p.y,floorUnder(p)+r+.03); }   // the ends stay on their plugs
+  return new T.TubeGeometry(new T.CatmullRomCurve3(sm,false,"centripetal"),segs,r,radial,false);
+}
 function drawConn(c){
   let a,da,b,db;
   // plugs are often moved in the same tick, before the renderer refreshes world matrices
@@ -54,7 +67,7 @@ function drawConn(c){
   if(c.a.pins) return drawBundle(c,a,da,mid,db);
   const keep=c.outside?(p=>p):inCase;                                     // desk cables (keyboard, mouse, monitor) run outside the case
   const pts=[a,keep(a.clone().addScaledVector(da,1.2)),...(c.via?c.via(a,b):[keep(mid)]),keep(b.clone().addScaledVector(db,1.2)),b];   // via: route around the case
-  const geo=new T.TubeGeometry(new T.CatmullRomCurve3(pts),64,c.radius,8,false);
+  const geo=cableGeo(pts,c.radius);
   if(!c.mesh){ c.mesh=new T.Mesh(geo,c.mat); c.mesh.castShadow=true; c.mesh.userData={part:"conn",conn:c.id}; scene.add(c.mesh); } else { c.mesh.geometry.dispose(); c.mesh.geometry=geo; }
 }
 // one wire per pin: they leave the plug straight and parallel, then gather into a tighter bundle toward the PSU
@@ -68,7 +81,7 @@ function drawBundle(c,a,da,mid,db){
     const tip=P.inner.localToWorld(pin.clone()), oP=uy.clone().multiplyScalar(pin.y*.45).addScaledVector(uz,pin.z*.45);
     const oMid=oP.clone().lerp(tip.clone().sub(P.inner.localToWorld(V3(pin.x,0,0))),.4);
     const pts=[a.clone().add(oP),inCase(a.clone().addScaledVector(da,1.6).add(oP)),inCase(mid.clone().add(oMid)),inCase(tip.clone().addScaledVector(db,2.2)),tip];
-    const geo=new T.TubeGeometry(new T.CatmullRomCurve3(pts),36,c.radius,5,false);
+    const geo=cableGeo(pts,c.radius,36,5);
     let m=c.group.children[i];
     if(!m){ m=new T.Mesh(geo,c.mat); m.castShadow=true; m.userData={part:"conn",conn:c.id}; c.group.add(m); } else { m.geometry.dispose(); m.geometry=geo; }
   });

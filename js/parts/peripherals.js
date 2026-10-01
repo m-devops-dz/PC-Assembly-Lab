@@ -139,7 +139,8 @@ const screenMat=new T.MeshStandardMaterial({map:screenOff,roughness:.3,metalness
   mesh(box(12,.6,18),periGrey,[0,.3,0],monG);                                                           // foot
   mesh(box(2,20,4),periGrey,[-1,10,0],monG);                                                            // neck
   mesh(box(2,33,56),periBlack,[.4,26,0],monG);                                                          // bezel
-  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2; })();
+  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2;
+  monG.traverse(o=>{ o.castShadow=false; }); })();   // its shadow falls past the edge of the sun's shadow area and showed as a cut-off dark rectangle on the desk
 function showScreen(tex,glow=.9){ screenMat.map=tex; screenMat.emissiveMap=tex; screenMat.emissiveIntensity=glow; screenMat.needsUpdate=true; }
 // monitor centre and a camera spot square in front of it (a little above, inside the orbit controls' lowest angle)
 function screenView(){ monG.updateMatrixWorld(true); const c=monG.localToWorld(V3(1.42,26,0)), n=monG.localToWorld(V3(2.42,26,0)).sub(c);
@@ -198,7 +199,7 @@ Object.assign(CONN,{
     anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)), via:slack(3)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
     anchor:()=>(monG.updateMatrixWorld(true),monG.localToWorld(V3(-2.1,12,0))), anchorDir:()=>V3(0,-1,0),
-    via:()=>[monG.localToWorld(V3(-6,.3,6)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, then along the desk around the top of the case
+    via:()=>[monG.localToWorld(V3(-7.5,.4,10)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, off its foot, then along the desk around the top of the case
   ac:{id:"ac",mat:periCable(0x141517),radius:.3,mesh:null,a:makeIecPlug("ac"),outside:true,           // runs off the desk to the wall socket
     anchor:()=>V3(-80,.35,L.z+26), anchorDir:()=>V3(1,0,0)}
 });

@@ -15,6 +15,7 @@ if(saved.lang==="ar") lang="ar";
 let appMode=saved.mode==="trouble"?"trouble":"build";                  // "trouble": troubleshooting mode (trouble.js)
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
+  tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights
   used:{}, tightOrder:[], fanOn:false, caseFanOn:false, powered:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
 const nearPt=(x,z,px,pz,r)=>Math.hypot(x-px,z-pz)<r;
@@ -90,6 +91,7 @@ const HELD={
     return best?{x:best.x,z:best.z,key:best.name,tg:best,msg:t("ok_snapHeader",{s:best.label||best.name})}:null; }}
 };
 function spawn(type,obj,from,to,rot,after){
+  if(S.fromTable) from=obj.parent.worldToLocal(S.fromTable.clone());   // taken from the parts table: fly in from there
   obj.visible=true; obj.position.copy(from); S.rot[type]=rot; const r1=rot*HELD[type].step; obj.rotation.y=r1+1.4;
   S.busy=true; S.snap=null; startClock();
   tween(900,k=>{ obj.position.lerpVectors(from,to,k); obj.rotation.y=r1+1.4*(1-k); },()=>{ S.busy=false; S.held=type; if(after) after(); updateTools(); updateTray(); },easeOut);

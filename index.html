@@ -15,6 +15,13 @@
       <div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div>
     </div>
     <div class="head-actions">
+      <div class="settings">
+        <button class="chip-btn" id="setBtn" aria-expanded="false" aria-controls="setPop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="set_btn"></span></button>
+        <div class="set-pop" id="setPop" hidden>
+          <label class="toggle"><input type="checkbox" id="setTray"> <span data-i18n="set_tray"></span></label>
+          <label class="toggle"><input type="checkbox" id="setRgb"> <span data-i18n="set_rgb"></span></label>
+        </div>
+      </div>
       <button class="chip-btn" id="offlineBtn" data-i18n="off_btn"></button>
       <button class="chip-btn" id="modeBtn"></button>
       <button class="chip-btn" id="langBtn"></button>
@@ -68,7 +75,7 @@
           <button class="tool" id="rotR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></svg></button>
           <button class="tool" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7L3 17h5z"/><path d="M16 7l5 10h-5z" fill="currentColor"/></svg></button>
         </div>
-        <div class="view-btns"><label class="bright"><span id="brightLbl"></span><input type="range" id="bright" min="0.5" max="1.8" step="0.05"></label><label class="bright"><span data-i18n="themePick"></span><select id="themeSel"></select></label><button id="glowBtn" aria-pressed="true"></button><button id="topBtn" data-i18n="topView"></button><button id="viewBtn" data-i18n="resetView"></button></div>
+        <div class="view-btns"><label class="bright"><span id="brightLbl"></span><input type="range" id="bright" min="0.5" max="1.8" step="0.05"></label><label class="bright"><span data-i18n="themePick"></span><select id="themeSel"></select></label><button id="glowBtn" aria-pressed="true"></button><button id="tableBtn" data-i18n="tableView"></button><button id="topBtn" data-i18n="topView"></button><button id="viewBtn" data-i18n="resetView"></button></div>
         <div class="toast" id="toast" role="status"></div>
         <div class="coach" id="coach" hidden><div class="coach-head"><b data-i18n="co_title"></b><button class="coach-x" id="coachX" data-i18n="co_hide"></button></div><ol></ol></div>
         <button class="hint-btn" id="hintBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg><span data-i18n="hintBtn"></span><b id="hintLeft">5</b></button>
@@ -102,6 +109,7 @@
 <script src="js/core/layout.js"></script>
 <script src="js/core/textures.js"></script>
 <script src="js/core/scene.js"></script>
+<script src="js/parts/desk.js"></script>
 <script src="js/parts/motherboard.js"></script>
 <script src="js/parts/rear-io.js"></script>
 <script src="js/parts/board-headers.js"></script>
@@ -118,6 +126,7 @@
 <script src="js/parts/cmos-battery.js"></script>
 <script src="js/parts/case.js"></script>
 <script src="js/parts/side-panel.js"></script>
+<script src="js/parts/case-fans.js"></script>
 <script src="js/parts/psu.js"></script>
 <script src="js/parts/gpu.js"></script>
 <script src="js/parts/wifi-card.js"></script>
@@ -126,6 +135,7 @@
 <script src="js/parts/connector-cables.js"></script>
 <script src="js/parts/front-panel.js"></script>
 <script src="js/parts/peripherals.js"></script>
+<script src="js/parts/power-strip.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="js/game/photos.js"></script>
 <script src="js/game/state.js"></script>
@@ -140,6 +150,8 @@
 <script src="js/game/input.js"></script>
 <script src="js/game/ui.js"></script>
 <script src="js/game/hints.js"></script>
+<script src="js/game/table.js"></script>
+<script src="js/game/settings.js"></script>
 <script src="js/game/trouble.js"></script>
 <script src="js/game/offline.js"></script>
 <script src="js/game/loop.js"></script>

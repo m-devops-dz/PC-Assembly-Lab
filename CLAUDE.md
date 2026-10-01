@@ -27,11 +27,13 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `layout.js`: board dimensions, socket and DIMM positions
   - `textures.js`: generated canvas textures
   - `scene.js`: renderer, camera, `VIEWS`, `focus()`, lights, `mesh()`
+- `js/parts/desk.js` (loaded right after scene.js): the dark desk, its RGB edge strip, and the parts mat (`PARTS_MAT`) where table.js lays the parts
 - `js/parts/`: one 3D part per file, in the order the parts are built
   - motherboard, rear-io, board-headers, socket, dimm-slots, pcie-latch
   - cpu, ram, fan-headers, thermal-paste, cooler
-  - cables, m2-ssd, cmos-battery, case, side-panel, psu, gpu, wifi-card
-  - sata-connectors, sata-ssd, connector-cables, front-panel (power button lead, front USB lead to JUSB3, the USB stick used in troubleshooting), peripherals (keyboard, mouse, monitor, rear port targets)
+  - cables, m2-ssd, cmos-battery, case (white), side-panel, case-fans (red LED rear fan, `updateCaseRgb`: lit only when powered and SYS_FAN1 is plugged in), psu, gpu, wifi-card
+  - sata-connectors, sata-ssd, connector-cables, front-panel (power button lead, front USB lead to JUSB3, the USB stick used in troubleshooting), peripherals (keyboard, mouse, monitor, rear port targets), power-strip (EU 4-socket strip on the desk: the PC power cord `CONN.ac` starts there; the monitor's power cable is plugged in at both ends)
+  - cable tubes go through `cableGeo` (connector-cables.js), which keeps them above the case floor / desk
 - `js/game/`
   - `state.js`: step order (`STEP_IDS`, `ST`, `STEPS`, `viewFor`, `setStep`), state `S`, `HELD`
   - `take-parts.js`: picking parts up from the tray (`takeCPU`, `takeRAM`, …)
@@ -48,4 +50,6 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `hints.js`: help: pointer arrow (always on the socket lever), first-part coach card (lever + CPU flip/rotate/drag/lower), Hint button (5 per build, H key; points at the next target, demos the move with a held part then puts it back)
   - `trouble.js`: troubleshooting mode (header button, remembered in sessionStorage as `mode`): starts fully built with one fault. `TS_CASES` is the numbered case list ([symptom, fault]); `TS_SYMPTOMS` is each symptom's checklist; `TS_CHECKS` has each check's camera, fault and fix. Solved cases are kept in sessionStorage (`tsDone`); a case always starts from a fresh page load (`tsGo` sets `tsNext` and reloads). New case: add it to `TS_CASES`, give the fault a `TS_CHECKS` entry with `fault`/`fix`, and add `ts_c_`/`ts_l_`/`ts_w_`/`ts_fix_` text. Text is `ts_*` in i18n.
   - `offline.js`: the "Download offline" header button: zips the page and every local file it loads (read from the page's own tags, plus fonts and theme zips)
+  - `table.js`: parts waiting on the desk (`TABLE_ITEMS`: clones of the real parts). Click → pops up and spins with a name tag, then calls the take function with `S.fromTable` set so `spawn`/`takeCPU` fly the real part in from there. With the parts bar off, the camera glides to `VIEWS.table` when a step needs a part. A new takeable part needs a `TABLE_ITEMS` entry
+  - `settings.js`: header ⚙ menu: parts bar (`S.tray`, off by default; `body.no-tray`) and RGB lights (`S.rgb`), both saved by `persist`
   - `loop.js`: render loop, glow hints, startup (`applyLang(); setStep(0)`)

@@ -1,15 +1,15 @@
 /* ---------------- case (lying on its side, side panel off) ---------------- */
 const L=V3(0,1.1,-50);                         // where the board ends up
 const caseG=new T.Group(); caseG.visible=false; scene.add(caseG);
-const steel=new T.MeshStandardMaterial({color:0x1c1d20,metalness:.45,roughness:.5});
+const steel=new T.MeshStandardMaterial({color:0xe9ecef,metalness:.12,roughness:.48});   // white powder-coated steel
 const MB_SCREW_Y=.2;                            // seated screw head centre, just on the board surface
 const CX0=-16.6, CX1=29.6, CZ0=L.z-18.1, CZ1=L.z+24.6;   // outer extents
-const trayTex=canvasTex(1024,900,(g,W,H)=>{ g.fillStyle="#26282c"; g.fillRect(0,0,W,H);
+const trayTex=canvasTex(1024,900,(g,W,H)=>{ g.fillStyle="#e3e6e9"; g.fillRect(0,0,W,H);
   const px=x=>(x-CX0)/(CX1-CX0)*W, pz=z=>(z-(L.z-17.3))/41.1*H;
-  g.fillStyle="#141518"; roundRect(g,px(SX-5),pz(L.z+SZ-5),10/46.2*W,10/41.1*H,10); g.fill();
-  [[16.6,-8],[16.6,0],[16.6,8]].forEach(([x,z])=>{ g.fillStyle="#101114"; roundRect(g,px(x),pz(L.z+z),1.6/46.2*W,4/41.1*H,8); g.fill(); });
-  g.strokeStyle="rgba(255,255,255,.08)"; g.lineWidth=2; for(let x=0;x<W;x+=32){ g.beginPath(); g.moveTo(x,pz(L.z+13)); g.lineTo(x,H); g.stroke(); } });
-const trayMat=new T.MeshStandardMaterial({map:trayTex,metalness:.4,roughness:.55});
+  g.fillStyle="#c4c9ce"; roundRect(g,px(SX-5),pz(L.z+SZ-5),10/46.2*W,10/41.1*H,10); g.fill();
+  [[16.6,-8],[16.6,0],[16.6,8]].forEach(([x,z])=>{ g.fillStyle="#b5bbc1"; roundRect(g,px(x),pz(L.z+z),1.6/46.2*W,4/41.1*H,8); g.fill(); });
+  g.strokeStyle="rgba(0,0,0,.07)"; g.lineWidth=2; for(let x=0;x<W;x+=32){ g.beginPath(); g.moveTo(x,pz(L.z+13)); g.lineTo(x,H); g.stroke(); } });
+const trayMat=new T.MeshStandardMaterial({map:trayTex,metalness:.12,roughness:.5});
 mesh(box(CX1-CX0,.5,41.1),six(steel,trayMat),[(CX0+CX1)/2,.15,L.z+3.25],caseG);
 
 /* rear wall with real openings: I/O shield, 120 mm exhaust fan, 7 expansion slots, PSU */
@@ -45,7 +45,7 @@ makeCable("caseFan",{parent:scene,color:0x1a1a1d,radius:.06,plugColor:0x111214,p
 mesh(box(.8,20.3,41.1),steel,[CX1-.4,10.05,L.z+3.25],caseG);                                                      // front
 mesh(box(CX1-CX0,20.3,.8),steel,[(CX0+CX1)/2,10.05,CZ0+.4],caseG);                                               // top
 mesh(box(CX1-CX0,20.3,.8),steel,[(CX0+CX1)/2,10.05,CZ1-.4],caseG);                                               // bottom
-mesh(box(CX1-CX0,.6,.8),new T.MeshStandardMaterial({color:0x2a2c30,metalness:.5,roughness:.4}),[(CX0+CX1)/2,20.35,CZ0+.4],caseG);
+mesh(box(CX1-CX0,.6,.8),new T.MeshStandardMaterial({color:0xd5d9de,metalness:.3,roughness:.4}),[(CX0+CX1)/2,20.35,CZ0+.4],caseG);
 
 /* front I/O panel on the outside of the front: power button, reset, 2× USB-A, USB-C, audio */
 const powerBtnMat=new T.MeshStandardMaterial({color:0xc9ced4,metalness:.9,roughness:.25});
@@ -58,7 +58,7 @@ const powerBtn=new T.Group(); powerBtn.position.set(CX1+.17,10,L.z-15.3); caseG.
   sym.rotation.y=Math.PI/2; sym.userData.part="powerBtn"; })();                 // ⏻ symbol on the button face
 (function frontIO(){
   const x=CX1+.02, y=10, blackP=new T.MeshStandardMaterial({color:0x0d0e10,roughness:.6}), blue=new T.MeshStandardMaterial({color:0x2458d8,roughness:.4});
-  mesh(box(.12,6,11.5),new T.MeshStandardMaterial({color:0x2a2c30,metalness:.5,roughness:.4}),[x,y,L.z-11],caseG);
+  mesh(box(.12,6,11.5),new T.MeshStandardMaterial({color:0xd5d9de,metalness:.3,roughness:.4}),[x,y,L.z-11],caseG);
   const rs=mesh(new T.CylinderGeometry(.35,.35,.2,16),blackP,[x+.1,y,L.z-13.3],caseG); rs.rotation.z=Math.PI/2;
   [L.z-11.6,L.z-10.3].forEach(z=>{ mesh(box(.3,1.35,.6),new T.MeshStandardMaterial({color:0xb9bec5,metalness:.9,roughness:.3}),[x+.1,y,z],caseG); mesh(box(.32,1.15,.42),blackP,[x+.1,y,z],caseG); mesh(box(.33,1.0,.12),blue,[x+.1,y,z-.08],caseG); });
   const c=mesh(box(.3,.95,.36),new T.MeshStandardMaterial({color:0xb9bec5,metalness:.9,roughness:.3}),[x+.1,y,L.z-9.1],caseG); mesh(box(.32,.8,.22),blackP,[x+.1,y,L.z-9.1],caseG);

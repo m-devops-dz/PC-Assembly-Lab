@@ -2,7 +2,7 @@
    The case lies on its side, so the panel closes the open top. It drops on 1.5 cm behind its final spot,
    slides forward (toward the front, +x) to hook in, then 2 thumbscrews go in at the rear. */
 const PANEL_Y=20.5, PANEL_W=CX1-CX0, PANEL_D=CZ1-CZ0;
-const panelFrameMat=new T.MeshStandardMaterial({color:0x1c1d20,metalness:.5,roughness:.45});
+const panelFrameMat=new T.MeshStandardMaterial({color:0xe9ecef,metalness:.12,roughness:.48});
 const panelGlass=new T.MeshPhysicalMaterial({color:0x6f8190,metalness:.1,roughness:.05,transparent:true,opacity:.3,depthWrite:false});
 const sideG=new T.Group(); sideG.visible=false; scene.add(sideG);
 const SIDE_X=(CX0+CX1)/2, SIDE_Z=(CZ0+CZ1)/2;
