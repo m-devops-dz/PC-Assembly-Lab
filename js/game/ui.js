@@ -60,7 +60,22 @@ function renderSteps(){
   document.getElementById("expText").textContent=fin?t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}):t("s_"+STEP_IDS[S.step]+"d");
   if(typeof TS==="undefined"||!TS.on) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
   if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
+  if(S.step!==renderSteps.shown){ renderSteps.shown=S.step; if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
+  else if(!stepCard.hidden) showStepCard();   // language change: redraw it
 }
+// step pop-up: on phones and in full screen the sidebar isn't in sight, so each new step's instructions open in a card
+// with an OK button (Settings can turn it off). Tapping the step name in the full-screen bar opens it again.
+const stepCard=document.getElementById("stepCard");
+function showStepCard(){
+  if((typeof TS!=="undefined"&&TS.on)||S.step>=STEPS) return;
+  document.getElementById("scNum").textContent=t("stepN",{n:S.step+1,m:STEPS});
+  document.getElementById("scTitle").textContent=t("s_"+STEP_IDS[S.step]);
+  document.getElementById("scText").textContent=t("s_"+STEP_IDS[S.step]+"d");
+  const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
+function hideStepCard(){ stepCard.hidden=true; }
+document.getElementById("scOk").onclick=hideStepCard;
+stepCard.addEventListener("keydown",e=>{ if(e.key==="Escape") hideStepCard(); });
+document.getElementById("fsStep").onclick=()=>{ if(!TS.on) showStepCard(); };
 // the current step's circle turns orange after 3 mistakes and red after a minute (checked live from the render loop)
 function updateStepMark(){ const li=renderSteps.cur, fs=document.getElementById("fsStep"), m=li&&li.isConnected?stepMark(S.step):"";
   document.getElementById("fsMis").textContent=S.mistakes; if(S.start) document.getElementById("fsTime").textContent=fmtTime((S.end||performance.now())-S.start);
@@ -109,14 +124,19 @@ const FS_ICON={on:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
   off:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'};
 const isFs=()=>document.body.classList.contains("fs");
 function renderFsBtn(){ const on=isFs(); fsBtn.innerHTML=FS_ICON[on?"off":"on"]; fsBtn.title=t(on?"fsOff":"fsOn"); fsBtn.setAttribute("aria-label",fsBtn.title); fsBtn.setAttribute("aria-pressed",on);
-  panelBtn.title=t("fsPanel"); panelBtn.setAttribute("aria-label",panelBtn.title); }
+  const open=document.body.classList.contains("fs-open"); panelBtn.title=t(open?"fsClose":"fsPanel"); panelBtn.setAttribute("aria-label",panelBtn.title); }
 function setFs(on){
   document.body.classList.toggle("fs",on); showFsPanel(false); renderFsBtn();
   const d=document, el=d.documentElement, cur=d.fullscreenElement||d.webkitFullscreenElement;
   try{ if(on&&!cur){ const r=el.requestFullscreen?el.requestFullscreen():el.webkitRequestFullscreen&&el.webkitRequestFullscreen(); if(r&&r.catch) r.catch(()=>{}); }
     else if(!on&&cur){ const r=d.exitFullscreen?d.exitFullscreen():d.webkitExitFullscreen&&d.webkitExitFullscreen(); if(r&&r.catch) r.catch(()=>{}); } }catch(e){}
 }
+// the ☰ button turns into × while the panel is open, and the panel opens just below the bar so the button stays in sight
+const PANEL_ICON={open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
 function showFsPanel(open){ document.body.classList.toggle("fs-open",open); panelBtn.setAttribute("aria-expanded",open);
+  panelBtn.innerHTML=PANEL_ICON[open?"close":"open"]; panelBtn.title=t(open?"fsClose":"fsPanel"); panelBtn.setAttribute("aria-label",panelBtn.title);
+  document.querySelector("aside").style.top=open?Math.round(document.getElementById("fsBar").getBoundingClientRect().bottom+8)+"px":"";
   if(open&&renderSteps.cur&&!TS.on) renderSteps.cur.scrollIntoView({block:"center"}); }
 fsBtn.onclick=()=>setFs(!isFs());
 panelBtn.onclick=e=>{ e.stopPropagation(); showFsPanel(!document.body.classList.contains("fs-open")); };

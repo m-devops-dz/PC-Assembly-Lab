@@ -17,6 +17,7 @@ const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cab
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
   tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights
   quiz:saved.quiz!==false, quizDone:{},                   // Settings: part quiz before a part is first taken (quiz.js); the parts already answered
+  card:saved.card!==false,                                // Settings: step pop-up on phones / in full screen (ui.js)
   stepMis:{}, stepMs:{},                                  // mistakes and time spent, per step (sidebar marks: orange > 2 mistakes, red > 60 s)
   used:{}, tightOrder:[], fanOn:false, caseFanOn:false, powered:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;

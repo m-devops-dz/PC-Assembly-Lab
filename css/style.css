@@ -325,3 +325,10 @@ body.fs.fs-open aside{ display:flex; }
 @keyframes redFlash{ 0%{ opacity:1; } 100%{ opacity:0; } }
 @keyframes shake{ 10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(5px); } 30%,50%,70%{ transform:translateX(-10px); } 40%,60%{ transform:translateX(10px); } }
 @media (prefers-reduced-motion: reduce){ .app.hit{ animation:none; } }
+/* step pop-up (ui.js): same card as the quiz */
+.step-card .quiz-card h2{ margin-bottom:8px; padding-inline-end:0; }
+.sc-text{ margin:0 0 18px; color:var(--ink); font-size:16px; line-height:1.6; }
+.step-card .primary{ display:block; width:100%; font-size:16px; padding:12px 22px; }
+.fs-step{ cursor:pointer; }
+/* full screen: while the steps panel is open, the ☰/× button is red-ringed so it's easy to find */
+body.fs-open .fs-panel{ background:var(--err); color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.85); }

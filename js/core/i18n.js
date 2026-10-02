@@ -21,7 +21,7 @@ const I18N = {
     h_cable:"Click the cable end the arrow points to.", h_port:"Click the port the arrow points to.",
     co_title:"How to handle a part", co_hide:"Hide",
     co_orbit:"Drag empty space to look around, scroll to zoom.", co_lever:"Click the blue socket lever (the arrow shows it) to lift it.",
-    co_tray:"Click the CPU in the parts tray below.", co_table:"Click the glowing CPU on the parts table.", h_table:"Click the glowing part on the table.", set_btn:"Settings", set_tray:"Show parts bar", set_rgb:"RGB lights", set_quiz:"Part quiz",
+    co_tray:"Click the CPU in the parts tray below.", co_table:"Click the glowing CPU on the parts table.", h_table:"Click the glowing part on the table.", set_btn:"Settings", set_tray:"Show parts bar", set_rgb:"RGB lights", set_quiz:"Part quiz", set_card:"Step pop-up (phone, full screen)", stepN:"Step {n} of {m}", fsClose:"Close the steps",
     // part quiz (quiz.js): q_<id> is the part's name, _a the right answer, _b and _c the wrong ones
     q_title:"What does this part do?", q_right:"Correct!", q_wrong:"Not quite. Try again.", q_close:"Close",
     q_cpu:"CPU (processor)", q_cpu_a:"Runs the programs' instructions and does the calculations: the brain of the PC", q_cpu_b:"Keeps your files saved while the PC is off", q_cpu_c:"Turns wall power into the voltages the parts use",
@@ -231,7 +231,7 @@ const I18N = {
     h_cable:"انقر طرف السلك الذي يشير إليه السهم.", h_port:"انقر المنفذ الذي يشير إليه السهم.",
     co_title:"كيف تتعامل مع القطعة", co_hide:"إخفاء",
     co_orbit:"اسحب في مكان فارغ لتغيير زاوية النظر، واستخدم عجلة الفأرة للتكبير.", co_lever:"انقر ذراع المقبس الأزرق (يشير إليه السهم) لرفعه.",
-    co_tray:"انقر المعالج في صندوق القطع في الأسفل.", co_table:"انقر المعالج المضيء على طاولة القطع.", h_table:"انقر القطعة المضيئة على الطاولة.", set_btn:"الإعدادات", set_tray:"إظهار شريط القطع", set_rgb:"إضاءة RGB", set_quiz:"اختبار القطع",
+    co_tray:"انقر المعالج في صندوق القطع في الأسفل.", co_table:"انقر المعالج المضيء على طاولة القطع.", h_table:"انقر القطعة المضيئة على الطاولة.", set_btn:"الإعدادات", set_tray:"إظهار شريط القطع", set_rgb:"إضاءة RGB", set_quiz:"اختبار القطع", set_card:"نافذة تعليمات الخطوة (الهاتف، ملء الشاشة)", stepN:"الخطوة {n} من {m}", fsClose:"إغلاق الخطوات",
     q_title:"ما وظيفة هذه القطعة؟", q_right:"إجابة صحيحة!", q_wrong:"ليست الإجابة الصحيحة. حاول مرة أخرى.", q_close:"إغلاق",
     q_cpu:"المعالج CPU", q_cpu_a:"ينفّذ تعليمات البرامج ويقوم بالحسابات: إنه عقل الحاسوب", q_cpu_b:"يحفظ ملفاتك عندما يكون الحاسوب مطفأً", q_cpu_c:"يحوّل كهرباء المنزل إلى الجهود التي تحتاجها القطع",
     q_ram:"الذاكرة الحية RAM", q_ram_a:"تحمل البرامج والبيانات المستخدمة الآن، وتُمسح عند انقطاع الكهرباء", q_ram_b:"تحفظ ملفاتك بشكل دائم", q_ram_c:"ترسم الصورة التي تُرسل إلى الشاشة",

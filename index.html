@@ -21,6 +21,7 @@
           <label class="toggle"><input type="checkbox" id="setTray"> <span data-i18n="set_tray"></span></label>
           <label class="toggle"><input type="checkbox" id="setRgb"> <span data-i18n="set_rgb"></span></label>
           <label class="toggle"><input type="checkbox" id="setQuiz"> <span data-i18n="set_quiz"></span></label>
+          <label class="toggle"><input type="checkbox" id="setCard"> <span data-i18n="set_card"></span></label>
         </div>
       </div>
       <button class="chip-btn" id="offlineBtn" data-i18n="off_btn"></button>
@@ -84,6 +85,14 @@
         <div class="keyview" id="keyView" hidden>
           <div class="kv-faces"></div>
           <p class="kv-msg" aria-live="polite"></p>
+        </div>
+        <div class="quiz step-card" id="stepCard" hidden>
+          <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+            <p class="quiz-part" id="scNum"></p>
+            <h2 id="scTitle"></h2>
+            <p class="sc-text" id="scText"></p>
+            <button class="primary" id="scOk" data-i18n="ok"></button>
+          </div>
         </div>
         <div class="quiz" id="quiz" hidden>
           <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
