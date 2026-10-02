@@ -20,6 +20,7 @@
         <div class="set-pop" id="setPop" hidden>
           <label class="toggle"><input type="checkbox" id="setTray"> <span data-i18n="set_tray"></span></label>
           <label class="toggle"><input type="checkbox" id="setRgb"> <span data-i18n="set_rgb"></span></label>
+          <label class="toggle"><input type="checkbox" id="setQuiz"> <span data-i18n="set_quiz"></span></label>
         </div>
       </div>
       <button class="chip-btn" id="offlineBtn" data-i18n="off_btn"></button>
@@ -84,6 +85,15 @@
           <div class="kv-faces"></div>
           <p class="kv-msg" aria-live="polite"></p>
         </div>
+        <div class="quiz" id="quiz" hidden>
+          <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+            <button class="quiz-x" id="quizX"><span aria-hidden="true">×</span></button>
+            <p class="quiz-part" id="quizPart"></p>
+            <h2 id="quizTitle" data-i18n="q_title"></h2>
+            <div class="quiz-choices" id="quizChoices"></div>
+            <p class="quiz-msg" id="quizMsg" aria-live="polite"></p>
+          </div>
+        </div>
         <div class="loadmsg" id="loadMsg"><div><b>Loading the 3D workbench…</b></div></div>
         <div class="done" id="done">
           <div class="done-card">
@@ -100,6 +110,7 @@
     </section>
   </div>
 </div>
+<div class="red-flash" id="redFlash" aria-hidden="true"></div>
 
 <script src="js/core/boot-errors.js"></script>
 <script src="vendor/three.min.js"></script>
@@ -153,6 +164,7 @@
 <script src="js/game/hints.js"></script>
 <script src="js/game/table.js"></script>
 <script src="js/game/settings.js"></script>
+<script src="js/game/quiz.js"></script>
 <script src="js/game/trouble.js"></script>
 <script src="js/game/offline.js"></script>
 <script src="js/game/loop.js"></script>
