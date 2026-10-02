@@ -33,10 +33,15 @@ const VIEWS={ cpu:{pos:[-0.6,25,6.2],tgt:[-2.5,0.6,-5]}, ram:{pos:[6.8,31,-3.8],
   tsFront:{pos:[46,46,-14],tgt:[4,4,-48]},                           // troubleshooting: the built PC from the front, through the glass
   antennas:{pos:[-40,17,-31],tgt:[-17,8,-40]} };                      // outside, behind the case: the Wi-Fi card's bracket                            // the x1 slots below the graphics card
 let view="cpu";
-camera.position.set(...VIEWS.cpu.pos);
+// phones (same 860px breakpoint as the CSS): the tall, narrow view cut parts off, so every camera view sits 1.5× farther
+// from what it looks at. Students can still pinch in; zooming in is easier than finding a part that's off screen.
+const PHONE_ZOOM=1.5, isPhone=()=>window.innerWidth<=860;
+// a view can ask for more on phones with phoneZoom (multiplies PHONE_ZOOM), e.g. the wide parts table
+function viewPos(pos,tgt,extra=1){ const p=new T.Vector3(...pos); if(!isPhone()) return p; const t=new T.Vector3(...tgt); return p.sub(t).multiplyScalar(PHONE_ZOOM*extra).add(t); }
+camera.position.copy(viewPos(VIEWS.cpu.pos,VIEWS.cpu.tgt));
 const controls=new T.OrbitControls(camera,renderer.domElement);
-controls.target.set(...VIEWS.cpu.tgt); controls.enableDamping=true; controls.dampingFactor=.08; controls.maxPolarAngle=1.42; controls.minDistance=4; controls.maxDistance=100; controls.update();
-function focus(name,dur=900){ view=name; const p0=camera.position.clone(), t0=controls.target.clone(), p1=new T.Vector3(...VIEWS[name].pos), t1=new T.Vector3(...VIEWS[name].tgt); tween(dur,k=>{ camera.position.lerpVectors(p0,p1,k); controls.target.lerpVectors(t0,t1,k); }); }
+controls.target.set(...VIEWS.cpu.tgt); controls.enableDamping=true; controls.dampingFactor=.08; controls.maxPolarAngle=1.42; controls.minDistance=4; controls.maxDistance=100*PHONE_ZOOM*1.5; controls.update();
+function focus(name,dur=900){ view=name; const p0=camera.position.clone(), t0=controls.target.clone(), p1=viewPos(VIEWS[name].pos,VIEWS[name].tgt,VIEWS[name].phoneZoom), t1=new T.Vector3(...VIEWS[name].tgt); tween(dur,k=>{ camera.position.lerpVectors(p0,p1,k); controls.target.lerpVectors(t0,t1,k); }); }
 // straight down onto whatever the camera is looking at, keeping the current distance
 function topView(dur=700){ const t=controls.target.clone(), d=Math.max(camera.position.distanceTo(t),8); view="top";
   const p0=camera.position.clone(), p1=new T.Vector3(t.x,t.y+d,t.z+d*.02); tween(dur,k=>camera.position.lerpVectors(p0,p1,k)); }

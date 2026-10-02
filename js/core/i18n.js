@@ -1,7 +1,7 @@
 /* ---------------- i18n ---------------- */
 const I18N = {
   en:{
-    title:"PC Assembly Lab", subtitle:"MSI B450 Gaming Plus Max, Ryzen 5 5600G, Asgard 8 GB DDR4", reset:"Start over", lessons:"Lessons",
+    title:"PC Assembly Lab", subtitle:"MSI B450 Gaming Plus Max, Ryzen 5 5600G, 16 GB DDR4", reset:"Start over", lessons:"Lessons",
     hints:"Show hints", mistakes:"mistakes", time:"time", tray:"Parts tray", resetView:"Reset view", fsOn:"Full screen", fsOff:"Exit full screen", fsPanel:"Steps and info", topView:"Top view", glowOn:"Highlights: on", glowOff:"Highlights: off", bright:"Brightness", ok:"OK",
     g_desk:"On the desk", g_case:"In the case", g_power:"Power and data cables", g_finish:"Finishing up",
     specs:"Parts in this build",
@@ -21,7 +21,7 @@ const I18N = {
     h_cable:"Click the cable end the arrow points to.", h_port:"Click the port the arrow points to.",
     co_title:"How to handle a part", co_hide:"Hide",
     co_orbit:"Drag empty space to look around, scroll to zoom.", co_lever:"Click the blue socket lever (the arrow shows it) to lift it.",
-    co_tray:"Click the CPU in the parts tray below.", co_table:"Click the glowing CPU on the parts table.", h_table:"Click the glowing part on the table.", set_btn:"Settings", set_tray:"Show parts bar", set_rgb:"RGB lights", set_quiz:"Part quiz", set_card:"Step pop-up (phone, full screen)", stepN:"Step {n} of {m}", fsClose:"Close the steps",
+    co_tray:"Click the CPU in the parts tray below.", co_table:"Click the glowing CPU on the parts table.", h_table:"Click the glowing part on the table.", set_btn:"Settings", set_tray:"Show parts bar", set_rgb:"RGB lights", set_quiz:"Part quiz", fa_title:"Switch to full screen?", fa_text:"The CPU is in. In full screen the 3D view gets the whole screen: the ☰ button opens the steps, and ⛶ leaves full screen.", fa_yes:"Full screen", fa_no:"Not now", set_card:"Step pop-up (phone, full screen)", stepN:"Step {n} of {m}", fsClose:"Close the steps",
     // part quiz (quiz.js): q_<id> is the part's name, _a the right answer, _b and _c the wrong ones
     q_title:"What does this part do?", q_right:"Correct!", q_wrong:"Not quite. Try again.", q_close:"Close",
     q_cpu:"CPU (processor)", q_cpu_a:"Runs the programs' instructions and does the calculations: the brain of the PC", q_cpu_b:"Keeps your files saved while the PC is off", q_cpu_c:"Turns wall power into the voltages the parts use",
@@ -43,7 +43,7 @@ const I18N = {
     s_placeCpu:"Align and place the CPU", s_placeCpud:"Drag the CPU over the socket. Turn it until its gold triangle is on the same corner as the triangle printed on the socket (that corner is also missing pins), pins facing down. Then press the lower button. It must drop in with zero force.",
     s_leverDown:"Lower the lever", s_leverDownd:"Lower the lever back down and hook it in place. This clamps the pins. Click the lever.",
     s_clips:"Open the memory clips", s_clipsd:"With two sticks, this board uses slots DIMMA2 and DIMMB2 for dual channel: the two red slots, 2nd and 4th from the CPU. Click those two slots to open their clips.",
-    s_ram1:"Install the first RAM stick", s_ram1d:"Take an Asgard 8 GB stick from the tray and drag it over a red slot. The notch in the gold contacts is off-center: turn the stick until it lines up with the key in the slot, then press it down.",
+    s_ram1:"Install the first RAM stick", s_ram1d:"Take an RAM 8 GB stick from the tray and drag it over a red slot. The notch in the gold contacts is off-center: turn the stick until it lines up with the key in the slot, then press it down.",
     s_ram2:"Install the second RAM stick", s_ram2d:"Put the second stick in the other red slot the same way.",
     s_bracket:"Remove the retention bracket", s_bracketd:"The stock cooler screws straight into the metal backplate behind the board, so the black plastic bracket around the socket has to come off. Click the bracket to remove its 4 screws. The backplate stays in place.",
     s_paste:"Apply thermal paste", s_pasted:"Take the thermal paste, hold it over the center of the CPU lid and press the lower button: you draw a thin X from corner to corner. The cooler's pressure spreads it evenly over the whole lid. The stock cooler ships with paste already applied; this is how you do it when you reinstall a cooler.",
@@ -211,7 +211,7 @@ const I18N = {
     ok_photo:"Photo applied.", ok_photoClear:"Back to the generated surfaces.", ok_theme:"Theme \"{n}\" applied: {c} photos.", e_photo:"That image could not be opened.", e_theme:"That file is not a readable .zip theme.", e_themeEmpty:"No photos found in the zip. Name them board, cpuTop, ram, m2, sata, gpu, psu (.jpg/.png/.webp), or list them in theme.json.", e_themeLib:"The zip library did not load (no internet?). Themes need it; single photos still work.", p_cpu:"Ryzen 5 5600G", p_ram:"Asgard 8 GB", p_paste:"Thermal paste", p_cooler:"Stock cooler", p_m2:"M.2 SSD", p_psu:"Power supply", p_gpu:"Graphics card", p_sata:"SATA SSD"
   },
   ar:{
-    title:"مختبر تركيب الحاسوب", subtitle:"MSI B450 Gaming Plus Max، Ryzen 5 5600G، Asgard 8 GB DDR4", reset:"ابدأ من جديد", lessons:"الدروس",
+    title:"مختبر تركيب الحاسوب", subtitle:"MSI B450 Gaming Plus Max، Ryzen 5 5600G، 16 GB DDR4", reset:"ابدأ من جديد", lessons:"الدروس",
     hints:"إظهار التلميحات", mistakes:"أخطاء", time:"الوقت", tray:"القطع الموجودة", resetView:"إعادة العرض", fsOn:"ملء الشاشة", fsOff:"الخروج من ملء الشاشة", fsPanel:"الخطوات والمعلومات", topView:"عرض علوي", glowOn:"توضيحات: تشغيل", glowOff:"توضيحات: إيقاف", bright:"السطوع", ok:"حسنًا",
     g_desk:"على الطاولة", g_case:"داخل الصندوق", g_power:"أسلاك الطاقة والبيانات", g_finish:"اللمسات الأخيرة",
     specs:"القطع في هذا التجميع",
@@ -231,7 +231,7 @@ const I18N = {
     h_cable:"انقر طرف السلك الذي يشير إليه السهم.", h_port:"انقر المنفذ الذي يشير إليه السهم.",
     co_title:"كيف تتعامل مع القطعة", co_hide:"إخفاء",
     co_orbit:"اسحب في مكان فارغ لتغيير زاوية النظر، واستخدم عجلة الفأرة للتكبير.", co_lever:"انقر ذراع المقبس الأزرق (يشير إليه السهم) لرفعه.",
-    co_tray:"انقر المعالج في صندوق القطع في الأسفل.", co_table:"انقر المعالج المضيء على طاولة القطع.", h_table:"انقر القطعة المضيئة على الطاولة.", set_btn:"الإعدادات", set_tray:"إظهار شريط القطع", set_rgb:"إضاءة RGB", set_quiz:"اختبار القطع", set_card:"نافذة تعليمات الخطوة (الهاتف، ملء الشاشة)", stepN:"الخطوة {n} من {m}", fsClose:"إغلاق الخطوات",
+    co_tray:"انقر المعالج في صندوق القطع في الأسفل.", co_table:"انقر المعالج المضيء على طاولة القطع.", h_table:"انقر القطعة المضيئة على الطاولة.", set_btn:"الإعدادات", set_tray:"إظهار شريط القطع", set_rgb:"إضاءة RGB", set_quiz:"اختبار القطع", fa_title:"التبديل إلى ملء الشاشة؟", fa_text:"المعالج في مكانه. في وضع ملء الشاشة يأخذ العرض ثلاثي الأبعاد الشاشة كلها: زر ☰ يفتح الخطوات، وزر ⛶ يخرج من ملء الشاشة.", fa_yes:"ملء الشاشة", fa_no:"ليس الآن", set_card:"نافذة تعليمات الخطوة (الهاتف، ملء الشاشة)", stepN:"الخطوة {n} من {m}", fsClose:"إغلاق الخطوات",
     q_title:"ما وظيفة هذه القطعة؟", q_right:"إجابة صحيحة!", q_wrong:"ليست الإجابة الصحيحة. حاول مرة أخرى.", q_close:"إغلاق",
     q_cpu:"المعالج CPU", q_cpu_a:"ينفّذ تعليمات البرامج ويقوم بالحسابات: إنه عقل الحاسوب", q_cpu_b:"يحفظ ملفاتك عندما يكون الحاسوب مطفأً", q_cpu_c:"يحوّل كهرباء المنزل إلى الجهود التي تحتاجها القطع",
     q_ram:"الذاكرة الحية RAM", q_ram_a:"تحمل البرامج والبيانات المستخدمة الآن، وتُمسح عند انقطاع الكهرباء", q_ram_b:"تحفظ ملفاتك بشكل دائم", q_ram_c:"ترسم الصورة التي تُرسل إلى الشاشة",
@@ -252,7 +252,7 @@ const I18N = {
     s_placeCpu:"حاذِ المعالج وضعه", s_placeCpud:"اسحب المعالج فوق المقبس. دوّره حتى يكون مثلثه الذهبي في نفس زاوية المثلث المطبوع على المقبس (هذه الزاوية تنقصها أسنان أيضًا)، والأسنان للأسفل. ثم اضغط زر الإنزال. يجب أن يدخل دون أي ضغط.",
     s_leverDown:"أنزل الذراع", s_leverDownd:"أنزل الذراع وثبّته في مشبكه. هذا يقفل الأسنان. انقر على الذراع.",
     s_clips:"افتح مشابك الذاكرة", s_clipsd:"مع شريحتين، تستخدم هذه اللوحة الفتحتين DIMMA2 و DIMMB2 للقناة المزدوجة: الفتحتان الحمراوان، الثانية والرابعة من جهة المعالج. انقر عليهما لفتح مشابكهما.",
-    s_ram1:"ركّب شريحة الذاكرة الأولى", s_ram1d:"خذ شريحة Asgard 8 GB من الصندوق واسحبها فوق فتحة حمراء. الشق في نقاط التلامس الذهبية ليس في المنتصف: دوّر الشريحة حتى يتطابق مع المفتاح في الفتحة، ثم اضغطها للأسفل.",
+    s_ram1:"ركّب شريحة الذاكرة الأولى", s_ram1d:"خذ شريحة RAM 8 GB من الصندوق واسحبها فوق فتحة حمراء. الشق في نقاط التلامس الذهبية ليس في المنتصف: دوّر الشريحة حتى يتطابق مع المفتاح في الفتحة، ثم اضغطها للأسفل.",
     s_ram2:"ركّب شريحة الذاكرة الثانية", s_ram2d:"ضع الشريحة الثانية في الفتحة الحمراء الأخرى بنفس الطريقة.",
     s_bracket:"انزع إطار التثبيت", s_bracketd:"المشتت الحراري يُثبّت بالبراغي مباشرة في الصفيحة المعدنية خلف اللوحة، لذلك يجب نزع الإطار البلاستيكي الأسود حول المقبس. انقر على الإطار لفك براغيه الأربعة. الصفيحة الخلفية تبقى في مكانها.",
     s_paste:"ضع المعجون الحراري", s_pasted:"خذ المعجون الحراري وضعه فوق وسط غطاء المعالج ثم اضغط زر الإنزال: سترسم حرف X رفيعًا من زاوية إلى زاوية. ضغط المبرد يوزّعه بالتساوي على كامل الغطاء. المشتت الحراري يأتي مع معجون موضوع مسبقًا؛ هكذا تفعل عند إعادة تركيب مبرد.",

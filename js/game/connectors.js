@@ -1,4 +1,4 @@
-function focusPoint(pos,tgt,dur=900){ const p0=camera.position.clone(), t0=controls.target.clone(); tween(dur,k=>{ camera.position.lerpVectors(p0,pos,k); controls.target.lerpVectors(t0,tgt,k); }); }
+function focusPoint(pos,tgt,dur=900){ pos=viewPos(pos.toArray(),tgt.toArray()); const p0=camera.position.clone(), t0=controls.target.clone(); tween(dur,k=>{ camera.position.lerpVectors(p0,pos,k); controls.target.lerpVectors(t0,tgt,k); }); }
 function clickConn(id){
   const job=connJob(S.step);
   if(S.busy) return;

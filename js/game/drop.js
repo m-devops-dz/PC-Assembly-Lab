@@ -76,5 +76,5 @@ function drop(){
 }
 function wrong2(msg,obj,hover,low){ mistake(); toast(msg,"err"); refuse(obj,hover,low); }
 function finish(){ S.end=performance.now(); renderSteps(); document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}); setTimeout(()=>document.getElementById("done").classList.add("show"),1800); }
-function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,mode:appMode,tsDone:TS.done,tsNext:TS.next})); }catch(e){} }
+function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,fsAsked:S.fsAsked,mode:appMode,tsDone:TS.done,tsNext:TS.next})); }catch(e){} }
 function resetAll(){ persist(); location.reload(); }

@@ -70,7 +70,7 @@ VIEWS.ram.tgt = [6.8, 0.5, -4.3];
 focus("ram");                          // glides the camera to VIEWS.ram
 ```
 
-Changes made in the console are lost on reload. Paste the copied line into `VIEWS` in `scene.js` to keep it. Which view a step uses is decided by `viewFor()` in [js/game/state.js](js/game/state.js).
+Tune views in a desktop-size window: on phones (860px wide or less) every view is 1.5× farther from its target, so a copied line would be too far out. Changes made in the console are lost on reload. Paste the copied line into `VIEWS` in `scene.js` to keep it. Which view a step uses is decided by `viewFor()` in [js/game/state.js](js/game/state.js).
 
 ## How it's built
 

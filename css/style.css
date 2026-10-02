@@ -332,3 +332,6 @@ body.fs.fs-open aside{ display:flex; }
 .fs-step{ cursor:pointer; }
 /* full screen: while the steps panel is open, the ☰/× button is red-ringed so it's easy to find */
 body.fs-open .fs-panel{ background:var(--err); color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.85); }
+.fa-btns{ display:flex; gap:10px; flex-wrap:wrap; }
+.fa-btns .primary{ flex:1; font-size:16px; padding:12px 22px; }
+.fa-btns .chip-btn{ flex:none; padding:12px 18px; font-size:15px; }

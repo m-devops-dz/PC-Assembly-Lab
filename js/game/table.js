@@ -5,7 +5,7 @@
    S.fromTable), otherwise it drops back down and the take function's message says why.
    While a step needs a part and the parts bar is off (Settings), the camera glides over to the table.
    A copy disappears once its part is used, or its step is past (skipped steps, troubleshooting). */
-VIEWS.table={pos:[39.5,46,37],tgt:[39.5,0,-4.5]};
+VIEWS.table={pos:[39.5,46,37],tgt:[39.5,0,-4.5],phoneZoom:1.5};   // phones: 1.5 × 1.5, the mat is wide and the view is narrow
 const TABLE_ITEMS=[
   // id (S.used key), name key, take, last step it's needed in, spot on the mat (x,z), pose turns [[axis,angle],...]
   {id:"cpu",name:"p_cpu",take:()=>takeCPU(),until:"takeCpu",src:()=>cpuYaw,at:[21,10]},

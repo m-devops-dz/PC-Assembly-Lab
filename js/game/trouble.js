@@ -116,7 +116,7 @@ function tsBuildAll(){
   while(S.step<ST.powerOn){ const id=STEP_IDS[S.step]; finishStep[id](); S.held=id==="takeCpu"?"cpu":null; S.snap=null; S.cable=null; S.job=null; setStep(S.step+1); }
   tweens.length=0; caseG.position.y=0;                                     // drop the queued camera moves and the case's drop-in
   sideG.visible=false; panelScrews.forEach(g=>g.visible=false);            // side panel stays off for the whole case, so every part is in plain view
-  const v=VIEWS.tsFront; camera.position.set(...v.pos); controls.target.set(...v.tgt); controls.update();
+  const v=VIEWS.tsFront; camera.position.copy(viewPos(v.pos,v.tgt)); controls.target.set(...v.tgt); controls.update();
 }
 function tsStart(){ document.body.classList.add("ts-mode"); tsBuildAll(); usbStick.visible=true;
   const n=TS.next; TS.next=null; persist();

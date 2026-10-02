@@ -60,7 +60,9 @@ function renderSteps(){
   document.getElementById("expText").textContent=fin?t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}):t("s_"+STEP_IDS[S.step]+"d");
   if(typeof TS==="undefined"||!TS.on) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
   if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
-  if(S.step!==renderSteps.shown){ renderSteps.shown=S.step; if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
+  if(S.step!==renderSteps.shown){ renderSteps.shown=S.step;
+    if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&!TS.on){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
+    else if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
   else if(!stepCard.hidden) showStepCard();   // language change: redraw it
 }
 // step pop-up: on phones and in full screen the sidebar isn't in sight, so each new step's instructions open in a card
@@ -72,8 +74,14 @@ function showStepCard(){
   document.getElementById("scTitle").textContent=t("s_"+STEP_IDS[S.step]);
   document.getElementById("scText").textContent=t("s_"+STEP_IDS[S.step]+"d");
   const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
-function hideStepCard(){ stepCard.hidden=true; }
+function hideStepCard(){ stepCard.hidden=true; fsAsk.hidden=true; }
 document.getElementById("scOk").onclick=hideStepCard;
+// once the CPU is placed, offer full screen once per session (S.fsAsked); then the step pop-up shows as usual
+const fsAsk=document.getElementById("fsAsk");
+function answerFsAsk(yes){ fsAsk.hidden=true; if(yes) setFs(true); if(S.card&&(window.innerWidth<=860||isFs())) showStepCard(); }
+document.getElementById("faYes").onclick=()=>answerFsAsk(true);
+document.getElementById("faNo").onclick=()=>answerFsAsk(false);
+fsAsk.addEventListener("keydown",e=>{ if(e.key==="Escape") answerFsAsk(false); });
 stepCard.addEventListener("keydown",e=>{ if(e.key==="Escape") hideStepCard(); });
 document.getElementById("fsStep").onclick=()=>{ if(!TS.on) showStepCard(); };
 // the current step's circle turns orange after 3 mistakes and red after a minute (checked live from the render loop)
