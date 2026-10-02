@@ -11,3 +11,8 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!setPop.hidden){ o
 setTray.onchange=()=>{ S.tray=setTray.checked; persist(); applySettings(); updateTray(); };
 setRgb.onchange=()=>{ S.rgb=setRgb.checked; persist(); applySettings(); };
 applySettings();
+// phones: the brightness slider and photo-theme picker move from the 3D view into this menu, to keep the view clear
+const brightLbls=[...document.querySelectorAll(".view-btns .bright")], phoneMq=matchMedia("(max-width: 860px)");
+function placeViewControls(){ const vb=document.querySelector(".view-btns"), glowB=document.getElementById("glowBtn");
+  brightLbls.forEach(l=>phoneMq.matches?setPop.appendChild(l):vb.insertBefore(l,glowB)); }
+(phoneMq.addEventListener?phoneMq.addEventListener("change",placeViewControls):phoneMq.addListener(placeViewControls)); placeViewControls();

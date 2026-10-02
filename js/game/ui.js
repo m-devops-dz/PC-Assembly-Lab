@@ -52,12 +52,19 @@ function renderSteps(){
   for(let i=0;i<STEPS;i++){
     const grp=STEP_GROUPS.find(([at])=>at===i); if(grp){ const g=document.createElement("li"); g.className="group"; g.textContent=t(grp[1]); ol.appendChild(g); }
     const li=document.createElement("li"); li.className=i<S.step?"done":i===S.step?"current":"todo"; li.innerHTML=`<span>${t("s_"+STEP_IDS[i])}</span>`; ol.appendChild(li);
-    if(i===S.step) ol.appendChild(box); }
+    if(i<S.step){ const m=stepMark(i); if(m) li.classList.add(m); li.title=t("stepStat",{t:fmtTime(stepTime(i)),m:S.stepMis[i]||0}); }
+    if(i===S.step){ renderSteps.cur=li; ol.appendChild(box); } }
+  if(S.step>=STEPS) renderSteps.cur=null; updateStepMark();
   const fin=S.step>=STEPS; if(fin) ol.appendChild(box);
   document.getElementById("expTitle").textContent=fin?t("doneTitle"):t("s_"+STEP_IDS[S.step]);
   document.getElementById("expText").textContent=fin?t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}):t("s_"+STEP_IDS[S.step]+"d");
-  if(window.innerWidth>860) box.scrollIntoView({block:"center"});
+  if(typeof TS==="undefined"||!TS.on) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
+  if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
 }
+// the current step's circle turns orange after 3 mistakes and red after a minute (checked live from the render loop)
+function updateStepMark(){ const li=renderSteps.cur, fs=document.getElementById("fsStep"), m=li&&li.isConnected?stepMark(S.step):"";
+  document.getElementById("fsMis").textContent=S.mistakes; if(S.start) document.getElementById("fsTime").textContent=fmtTime((S.end||performance.now())-S.start);
+  [li,fs].forEach(el=>{ if(!el) return; el.classList.toggle("warn",m==="warn"); el.classList.toggle("slow",m==="slow"); }); }
 function renderModules(){
   const lock='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 7V5a4 4 0 1 1 8 0v2h1v8H3V7zm2 0h4V5a2 2 0 1 0-4 0z"/></svg>', play='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6z"/></svg>', check='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8l3 3 7-7"/></svg>';
   document.getElementById("modules").innerHTML=MODULES.map(([k,from,to])=>{ const done=S.step>=to, act=S.step>=from&&!done;
@@ -87,7 +94,7 @@ function applyLang(){
   document.getElementById("brightLbl").textContent=t("bright");
   document.getElementById("modeBtn").textContent=t(appMode==="trouble"?"mode_build":"mode_trouble"); if(typeof TS!=="undefined") renderTS();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn(); renderFsBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };
@@ -95,6 +102,29 @@ document.getElementById("glowBtn").onclick=()=>{ S.glow=!S.glow; persist(); appl
 const brightIn=document.getElementById("bright"); brightIn.value=S.bright; renderer.toneMappingExposure=S.bright;
 brightIn.oninput=()=>{ S.bright=+brightIn.value; renderer.toneMappingExposure=S.bright; persist(); };
 document.getElementById("resetBtn").onclick=resetAll;
+/* full screen: header and sidebar go away so the 3D view fills the screen (a small bar keeps the step, mistakes and time;
+   its ☰ button opens the sidebar over the view). Uses the browser's Fullscreen API when there is one (not on iPhone). */
+const fsBtn=document.getElementById("fsBtn"), panelBtn=document.getElementById("panelBtn");
+const FS_ICON={on:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  off:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'};
+const isFs=()=>document.body.classList.contains("fs");
+function renderFsBtn(){ const on=isFs(); fsBtn.innerHTML=FS_ICON[on?"off":"on"]; fsBtn.title=t(on?"fsOff":"fsOn"); fsBtn.setAttribute("aria-label",fsBtn.title); fsBtn.setAttribute("aria-pressed",on);
+  panelBtn.title=t("fsPanel"); panelBtn.setAttribute("aria-label",panelBtn.title); }
+function setFs(on){
+  document.body.classList.toggle("fs",on); showFsPanel(false); renderFsBtn();
+  const d=document, el=d.documentElement, cur=d.fullscreenElement||d.webkitFullscreenElement;
+  try{ if(on&&!cur){ const r=el.requestFullscreen?el.requestFullscreen():el.webkitRequestFullscreen&&el.webkitRequestFullscreen(); if(r&&r.catch) r.catch(()=>{}); }
+    else if(!on&&cur){ const r=d.exitFullscreen?d.exitFullscreen():d.webkitExitFullscreen&&d.webkitExitFullscreen(); if(r&&r.catch) r.catch(()=>{}); } }catch(e){}
+}
+function showFsPanel(open){ document.body.classList.toggle("fs-open",open); panelBtn.setAttribute("aria-expanded",open);
+  if(open&&renderSteps.cur&&!TS.on) renderSteps.cur.scrollIntoView({block:"center"}); }
+fsBtn.onclick=()=>setFs(!isFs());
+panelBtn.onclick=e=>{ e.stopPropagation(); showFsPanel(!document.body.classList.contains("fs-open")); };
+// leaving the browser's full screen (Esc, back gesture) also leaves ours
+["fullscreenchange","webkitfullscreenchange"].forEach(ev=>document.addEventListener(ev,()=>{ if(!(document.fullscreenElement||document.webkitFullscreenElement)&&isFs()) setFs(false); }));
+window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&isFs()&&!document.fullscreenElement) setFs(false); });
+// a tap on the 3D view closes the sidebar overlay
+vp.addEventListener("pointerdown",e=>{ if(document.body.classList.contains("fs-open")&&e.target===renderer.domElement) showFsPanel(false); });
 document.getElementById("againBtn").onclick=()=>{ document.getElementById("done").classList.remove("show"); };
 document.getElementById("viewBtn").onclick=()=>focus(viewFor(S.step),700);
 document.getElementById("topBtn").onclick=()=>topView();

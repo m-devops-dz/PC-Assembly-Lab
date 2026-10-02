@@ -30,9 +30,12 @@ function drop(){
   } else if(type==="m2"){
     if(!sn){ toast(t("e_m2Above"),"err"); return; }
     if(mod(S.rot.m2,2)) return wrong("e_m2Turn",m2G,M2_HOVER,1.2);
-    S.busy=true; S.held=null; updateTools(); const p0=m2G.position.clone(), p1=V3(M2_SEAT.x,.75,M2Z);
-    tween(700,k=>{ m2G.position.lerpVectors(p0,p1,k); m2G.rotation.z=-.42*k; },()=>{
-      tween(700,k=>{ m2G.rotation.z=-.42*(1-k); m2G.position.y=.75-.3*k; },()=>{ S.busy=false; toast(t("ok_m2"),"ok"); setStep(ST.m2Screw); }); });
+    // like a real M.2 card: line up at about 25°, slide the gold fingers into the socket along the card, then press the far end down
+    S.busy=true; S.held=null; updateTools(); const A=-.42, ax=V3(Math.cos(A),Math.sin(A),0), seat=V3(M2_SEAT.x,M2_SEAT.y,M2Z);
+    const p0=m2G.position.clone(), pre=seat.clone().addScaledVector(ax,-1.4), r0=m2G.rotation.z;
+    tween(700,k=>{ m2G.position.lerpVectors(p0,pre,k); m2G.rotation.z=r0+(A-r0)*k; },()=>{
+      tween(600,k=>{ m2G.position.lerpVectors(pre,seat,k); },()=>{
+        tween(700,k=>{ m2G.rotation.z=A*(1-k); },()=>{ S.busy=false; toast(t("ok_m2"),"ok"); setStep(ST.m2Screw); },easeOut); }); });
   } else if(type==="psu"){
     if(!sn){ toast(t("e_psuAbove"),"err"); return; }
     if(mod(S.rot.psu,4)!==0) return wrong("e_psuTurn",psuG,PSU_HOVER,17);

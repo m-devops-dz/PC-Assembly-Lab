@@ -89,6 +89,6 @@ PSU_HOLES.forEach(([dy,dz])=>{ const y=7.9+dy, z=L.z+18.2+dz;
   const ring=mesh(new T.RingGeometry(.24,.42,24),psuHoleMat,[CX0+.82,y,z],caseG,{cast:false}); ring.rotation.y=Math.PI/2;
   const d=mesh(new T.CircleGeometry(.24,20),holeDark,[CX0+.815,y,z],caseG,{cast:false}); d.rotation.y=Math.PI/2; });
 const psuScrews=PSU_HOLES.map(([dy,dz])=>{ const g=new T.Group(); g.position.set(CX0-1.4,7.9+dy,L.z+18.2+dz); g.visible=false; caseG.add(g);
-  const h=mesh(new T.CylinderGeometry(.34,.34,.18,20),screwMetal,[0,0,0],g); h.rotation.z=Math.PI/2;
-  const s=mesh(new T.CylinderGeometry(.14,.14,.9,10),screwMetal,[.5,0,0],g); s.rotation.z=Math.PI/2; return g; });
+  const a=new T.Group(); a.position.x=.1; a.rotation.z=Math.PI/2; g.add(a);   // #6-32 Phillips pan head: head outside (−x), thread into the PSU
+  panScrew(a,.36,.14,.15,.85); return g; });
 const psuMark=mesh(box(14.2,.02,8.8),new T.MeshBasicMaterial({color:0xffc400,transparent:true,opacity:.0,depthWrite:false}),[-8.8,.42,L.z+18.2],caseG,{cast:false});

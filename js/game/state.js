@@ -16,6 +16,7 @@ let appMode=saved.mode==="trouble"?"trouble":"build";                  // "troub
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
   tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights
+  stepMis:{}, stepMs:{},                                  // mistakes and time spent, per step (sidebar marks: orange > 2 mistakes, red > 60 s)
   used:{}, tightOrder:[], fanOn:false, caseFanOn:false, powered:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
 const nearPt=(x,z,px,pz,r)=>Math.hypot(x-px,z-pz)<r;
@@ -29,7 +30,8 @@ function viewFor(n){
   if(n===ST.fanCable) return "fan";
   if(n===ST.cooler) return "coolerTop";
   if(n===ST.coolerScrews) return "coolerDrop";
-  if(n===ST.m2Out||n===ST.m2Screw) return "m2Screw";
+  if(n===ST.m2Out) return "m2Screw";
+  if(n===ST.m2Screw) return "m2Table";
   if(n<=ST.m2Screw) return "m2";
   if(n===ST.battery) return "battery";
   if(n===ST.psu) return "psu";
@@ -54,7 +56,7 @@ function viewFor(n){
   return "rearIO";
 }
 function setStep(n){
-  const prev=viewFor(S.step); S.step=n; S.stepAt=performance.now();
+  const prev=viewFor(S.step), now=performance.now(); if(n>S.step) S.stepMs[S.step]=stepTime(S.step,now); S.step=n; S.stepAt=now;
   if(viewFor(n)!==prev){ const v=nextConnView(n);                  // SATA cable steps: close-up framing instead of a fixed view
     if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
   if(n===ST.fanCable) spawnCable(CABLES.fan);
@@ -69,7 +71,10 @@ function setStep(n){
   renderSteps(); renderModules(); updateTools(); updateTray();
   if(n===STEPS) finish();
 }
-function mistake(){ S.mistakes++; document.getElementById("mistakes").textContent=S.mistakes; }
+function mistake(){ S.mistakes++; S.stepMis[S.step]=(S.stepMis[S.step]||0)+1; document.getElementById("mistakes").textContent=S.mistakes; updateStepMark(); }
+// time on a step: the current one counts from when it started (or the clock started), finished ones are stored
+function stepTime(i,now=performance.now()){ return i===S.step?(S.start?Math.max(0,now-Math.max(S.stepAt,S.start)):0):S.stepMs[i]||0; }
+function stepMark(i){ return stepTime(i)>60000?"slow":(S.stepMis[i]||0)>2?"warn":""; }
 function startClock(){ if(!S.start) S.start=performance.now(); }
 const canManipulate=()=>!!S.held&&!S.busy&&!dragging;
 

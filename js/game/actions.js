@@ -31,10 +31,18 @@ function clickScrew(i){
 }
 function clickM2Screw(){
   if(S.busy) return;
-  if(S.step===ST.m2Out){ S.busy=true; const p0=m2Screw.position.clone();
-    tween(900,k=>{ m2Screw.position.lerpVectors(p0,M2_PARK,k); m2Screw.position.y+=Math.sin(k*Math.PI)*1.5; m2Screw.rotation.y=k*12; },()=>{ S.busy=false; S.m2screw="parked"; toast(t("ok_m2out"),"ok"); setStep(ST.m2In); }); }
-  else if(S.step===ST.m2Screw){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,M2_SCREW_Y.fastened,M2Z);
-    tween(900,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*1.5; m2Screw.rotation.y=-k*12; },()=>{ S.busy=false; S.m2screw="fastened"; toast(t("ok_m2screw"),"ok"); setStep(ST.battery); }); }
+  // out: unscrewed straight up, then it flies over to the parts mat and lies down there
+  if(S.step===ST.m2Out){ S.busy=true; const y0=m2Screw.position.y;
+    tween(700,k=>{ m2Screw.position.y=y0+k*1.2; m2Screw.rotation.y=k*12; },()=>{
+      const p0=m2Screw.position.clone(), p1=m2Park(); focus("m2Table",1100);
+      tween(1100,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*4; m2Screw.rotation.z=k*Math.PI/2; },
+        ()=>{ S.busy=false; S.m2screw="parked"; toast(t("ok_m2out"),"ok"); setStep(ST.m2In); },easeOut); }); }
+  // back in: picked up from the mat, stood upright over the standoff, then screwed down onto the SSD
+  else if(S.step===ST.m2Screw){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,M2_SCREW_Y.fastened+1.2,M2Z);
+    focus("m2Screw",1100);
+    tween(1100,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*4; m2Screw.rotation.z=Math.PI/2*(1-k); },()=>{
+      tween(700,k=>{ m2Screw.position.y=M2_SCREW_Y.fastened+1.2*(1-k); m2Screw.rotation.y=-k*12; },
+        ()=>{ S.busy=false; S.m2screw="fastened"; toast(t("ok_m2screw"),"ok"); setStep(ST.battery); }); },easeOut); }
   else toast(t("e_notNow"));
 }
 function rotate(dir){
@@ -58,10 +66,10 @@ const wrong=(key,obj,hover,low)=>{ mistake(); toast(t(key),"err"); refuse(obj,ho
 // one click drives all 9 screws, one after another (clicking any glowing hole does the same as taking them from the tray)
 function clickBoardScrew(){ takeScrews(); }
 function screwAllBoard(){
-  S.busy=true; const gap=220, n=BOARD_HOLES.length;
+  S.busy=true; const gap=440, n=BOARD_HOLES.length;
   boardScrews.forEach((m,i)=>setTimeout(()=>{ mbHoleHints[i].visible=false; m.visible=true; m.position.y=1.2;
-    tween(420,k=>{ m.position.y=1.2-(1.2-MB_SCREW_Y)*k; m.rotation.y=k*Math.PI*6; },()=>{ S.mbScrews=i+1; }); },i*gap));
-  setTimeout(()=>{ S.busy=false; mbScrewHints.visible=false; toast(t("ok_boardScrews"),"ok"); setStep(ST.pcieLatch); },(n-1)*gap+520);
+    tween(840,k=>{ m.position.y=1.2-(1.2-MB_SCREW_Y)*k; m.rotation.y=k*Math.PI*6; },()=>{ S.mbScrews=i+1; }); },i*gap));
+  setTimeout(()=>{ S.busy=false; mbScrewHints.visible=false; toast(t("ok_boardScrews"),"ok"); setStep(ST.pcieLatch); },(n-1)*gap+1040);
 }
 // antennas: each one comes in along its jack's axis, turning (screwed on), then swings up
 function fitAntennas(){

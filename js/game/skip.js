@@ -30,9 +30,9 @@ const finishStep={
   coolerScrews:()=>coolerScrews.forEach((s,i)=>{ if(!s.tight){ s.tight=true; S.tightOrder.push(i); coolerScrewDepth(s,1); } }),
   fanCable:()=>{ const c=CABLES.fan, h=HEADERS.find(x=>x.ok); fanLead.visible=false; c.plug.visible=true;
     c.plug.position.set(h.x,.3,h.z); c.plug.rotation.y=h.rot; c.state="seated"; drawCable(c); S.fanOn=true; },
-  m2Out:()=>{ m2Screw.position.copy(M2_PARK); S.m2screw="parked"; },
+  m2Out:()=>{ m2Screw.position.copy(m2Park()); m2Screw.rotation.set(0,0,Math.PI/2); S.m2screw="parked"; },
   m2In:()=>{ S.used.m2=true; S.rot.m2=0; m2G.visible=true; m2G.position.set(M2_SEAT.x,.45,M2Z); m2G.rotation.set(0,0,0); },
-  m2Screw:()=>{ m2Screw.position.set(M2_SCREW.x,M2_SCREW_Y.fastened,M2Z); m2Screw.rotation.y=0; S.m2screw="fastened"; },
+  m2Screw:()=>{ m2Screw.position.set(M2_SCREW.x,M2_SCREW_Y.fastened,M2Z); m2Screw.rotation.set(0,0,0); S.m2screw="fastened"; },
   battery:()=>{ S.used.battery=true; S.batFlip=0; batFlip.rotation.z=0; batG.visible=true; batG.rotation.y=0; batG.position.set(BAT_POS.x,BAT_SEAT,BAT_POS.z); },
   psu:()=>{ S.used.psu=true; S.rot.psu=0; psuG.visible=true; psuG.position.copy(PSU_POS); psuG.rotation.y=0; psuScrews.forEach(g=>{ g.visible=true; g.position.x=CX0-.1; }); },
   board:()=>{ boardRoot.position.copy(L); boardRoot.rotation.set(0,0,0); S.rot.board=0; },

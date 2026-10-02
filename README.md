@@ -52,6 +52,26 @@ cd PC-Assembly-Lab
 
 three.js r147 loads from a CDN, so the first load needs an internet connection.
 
+## Tuning a camera view from the browser console
+
+Each step's camera is an entry in `VIEWS` in [js/core/scene.js](js/core/scene.js): `pos` is where the camera sits, `tgt` is the point it looks at (both `[x, y, z]`). The scripts are classic, not modules, so `VIEWS`, `camera`, `controls`, `view` and `focus()` can all be used straight from the DevTools console (F12):
+
+```js
+view                                   // name of the current view, e.g. "cpu"
+
+// 1. Orbit / zoom with the mouse until it looks right, then copy the values to the clipboard:
+const r = v => +v.toFixed(1);
+copy(`${view}:{pos:[${camera.position.toArray().map(r)}],tgt:[${controls.target.toArray().map(r)}]},`);
+// copy() is a DevTools console helper (Chrome, Edge, Firefox); it doesn't exist in page scripts
+
+// 2. Or set the numbers and fly there:
+VIEWS.ram.pos = [6.8, 28, -2];
+VIEWS.ram.tgt = [6.8, 0.5, -4.3];
+focus("ram");                          // glides the camera to VIEWS.ram
+```
+
+Changes made in the console are lost on reload. Paste the copied line into `VIEWS` in `scene.js` to keep it. Which view a step uses is decided by `viewFor()` in [js/game/state.js](js/game/state.js).
+
 ## How it's built
 
 - Plain HTML, CSS and JavaScript with [three.js](https://threejs.org/) r147. There's no framework and no bundler.

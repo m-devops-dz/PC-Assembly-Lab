@@ -38,7 +38,7 @@ function schukoPlug(i){
 const STRIP_PC=3, STRIP_MON=2;
 const pcPlugOut=schukoPlug(STRIP_PC), monPlugOut=schukoPlug(STRIP_MON);
 // the PC's power cord now starts at the strip
-Object.assign(CONN.ac,{anchor:()=>pcPlugOut.clone(), anchorDir:()=>V3(0,0,-1)});
+Object.assign(CONN.ac,{anchor:()=>pcPlugOut.clone(), anchorDir:()=>V3(0,0,-1), via:coil(2.2,4)});   // plenty of slack on the desk
 // strip cord: off the −x end, along the desk and over its edge to the wall
 (function cord(){ stripG.updateMatrixWorld(true); const e=stripG.localToWorld(V3(-STRIP_L/2-1.8,1.6,0));
   const pts=[e,e.clone().add(V3(-3,0,0)),V3(-60,.3,-15.5),V3(-70,.3,-13),V3(-77.2,.3,-12.5),V3(-79,-1.2,-12.4),V3(-79.6,-8,-12.3),V3(-79.8,-40,-12.3)];

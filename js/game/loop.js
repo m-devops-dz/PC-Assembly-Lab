@@ -79,8 +79,8 @@ function frame(now){
   if(S.powered&&S.fanOn) fanRot.rotation.y-=dt*14;
   if(S.powered&&S.caseFanOn) rearBlades.rotation.x-=dt*10;
   if(S.powered) gpuFans.forEach(r=>r.rotation.z-=dt*9);
-  if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); }
-  updateHints(now); updateTable(now); updateCaseRgb(now,dt); updateDeskRgb(dt);
+  if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); updateStepMark(); }
+  updateHints(now); updateTable(now); tsFrame(now); updateCaseRgb(now,dt); updateDeskRgb(dt); updateMouseLed();
   controls.update(); renderer.render(scene,camera);
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);

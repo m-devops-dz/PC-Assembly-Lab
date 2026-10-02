@@ -5,7 +5,7 @@ const isDesc=(o,root)=>{ while(o){ if(o===root) return true; o=o.parent; } retur
 const plane=new T.Plane(V3(0,1,0),0), dragOff=V3(0,0,0), hitP=V3(0,0,0);
 let dragging=false, downXY=null, moved=false;
 function setNDC(e){ const r=renderer.domElement.getBoundingClientRect(); ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1); ray.setFromCamera(ndc,camera); }
-// (in troubleshooting mode the case is closed: clicks go through the glass side panel)
+// (troubleshooting mode hides the side panel; the check below is a safety net)
 function pick(e){ setNDC(e); const hits=ray.intersectObjects(scene.children,true);
   // choosing a port: plugs already seated next to it (USB above the board's HDMI) must not swallow the click
   if(S.connPick){ const h=hits.find(h=>(h.object.userData.part==="rport"||h.object.userData.part==="sport")&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }

@@ -9,7 +9,7 @@ const psuBack=new T.MeshStandardMaterial({map:canvasTex(512,512,(g,W,H)=>{ g.fil
   for(let y=20;y<H-20;y+=22) for(let x=(y/22%2)*11+20;x<W*.62;x+=22){ g.beginPath(); g.arc(x,y,8,0,7); g.fill(); }
   g.fillStyle="#2b2d31"; g.fillRect(W*.7,H*.25,W*.22,H*.24); g.fillStyle="#050506"; g.fillRect(W*.73,H*.29,W*.16,H*.16); }),metalness:.4,roughness:.5});   // the I/O switch is a 3D rocker (PSU_SWITCH, below)
 const psuLabel=new T.MeshStandardMaterial({map:canvasTex(512,512,(g,W,H)=>{ g.fillStyle="#151619"; g.fillRect(0,0,W,H); g.fillStyle="#e9eaec"; roundRect(g,W*.1,H*.2,W*.8,H*.6,10); g.fill();
-  g.fillStyle="#1b1d22"; g.font="700 64px 'Barlow Semi Condensed', Arial"; g.fillText("550 W",W*.18,H*.42); g.font="500 28px Barlow, Arial"; g.fillText("ATX12V  80 PLUS BRONZE",W*.18,H*.55); g.fillText("AC 220-240V  50/60Hz",W*.18,H*.65); }),roughness:.5});
+  g.fillStyle="#1b1d22"; g.font="700 64px 'Barlow Semi Condensed', Arial"; g.fillText("650 W",W*.18,H*.42); g.font="500 28px Barlow, Arial"; g.fillText("ATX12V  80 PLUS GOLD",W*.18,H*.55); g.fillText("AC 220-240V  50/60Hz",W*.18,H*.65); }),roughness:.5});
 // box faces: +x, -x, +y, -y, +z, -z  →  front(cables), back(socket), label, -, fan (case bottom), -
 const psuBody=mesh(box(14,15,8.6),[psuBlack,psuBack,psuLabel,psuBlack,psuFan,psuBlack],[0,0,0],psuG); psuBody.userData.part="psu";
 mesh(new T.CylinderGeometry(.9,.9,.4,16),psuBlack,[7.1,3,-2],psuG).rotation.z=Math.PI/2;

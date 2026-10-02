@@ -56,7 +56,7 @@ const TS_CHECKS={
       tween(900,k=>{ P.outer.position.lerpVectors(p0,s.p,k); P.outer.position.y+=Math.sin(k*Math.PI)*2; P.outer.quaternion.slerpQuaternions(q0,s.q,k); drawConn(CONN.cpu8); },done); }},
   cmos:{at:()=>boardRoot.localToWorld(V3(BAT_POS.x,.5,BAT_POS.z)),off:V3(4,10,7),hit:d=>d.part==="battery",
     fault:()=>{}, reading:()=>t("ts_volts",{v:TS.fault==="cmos"&&!TS.fixed?"1.9":"3.0"}),               // a dead battery looks fine: measure it
-    fix:done=>{ const y0=batG.position.y; tween(450,k=>{ batG.position.y=y0+k*2.5; },()=>tween(450,k=>{ batG.position.y=y0+2.5*(1-k); },done)); }},
+    fix:done=>tsSwapBattery(done)},
   sataPower:{at:()=>portWorld(ssdPower).p,off:V3(-6,10,5),hit:d=>d.part==="conn"&&d.conn==="power",
     fault:()=>plugOut(CONN.power,CONN.power.a,ssdPower,1.4), fix:done=>plugSlide(CONN.power,CONN.power.a,ssdPower,1.4,0,done)},
   sataData:{at:()=>portWorld(ssdData).p,off:V3(-6,10,5),hit:d=>d.part==="conn"&&d.conn==="data",
@@ -72,6 +72,39 @@ const TS_CHECKS={
   frontUsbCable:{at:()=>cableAt(CABLES.fusb),off:V3(8,10,6),hit:d=>d.part==="cable"&&d.cable==="fusb",
     fault:()=>cableOff(CABLES.fusb,V3(1.4,1.6,-1.2),.35), fix:done=>cableOn(CABLES.fusb,done)}
 };
+/* CMOS case: a battery-level badge floats over the coin cell. Low (red) while it's being checked or fixed; the fix takes
+   the old cell out to the parts mat (it keeps its low badge) and a new one rises from the mat with a full badge and goes in. */
+function batBadge(full){ const tex=canvasTex(320,128,(g,W,H)=>{ g.fillStyle="rgba(14,20,26,.88)"; roundRect(g,4,4,W-8,H-8,26); g.fill();
+    const c=full?"#34c759":"#ff3b30"; g.strokeStyle=c; g.lineWidth=5; roundRect(g,4,4,W-8,H-8,26); g.stroke();
+    g.strokeStyle="#f1f3f5"; g.lineWidth=8; roundRect(g,26,30,140,68,10); g.stroke(); g.fillStyle="#f1f3f5"; g.fillRect(166,50,12,28);   // cell outline + nub
+    g.fillStyle=c; for(let i=0;i<(full?4:1);i++) g.fillRect(38+i*32,42,26,44);
+    g.font="700 46px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(full?"3.0V":"1.9V",246,66); });
+  const sp=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true,toneMapped:false,sizeAttenuation:false}));   // same size on screen, near or far
+  sp.scale.set(.15,.06,1); sp.center.set(.5,0); sp.position.y=1.2; sp.renderOrder=14; sp.raycast=()=>{}; sp.visible=false; batG.add(sp); return sp; }
+const batLow=batBadge(false), batFull=batBadge(true);
+const BAT_OLD_AT=V3(30,DESK.y+.17,6), BAT_NEW_AT=V3(34.5,DESK.y+.17,6);   // spots on the parts mat
+function tsSwapBattery(done){
+  const cam=TS_CHECKS.cmos, look=()=>{ const p=cam.at(); focusPoint(p.clone().add(cam.off),p,1300); };
+  boardRoot.updateMatrixWorld(true); TS.swap=true;
+  const old=batG.clone(true); old.traverse(o=>{ o.raycast=()=>{}; }); batG.getWorldPosition(old.position); scene.add(old);   // the old cell, still wearing its low badge
+  old.children.forEach(o=>{ if(o.isSprite) o.visible=o.material===batLow.material; });
+  batG.visible=false;
+  const s0=old.position.clone();
+  tween(500,k=>{ old.position.y=s0.y+k*2.5; },()=>{                                         // out of the holder
+    const a=old.position.clone(); focus("table",1300);
+    tween(1300,k=>{ old.position.lerpVectors(a,BAT_OLD_AT,k); old.position.y+=Math.sin(k*Math.PI)*8; },()=>{   // over to the mat
+      const lp=boardRoot.worldToLocal(BAT_NEW_AT.clone()); batG.position.copy(lp); batG.visible=true; batFull.visible=true;
+      tween(600,k=>{ batG.position.y=lp.y+k*3; },()=>{                                     // the new cell rises, full badge on
+        const b=batG.position.clone(), top=V3(BAT_POS.x,BAT_SEAT+2.5,BAT_POS.z); setTimeout(look,250);
+        tween(1300,k=>{ batG.position.lerpVectors(b,top,k); batG.position.y+=Math.sin(k*Math.PI)*8; },()=>{
+          tween(450,k=>{ batG.position.y=top.y+(BAT_SEAT-top.y)*k; },()=>{ old.children.forEach(o=>{ if(o.isSprite) o.visible=false; }); TS.swap=false;
+            setTimeout(done,1200); setTimeout(()=>{ batFull.visible=false; },3400); },easeOut); },easeOut); },easeOut); },easeOut); },easeOut);
+}
+// every frame (loop.js): the low badge shows over the dead cell while it's being checked or replaced
+function tsFrame(now){
+  batLow.visible=TS.on&&TS.fault==="cmos"&&!TS.fixed&&!TS.swap&&(TS.cur==="cmos"||TS.phase==="fix");
+  const bob=Math.sin(now/320)*.15; batLow.position.y=batFull.position.y=1.2+bob;
+}
 // the BIOS screen for the PC as it is now (fault still there or fixed); the USB stick is always in the front port
 const biosCache={};
 function tsBios(){ const f=TS.fixed?"":TS.fault;
@@ -82,6 +115,7 @@ const shuffle=a=>{ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random
 function tsBuildAll(){
   while(S.step<ST.powerOn){ const id=STEP_IDS[S.step]; finishStep[id](); S.held=id==="takeCpu"?"cpu":null; S.snap=null; S.cable=null; S.job=null; setStep(S.step+1); }
   tweens.length=0; caseG.position.y=0;                                     // drop the queued camera moves and the case's drop-in
+  sideG.visible=false; panelScrews.forEach(g=>g.visible=false);            // side panel stays off for the whole case, so every part is in plain view
   const v=VIEWS.tsFront; camera.position.set(...v.pos); controls.target.set(...v.tgt); controls.update();
 }
 function tsStart(){ document.body.classList.add("ts-mode"); tsBuildAll(); usbStick.visible=true;
@@ -105,7 +139,7 @@ function tsPower(){
     powerUp(); const v=screenView(); focusPoint(v.pos,v.tgt,1200); showScreen(screenOff);
     if(bad&&TS.sym==="noDisplay"){                                          // fans spin, but the screen stays on "No signal"
       setTimeout(()=>{ focus("fansOn",1400); toast(t("ts_fansNoPic"),"err"); },3000); setTimeout(tsPowerOff,8000); return; }
-    const fans=TS.sym==="cpuFan"||TS.sym==="caseFan";                     // then look through the glass at the fans
+    const fans=TS.sym==="cpuFan"||TS.sym==="caseFan";                     // then look in at the fans
     setTimeout(()=>showScreen(screenOn),1800);
     setTimeout(()=>{ showScreen(tsBios()); if(bad) toast(t(TS_SEE[TS.sym]),"err"); },3400);
     if(fans) setTimeout(()=>{ focus("fansOn",1400); toast(t(bad?"ts_seeFans":"ts_fansOk"),bad?"err":"ok"); },7500);
@@ -173,6 +207,7 @@ function renderTS(){
     }
     h+=`<button class="chip-btn ts-back" data-act="list">${t("ts_list")}</button>`;
   }
+  document.getElementById("fsStep").textContent=TS.phase==="pick"?t("ts_title"):TS.phase==="solved"?t("ts_solved"):t({power:"ts_pressPower",check:"ts_pickCheck",fix:"ts_fixIt",retry:"ts_retry"}[TS.phase]);
   el.innerHTML=h; el.parentElement.scrollTop=0;                          // the panel is at the top of the sidebar
   el.querySelectorAll("[data-case]").forEach(b=>b.onclick=()=>tsPick(b.dataset.case==="random"?"random":+b.dataset.case));
   el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>tsGo(+b.dataset.go));

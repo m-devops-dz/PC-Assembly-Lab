@@ -64,32 +64,85 @@ let kbLegendMat=null; const kbLeds=[];
   [0,1.3,2.6].forEach(o=>{ const m=new T.MeshBasicMaterial({color:0x13201a}); kbLeds.push(m); mesh(ledGeo,m,[lx+.25,KB_PLATE-.12+capH+.008,lz+o],kbG,{cast:false}); });
   const sr=mesh(new T.CylinderGeometry(.28,.36,.9,14),periBlack,[KB_D/2+.3,.55,13],kbG); sr.rotation.z=Math.PI/2;   // cable strain relief at the back
 })();
-/* mouse: sculpted right-handed shell (hump toward the palm, narrower nose), split buttons, scroll wheel, 2 thumb buttons */
+/* mouse: Razer Viper V4 Pro style, 12.7 × 6.1 × 3.85 cm. White shell built from its top-view outline (squared nose,
+   near-parallel sides, wide palm, round tail) and a side profile, with steep rounded walls. Black diamond grip tape on both
+   buttons and both sides, white wheel housing with a black ribbed wheel, 2 white thumb buttons, grey snake mark on the palm.
+   The green status LED in front of the wheel lights once the PC is on (updateMouseLed, loop.js). */
 const mouseG=new T.Group(); mouseG.position.copy(MOUSE_POS); mouseG.rotation.y=MOUSE_YAW; periG.add(mouseG);
+let mouseLedMat=null;
 (function mouse(){
-  // unit-sphere point → shell point. x is the long axis (nose at +x), flat bottom at y 0.
-  const shape=(x,y,z)=>{ const top=3.55-.8*(x+.3)*(x+.3), wide=(3.15-.28*x)*(1-.07*Math.exp(-(((x+.05)/.35)**2)));
-    return V3(x*6.1,(y>0?y*top:Math.max(y*.55,-.32))+.32,z*wide); };
-  const surf=(x,z)=>shape(x,Math.sqrt(Math.max(0,1-x*x-z*z)),z);
-  const geo=new T.SphereGeometry(1,72,44), p=geo.attributes.position;
-  for(let i=0;i<p.count;i++){ const v=shape(p.getX(i),p.getY(i),p.getZ(i)); p.setXYZ(i,v.x,v.y,v.z); }
-  geo.computeVertexNormals();
-  const shell=new T.MeshStandardMaterial({color:0x141518,roughness:.38,metalness:.05}), seam=new T.MeshStandardMaterial({color:0x040405,roughness:.9});
-  mesh(geo,shell,[0,0,0],mouseG);
-  const groove=(pts)=>mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),40,.045,6,false),seam,null,mouseG,{cast:false});
-  const line=(n,f)=>Array.from({length:n+1},(_,i)=>f(i/n));
-  groove(line(12,k=>surf(.985-.3*k,0))); groove(line(12,k=>surf(.37-.34*k,0)));                  // left/right button split, broken by the wheel
-  groove(line(24,k=>{ const z=-.82+1.64*k; return surf(.03+.12*z*z,z); }));                     // back edge of the buttons
-  // scroll wheel in its slot: ribbed rubber tyre
-  const w=surf(.52,0), rib=canvasTex(256,32,(g,W,H)=>{ g.fillStyle="#26282c"; g.fillRect(0,0,W,H); g.fillStyle="#0c0c0e"; for(let x=0;x<W;x+=8) g.fillRect(x,0,4,H); });
+  // x along the length (nose +x), z across, cm. halfW: top-view half width; topH: height along the centre line.
+  const XN=6.35, XT=-6.35, B=.35;
+  const halfW=x=>{ if(x>=XN||x<=XT) return 0; let w=3.03-.009*(x+2)*(x+2);
+    if(x>5) w*=Math.pow(1-((x-5)/(XN-5))**3,1/3);                                   // squared nose, rounded corners
+    if(x<-4.3) w*=Math.pow(1-((-4.3-x)/(-4.3-XT))**2.2,1/2.2);                      // round tail
+    return w; };
+  const topH=x=>3.85-(x>-1?.028:.016)*(x+1)*(x+1);                               // hump just behind the middle, full tail
+  const edge=r=>r>=1?0:Math.pow(1-Math.pow(r,2.6),1/2.4);                            // 1 on top → 0 at the rim, vertical wall at r 1
+  // outline radius from the origin in direction a (bisection: is the point inside the outline?)
+  const rad=a=>{ const c=Math.cos(a), s=Math.abs(Math.sin(a)); let lo=0, hi=7;
+    for(let i=0;i<30;i++){ const m=(lo+hi)/2; (m*s<halfW(m*c))?lo=m:hi=m; } return lo; };
+  const hAt=(x,r)=>B+(topH(x)-B)*edge(r);
+  const heightAt=(x,z)=>hAt(x,Math.hypot(x,z)/rad(Math.atan2(z,x)));
+  // shell: rings r 0 → 1 (packed toward the rim where the wall bends), then a skirt down to the desk. Seam at the tail.
+  const NR=40, NT=180, pos=[], uv=[], idx=[], rs=[];
+  for(let i=0;i<=NR;i++) rs.push(1-Math.pow(1-i/NR,2.2));
+  const RA=[]; for(let j=0;j<=NT;j++) RA.push(rad(Math.PI+2*Math.PI*j/NT));
+  rs.concat([1]).forEach((r,i)=>{ for(let j=0;j<=NT;j++){ const a=Math.PI+2*Math.PI*j/NT, x=r*RA[j]*Math.cos(a), z=r*RA[j]*Math.sin(a);
+    pos.push(x,i>NR?0:hAt(x,r),z); uv.push(j/NT,r); } });
+  for(let i=0;i<=NR;i++) for(let j=0;j<NT;j++){ const k=i*(NT+1)+j, n=k+NT+1; idx.push(k,k+1,n,k+1,n+1,n); }
+  const geo=new T.BufferGeometry(); geo.setAttribute("position",new T.Float32BufferAttribute(pos,3)); geo.setAttribute("uv",new T.Float32BufferAttribute(uv,2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  { const nm=geo.attributes.normal;                                                  // weld the normals across the seam and at the centre
+    for(let i=0;i<=NR+1;i++){ const k=i*(NT+1), m=k+NT, v=V3(nm.getX(k)+nm.getX(m),nm.getY(k)+nm.getY(m),nm.getZ(k)+nm.getZ(m)).normalize(); nm.setXYZ(k,v.x,v.y,v.z); nm.setXYZ(m,v.x,v.y,v.z); }
+    for(let j=0;j<=NT;j++) nm.setXYZ(j,0,1,0); }
+  // skin, painted in (angle, r) space: each texel is turned back into x, z, height to decide pad / grip / white
+  // also a roughness map, so the grip tape is matte and the white plastic has a soft sheen
+  let rough=null;
+  const skin=canvasTex(2048,1536,(g,W,H)=>{ const cw=g.canvas.width, ch=g.canvas.height, img=g.createImageData(cw,ch), px=img.data;
+    const rc=document.createElement("canvas"); rc.width=cw; rc.height=ch; const rg=rc.getContext("2d"), rimg=rg.createImageData(cw,ch), rp=rimg.data;
+    const cols=[]; for(let c=0;c<cw;c++){ const a=Math.PI+2*Math.PI*(c+.5)/cw; cols.push([Math.cos(a),Math.sin(a),rad(a)]); }
+    const dia=(p,q,P)=>{ const f1=((p+q)/P%1+1)%1, f2=((p-q)/P%1+1)%1; return (f1<.16||f2<.16)?[34,36,40]:[12,13,15]; };
+    const RR=.35, XB=.48;                                                                  // pad corner radius, pad back edge
+    for(let row=0;row<ch;row++){ const r=1-(row+.5)/ch;
+      for(let c=0;c<cw;c++){ const [ca,sa,R0]=cols[c], x=r*R0*ca, z=r*R0*sa, az=Math.abs(z), y=hAt(x,r);
+        let v=[236,237,239];
+        // button pads: inner edge at the wheel housing (wide) then the button split (thin); outer edge just inside the outline
+        const zin=x>2.7?.43:x>2.2?.07+.36*(x-2.2)/.5:.07, zout=halfW(x)-.2;
+        const qx=Math.max(XB+RR-x,0), qz=Math.max(zin+RR-az,0,az-(zout-RR));
+        if(r<.93&&x>XB&&az>zin&&az<zout&&Math.hypot(qx,qz)<RR&&halfW(x+.2)>az) v=dia(x,z,.22);
+        // side grips: lower wall, rounded ends
+        else if(r>.8&&y>.6&&y<.6+1.6*Math.sqrt(Math.max(0,1-((x+2)/3.4)**6))) v=dia(x,y,.22);
+        const i=(row*cw+c)*4, ro=v[0]<60?240:120; px[i]=v[0]; px[i+1]=v[1]; px[i+2]=v[2]; px[i+3]=255; rp[i]=rp[i+1]=rp[i+2]=ro; rp[i+3]=255; } }
+    g.putImageData(img,0,0); rg.putImageData(rimg,0,0); rough=new T.CanvasTexture(rc); });
+  mesh(geo,new T.MeshStandardMaterial({map:skin,roughnessMap:rough,roughness:1,metalness:0}),[0,0,0],mouseG);
+  // snake mark: a small decal laid on the palm (u → +z, v → nose, so it reads from the typist's seat)
+  const LX=-3.6, LS=2.0, logo=canvasTex(256,256,(g,W,H)=>{ g.translate(W/2,H/2); g.scale(2.4,2.4); g.strokeStyle="#7c7f86"; g.fillStyle="#7c7f86"; g.lineWidth=2.4; g.lineCap="round";
+    for(let k=0;k<3;k++){ g.save(); g.rotate(k*Math.PI*2/3); g.beginPath(); g.moveTo(0,-6); g.bezierCurveTo(16,-14,4,-30,20,-40); g.bezierCurveTo(28,-45,34,-38,30,-32); g.stroke();
+      g.beginPath(); g.arc(30,-32,3.4,0,Math.PI*2); g.fill(); g.restore(); }
+    g.beginPath(); g.arc(0,0,7,0,Math.PI*2); g.stroke(); });
+  const lg=new T.PlaneGeometry(LS,LS,10,10), lp=lg.attributes.position;
+  for(let i=0;i<lp.count;i++){ const z=lp.getX(i), x=LX+lp.getY(i); lp.setXYZ(i,x,heightAt(x,z)+.015,z); }
+  lg.computeVertexNormals();
+  mesh(lg,new T.MeshStandardMaterial({map:logo,transparent:true,depthWrite:false,roughness:.5,polygonOffset:true,polygonOffsetFactor:-2}),null,mouseG,{cast:false});
+  // scroll wheel in its slot in the housing: black ribbed tyre
+  const WX=2.9, wy=heightAt(WX,0), slope=Math.atan2(heightAt(WX+.3,0)-heightAt(WX-.3,0),.6);
+  const slot=new T.MeshStandardMaterial({color:0x060607,roughness:.9}),
+    rib=canvasTex(256,32,(g,W,H)=>{ g.fillStyle="#1d1e21"; g.fillRect(0,0,W,H); g.fillStyle="#060607"; for(let x=0;x<W;x+=8) g.fillRect(x,0,4,H); });
   rib.wrapS=T.RepeatWrapping; rib.repeat.set(3,1);
-  mesh(box(1.6,.3,.72),seam,[w.x,w.y-.1,0],mouseG,{cast:false}).rotation.z=-.15;
-  const wheel=mesh(new T.CylinderGeometry(.52,.52,.42,28),[new T.MeshStandardMaterial({map:rib,roughness:.85}),periGrey,periGrey],[w.x,w.y-.28,0],mouseG); wheel.rotation.x=Math.PI/2;
-  const dpi=surf(.24,0); mesh(box(.5,.12,.3),periGrey,[dpi.x,dpi.y+.02,0],mouseG).rotation.z=-.2;   // DPI button
-  // thumb buttons on the left side (−z)
-  [[.28,1.25],[-.08,1.1]].forEach(([x,len])=>{ const q=surf(x,-.9); const b=mesh(new T.CapsuleGeometry(.17,len,4,10),periGrey,[q.x,q.y,q.z-.08],mouseG);
-    b.rotation.z=Math.PI/2; b.scale.set(1,1,.6); });
+  mesh(box(1.5,.3,.56),slot,[WX,wy-.165,0],mouseG,{cast:false}).rotation.z=slope;
+  const wheel=mesh(new T.CylinderGeometry(.55,.55,.38,28),[new T.MeshStandardMaterial({map:rib,roughness:.85}),slot,slot],[WX,wy-.25,0],mouseG); wheel.rotation.x=Math.PI/2;
+  // green status LED in front of the wheel
+  const LDX=5.5, ledGeo=new T.CircleGeometry(.09,16); ledGeo.rotateX(-Math.PI/2);
+  mouseLedMat=new T.MeshBasicMaterial({color:0x16241a,toneMapped:false});
+  mesh(ledGeo,mouseLedMat,[LDX,heightAt(LDX,0)+.02,0],mouseG,{cast:false}).rotation.z=Math.atan2(heightAt(LDX+.2,0)-heightAt(LDX-.2,0),.4);
+  // white thumb buttons on the left wall (−z), at 2.4 cm up
+  const shellWhite=new T.MeshStandardMaterial({color:0xeeeff1,roughness:.5});
+  [[2.05,1.5],[-.3,1.15]].forEach(([x,len])=>{ let z=-halfW(x); while(heightAt(x,z)<2.4&&z<0) z+=.02;
+    const b=mesh(new T.CapsuleGeometry(.17,len,4,10),shellWhite,[x,2.4,z+.02],mouseG); b.rotation.z=Math.PI/2; b.scale.set(1,1,.45); });
 })();
+// the status LED shows green while the PC is on
+function updateMouseLed(){ mouseLedMat.color.setHex(S.powered?0x2bff6a:0x16241a); }
 /* monitor past the case's front panel and off beyond its top edge, screen turned toward the finishing camera */
 const MON_POS=V3(52,0,L.z-46), MON_YAW=-.5;
 const monG=new T.Group(); monG.position.copy(MON_POS); monG.rotation.y=MON_YAW; periG.add(monG);
@@ -119,13 +172,13 @@ function biosTex(o={}){ return canvasTex(1024,576,(g,W,H)=>{
    ["BIOS Ver","E7C02AMS.2H0"],["BIOS Build Date","06/19/2023"]].forEach(([k,v],i)=>{ const y=100+i*21; g.fillStyle="#9aa1ab"; g.fillText(k+":",350,y); g.fillStyle="#e3e6ea"; g.fillText(v,520,y); });
   box(18,240,988,86);
   g.fillStyle="#9aa1ab"; g.font="600 16px Barlow, Arial"; g.fillText("Boot Priority",34,264);
-  [["UEFI: NVMe SSD 512GB","#d22630"],...(o.noSata?[]:[["SATA SSD","#4d5561"]]),[o.usb==="ok"?"USB: SanDisk":"USB","#4d5561"],["Network","#4d5561"]].forEach(([l,c],i)=>{ const x=34+i*170;
+  [["UEFI: NVMe SSD 1TB","#d22630"],...(o.noSata?[]:[["SATA SSD","#4d5561"]]),[o.usb==="ok"?"USB: SanDisk":"USB","#4d5561"],["Network","#4d5561"]].forEach(([l,c],i)=>{ const x=34+i*170;
     g.fillStyle=c; roundRect(g,x,276,150,38,6); g.fill(); g.fillStyle="#f1f3f5"; g.font="600 15px Barlow, Arial"; g.fillText(l,x+10,300); });
   box(18,342,300,200);
   ["M-Flash","Favorites","Hardware Monitor"].forEach((l,i)=>{ g.fillStyle="#1f232b"; g.fillRect(30,356+i*58,276,46); g.fillStyle="#e3e6ea"; g.font="600 18px Barlow, Arial"; g.fillText(l,46,385+i*58); });
   box(334,342,672,200);
   g.fillStyle="#9aa1ab"; g.font="600 16px Barlow, Arial"; g.fillText("Storage",350,368); g.fillText("Fan Info",690,368);
-  g.fillStyle="#e3e6ea"; g.font="500 16px Barlow, Arial"; g.fillText("M2_1: NVMe SSD 512GB",350,396); if(o.noSata) g.fillStyle="#ff5a5f"; g.fillText(o.noSata?"SATA1: Not detected":"SATA1: SATA SSD",350,420);
+  g.fillStyle="#e3e6ea"; g.font="500 16px Barlow, Arial"; g.fillText("M2_1: Samsung SSD 980 PRO 1TB",350,396); if(o.noSata) g.fillStyle="#ff5a5f"; g.fillText(o.noSata?"SATA1: Not detected":"SATA1: SATA SSD",350,420);
   if(o.usb){ g.fillStyle=o.usb==="ok"?"#e3e6ea":"#ff5a5f"; g.fillText(o.usb==="ok"?"USB: SanDisk Ultra 32GB":"USB (front): Not detected",350,444); }
   [["CPU_FAN1",o.cpuFan0?"0 RPM":"2210 RPM",o.cpuFan0],["SYS_FAN1",o.sysFan0?"0 RPM":"1080 RPM",o.sysFan0]].forEach(([k,v,off],i)=>{ const y=396+i*24; g.fillStyle="#e3e6ea"; g.fillText(k,690,y); g.fillStyle=off?"#ff5a5f":"#3ecf6e"; g.fillText(v,800,y); });
   g.fillStyle="#6e7580"; g.font="500 15px Barlow, Arial"; g.textAlign="center"; g.fillText("F10: Save & Exit     F7: Advanced Mode     ESC: Exit",W/2,H-10);
@@ -189,14 +242,19 @@ function makeIecPlug(id){
   return {outer,inner,roll:0,back:-3.6};
 }
 const periCable=(c)=>new T.MeshStandardMaterial({color:c,roughness:.6});
-// slack: the cable snakes along the desk (two side-to-side bends) instead of running straight to the plug
-const slack=(amp)=>(a,b)=>{ const d=b.clone().sub(a), n=V3(-d.z,0,d.x).normalize().multiplyScalar(amp);
-  return [a.clone().addScaledVector(d,.3).add(n).setY(.3),a.clone().addScaledVector(d,.65).sub(n).setY(.3)]; };
+// coil: the cable lies on the desk in n side-to-side bends, wide enough that it's about `ratio` × the straight distance
+// between its ends (a long cable with slack, not one pulled tight). Bends stay outside the case's rear wall.
+const coil=(ratio,n)=>(a,b)=>{ const a1=a.clone().setY(.3), b1=b.clone().setY(.3), d=b1.clone().sub(a1), side=V3(-d.z,0,d.x).normalize();
+  const pts=A=>{ const r=[]; for(let i=1;i<=n;i++){ const p=a1.clone().addScaledVector(d,i/(n+1)).addScaledVector(side,A*(i%2?1:-1)); p.x=Math.min(p.x,CX0-1.2); r.push(p); } return r; };
+  const len=A=>{ const q=[a,...pts(A),b]; let s=0; for(let i=1;i<q.length;i++) s+=q[i].distanceTo(q[i-1]); return s; };
+  const want=ratio*a.distanceTo(b); let lo=0, hi=d.length()+5;
+  for(let i=0;i<24;i++){ const m=(lo+hi)/2; len(m)<want?lo=m:hi=m; }
+  return pts(lo); };
 Object.assign(CONN,{
   usbKb:{id:"usbKb",mat:periCable(0x1b1c1f),radius:.18,mesh:null,a:makeUsbPlug("usbKb"),outside:true,
-    anchor:()=>V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13), anchorDir:()=>V3(1,0,0), via:slack(4)},
+    anchor:()=>V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13), anchorDir:()=>V3(1,0,0), via:coil(2.2,5)},
   usbMouse:{id:"usbMouse",mat:periCable(0x1b1c1f),radius:.14,mesh:null,a:makeUsbPlug("usbMouse"),outside:true,
-    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)), via:slack(3)},
+    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)), via:coil(2.2,5)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
     anchor:()=>(monG.updateMatrixWorld(true),monG.localToWorld(V3(-2.1,12,0))), anchorDir:()=>V3(0,-1,0),
     via:()=>[monG.localToWorld(V3(-7.5,.4,10)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, off its foot, then along the desk around the top of the case

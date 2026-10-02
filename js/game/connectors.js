@@ -2,6 +2,7 @@ function focusPoint(pos,tgt,dur=900){ const p0=camera.position.clone(), t0=contr
 function clickConn(id){
   const job=connJob(S.step);
   if(S.busy) return;
+  if(job&&job.choose==="usb"&&id==="hdmi"&&!S.held){ toast(t("e_hdmiNotUsb"),"err"); flashHdmi(); return; }   // keyboard/mouse step: that's the monitor's cable
   if(!job||job.c.id!==id||S.held){ toast(t("e_notNow")); return; }
   if(job.choose&&!job.port){ S.connPick=job.choose; toast(t(job.choose==="usb"?"pick_usb":"pick_hdmi")); return; }   // next: click a port
   if(job.pick&&!S.connPort){ S.connPick="sata"; toast(t(job.c.id==="power"?"pick_sataPower":job.pick==="mb"?"pick_sataMb":"pick_sataSsd")); return; }
@@ -96,4 +97,18 @@ function clickSataPort(id){
   if(s.dev!==job.pick){ toast(t(job.pick==="ssd"?"e_sataSsdEnd":"e_sataMbEnd")); return; }   // right kind of port, wrong end of the cable: not a mistake
   if(S.step===ST.dataMb) S.sataMb=s.port;                                       // any of the board's SATA ports will do
   S.connPort=s; clickConn(job.c.id);
+}
+// HDMI clicked while plugging in the keyboard or mouse: the HDMI cable, its plug and the monitor turn red for a moment,
+// and the camera pulls back to show where that cable goes before returning
+const hdmiRed=new T.MeshStandardMaterial({color:0xe01010,emissive:0xff0000,emissiveIntensity:.5,roughness:.5,toneMapped:false});
+let hdmiFlash=null;
+function flashHdmi(){
+  if(!hdmiFlash){ hdmiFlash=new Map();
+    const swap=o=>{ if(!o.isMesh||o.material===screenMat||o.material.opacity===0) return; hdmiFlash.set(o,o.material); o.material=hdmiRed; };
+    monG.traverse(swap); CONN.hdmi.a.outer.traverse(swap); if(CONN.hdmi.mesh) swap(CONN.hdmi.mesh); }
+  clearTimeout(flashHdmi.timer); const st=S.step;
+  focusPoint(V3(-28,72,-24),V3(18,10,-78),900);
+  tween(3200,k=>{ hdmiRed.emissiveIntensity=.25+.75*Math.abs(Math.sin(k*Math.PI*4)); });
+  flashHdmi.timer=setTimeout(()=>{ hdmiFlash.forEach((m,o)=>o.material=m); hdmiFlash=null;
+    if(S.step===st&&!S.busy&&!S.held) focus(viewFor(st),900); },3400);
 }

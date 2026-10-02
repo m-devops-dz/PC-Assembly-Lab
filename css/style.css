@@ -1,7 +1,7 @@
 :root{
   --paper:#eef1f0; --panel:#ffffff; --ink:#1b2226; --muted:#5a676d; --line:#d3dbdb;
   --mat:#3f6168; --mat-dot:rgba(255,255,255,.07); --mat-edge:#2f4a50;
-  --gold:#e8b33a; --gold-ink:#2a1f00; --ok:#2f8f5b; --err:#c9423a;
+  --gold:#e8b33a; --gold-ink:#2a1f00; --ok:#2f8f5b; --err:#c9423a; --warn:#e07b12;
   --btn:#ffffff; --btn-ink:#1b2226; --tray:#263b40; --tray-card:#f4f6f5; --tray-ink:#1b2226;
   --font:"Barlow", "Segoe UI", Roboto, Arial, sans-serif;
   --display:"Barlow Semi Condensed", "Arial Narrow", "Segoe UI", sans-serif;
@@ -59,6 +59,11 @@ aside{ border-inline-end:1px solid var(--line); background:var(--panel); overflo
 .steps li span{ padding-top:3px; font-weight:500; }
 .steps li.todo span{ color:var(--muted); }
 .steps li.current span{ font-weight:700; }
+/* per-step marks: orange = more than 2 mistakes in the step, red = more than 60 s on it */
+.steps li.done.warn::before{ background:var(--warn); border-color:var(--warn); }
+.steps li.done.slow::before{ background:var(--err); border-color:var(--err); }
+.steps li.current.warn::before{ background:var(--warn); border-color:var(--warn); color:#fff; }
+.steps li.current.slow::before{ background:var(--err); border-color:var(--err); color:#fff; }
 
 .explain{ border-inline-start:4px solid var(--gold); padding:10px 14px; background:color-mix(in srgb, var(--gold) 9%, var(--panel)); border-radius:0 8px 8px 0; }
 :root[dir="rtl"] .explain{ border-radius:8px 0 0 8px; }
@@ -152,7 +157,7 @@ details.photos p.theme-name:empty{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){ .part.pulse{ animation:none; } .tool,.toast,.kv-turn{ transition:none; } }
 .steps li.group{ display:block; padding:12px 0 2px; font-family:var(--display); font-weight:700; font-size:14px; color:var(--muted); }
-.steps li.group::after{ content:none; }
+.steps li.group::before, .steps li.group::after{ content:none; counter-increment:none; }   /* group headings take no step number */
 .steps li.exp{ display:block; padding:2px 0 6px; padding-inline-start:38px; }
 .steps li.exp::before{ content:none; }
 .steps li.exp:not(:last-child)::after{ top:0; }
@@ -243,3 +248,53 @@ details.specs summary{ cursor:pointer; font-weight:600; }
 /* the 3D view sits in a dark gaming room so the RGB lights stand out */
 .viewport{ background-color:#151a26; background-image:radial-gradient(ellipse at 50% 0%, #2c3550 0%, #151a26 55%, #0b0e15 100%); background-size:auto; }
 @media (max-width: 860px){ .no-tray .stage{ grid-template-rows:62vh; } .head-actions{ flex-wrap:wrap; justify-content:flex-end; } }
+/* full screen (⛶ in the 3D view): no header or sidebar; a small bar keeps the step, mistakes and time, and its ☰ opens the sidebar over the view */
+.view-btns .fs-btn{ display:grid; place-items:center; padding:5px 9px; }
+.view-btns .fs-btn svg{ width:18px; height:18px; }
+.fs-bar{ display:none; position:absolute; top:10px; inset-inline-start:10px; max-width:calc(100% - 300px); align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:999px; background:rgba(0,0,0,.5); color:#fff; border:1px solid rgba(255,255,255,.25); backdrop-filter:blur(4px); z-index:3; }
+:root[dir="rtl"] .fs-bar{ padding:4px 4px 4px 12px; }
+.fs-bar p{ margin:0; font-size:14px; white-space:nowrap; }
+.fs-step{ overflow:hidden; text-overflow:ellipsis; font-weight:600; min-width:0; padding-inline-start:8px; border-inline-start:4px solid var(--ok); }
+.fs-step.warn{ border-color:var(--warn); } .fs-step.slow{ border-color:var(--err); }
+.fs-stats{ flex:none; color:#d6dde0; } .fs-stats b{ color:#ffb4ae; }
+.fs-panel{ flex:none; width:34px; height:34px; border-radius:50%; border:0; background:var(--gold); color:var(--gold-ink); display:grid; place-items:center; cursor:pointer; }
+.fs-panel svg{ width:18px; height:18px; }
+body.fs .app{ height:100vh; height:100dvh; grid-template-rows:1fr; }
+body.fs header{ display:none; }
+body.fs .work{ display:flex; flex-direction:column; overflow:hidden; }
+body.fs .stage, body.fs.no-tray .stage{ order:0; flex:1; height:auto; min-height:0; grid-template-rows:1fr auto; }
+body.fs.no-tray .stage{ grid-template-rows:1fr; }
+body.fs .fs-bar{ display:flex; }
+body.fs .view-btns{ top:58px; }                    /* below the step bar */
+body.fs aside{ display:none; position:fixed; z-index:30; top:54px; bottom:10px; inset-inline-start:10px; width:min(340px, calc(100vw - 20px)); border:1px solid var(--line); border-radius:12px; box-shadow:0 16px 40px rgba(0,0,0,.45); overflow:auto; }
+body.fs.fs-open aside{ display:flex; }
+/* theme picker and brightness inside the settings menu (phones move them there) */
+.set-pop .bright{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:14px; }
+.set-pop .bright input{ width:110px; accent-color:var(--gold); }
+.set-pop .bright select{ font:inherit; color:var(--ink); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:2px 4px; }
+/* phones: the 3D view takes almost the whole screen (the sidebar is below it); compact header, buttons and toasts */
+@media (max-width: 860px){
+  header{ padding:6px 10px; gap:8px; }
+  .brand svg{ width:24px; height:24px; } .brand h1{ font-size:16px; }
+  .head-actions{ gap:5px; } .head-actions .chip-btn{ padding:4px 9px; font-size:13px; }
+  #offlineBtn{ display:none; }
+  #setBtn span{ display:none; }
+  .brand div{ display:none; }
+  /* a flex column (the grid row collapsed to 0 on phones and the sidebar drew over the view): 3D view first, sidebar below it */
+  .work{ display:flex; flex-direction:column; overflow:auto; }
+  .stage, .no-tray .stage{ order:-1; flex:none; height:calc(100vh - 100px); height:calc(100svh - 100px); grid-template-rows:1fr auto; }
+  .no-tray .stage{ grid-template-rows:1fr; }
+  aside{ flex:none; }
+  .view-btns{ top:10px; inset-inline-end:10px; flex-direction:column; align-items:flex-end; gap:6px; }
+  .view-btns button{ padding:4px 10px; font-size:12.5px; }
+  .tool{ width:42px; height:42px; } .tool.drop{ width:50px; height:50px; } .tool svg{ width:20px; height:20px; }
+  .tools{ inset-inline-start:10px; gap:8px; }
+  .toast, :root[dir] .toast{ top:auto; bottom:58px; left:10px; right:10px; max-width:none; transform:none; font-size:14px; padding:8px 12px; z-index:4; }
+  .toast.show{ transform:none; }
+  .fs-bar{ max-width:calc(100% - 120px); } .fs-bar p{ font-size:13px; }
+  body.fs .view-btns{ top:10px; }                  /* phones: the buttons are a column on the right, beside the bar */
+  .hint-btn{ padding:6px 11px; }
+}
+@media (max-width: 860px) and (orientation: landscape){
+  .stage, .no-tray .stage{ height:calc(100vh - 50px); height:calc(100svh - 50px); }
+}

@@ -1,7 +1,12 @@
 /* ---------------- M.2 slot + SSD ---------------- */
-const M2Z=5.9, M2_SEAT=V3(3.05,.45,M2Z), M2_SCREW=V3(-4.95,0,M2Z), M2_PARK=V3(-6.4,.46,7.4);
+const M2Z=5.9, M2_SEAT=V3(3.05,.45,M2Z), M2_SCREW=V3(-4.95,0,M2Z);
 const M2_SCREW_Y={standoff:.42,fastened:.5};   // head underside on the bare standoff, then on top of the SSD
-mesh(box(.5,.4,2.3),blackPlastic,[3.3,.3,M2Z]);
+// once it's out, the screw lies on the parts mat (world spot, between the SSD and the screw dish) until the SSD is in
+const M2_TABLE=V3(17.6,DESK.y+.24,-7.6);
+function m2Park(){ boardRoot.updateMatrixWorld(true); return boardRoot.worldToLocal(M2_TABLE.clone()); }
+// M.2 socket: deep enough that the SSD's gold fingers disappear inside it once seated (the card goes in through the slit on its −x face)
+mesh(box(1.0,.46,2.4),blackPlastic,[3.05,.33,M2Z]);
+mesh(box(.02,.12,2.1),new T.MeshBasicMaterial({color:0x050506}),[2.54,.45,M2Z],boardRoot,{cast:false});
 const brass=new T.MeshStandardMaterial({color:0xc9a54a,metalness:.85,roughness:.35});
 mesh(new T.CylinderGeometry(.22,.22,.31,16),brass,[M2_SCREW.x,.255,M2Z]);
 const m2ScrewMat=phillipsMat.clone();
@@ -13,7 +18,7 @@ const m2Ring=mesh(new T.RingGeometry(.32,.46,32),new T.MeshBasicMaterial({color:
 m2Ring.rotation.x=-Math.PI/2; m2Ring.visible=false; m2Ring.raycast=()=>{};
 function m2Texture(){ return canvasTex(800,220,(g,W,H)=>{ g.fillStyle="#141518"; g.fillRect(0,0,W,H);
   g.fillStyle="#e8e9eb"; roundRect(g,W*.06,H*.08,W*.8,H*.84,8); g.fill();
-  g.fillStyle="#1b1d22"; g.font="700 44px 'Barlow Semi Condensed', Arial"; g.fillText("NVMe SSD  512GB",W*.1,H*.42);
+  g.fillStyle="#1b1d22"; g.font="700 44px 'Barlow Semi Condensed', Arial"; g.fillText("NVMe SSD  1TB",W*.1,H*.42);
   g.font="500 26px Barlow, Arial"; g.fillText("M.2 2280  PCIe 3.0 x4",W*.1,H*.62);
   const R=rng(6); let x=W*.1; while(x<W*.5){ const w=1+R()*4; g.fillRect(x,H*.7,w,H*.14); x+=w+1+R()*3; }
   g.fillStyle="#0a0a0a"; g.beginPath(); g.arc(0,H/2,18,0,7); g.fill(); }); }
