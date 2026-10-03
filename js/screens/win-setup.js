@@ -71,7 +71,7 @@ function wsRender(){
     body=`<h2>${t("ws_diskH")}</h2><div class="ws-table disk"><div class="ws-th"><span>${t("ws_name")}</span><span>${t("ws_total")}</span><span>${t("ws_free")}</span><span>${t("ws_type")}</span></div>
       ${rows.map(r=>`<button class="ws-tr${WS.sel===r.id?" on":""}" data-w="sel" data-v="${r.id}"><span>${OS_ICON.drive}${r.name}</span><span>${gbFmt(r.gb)}</span><span>${gbFmt(r.free)}</span><span>${typeName(r.type)}</span></button>`).join("")}</div>
       <div class="ws-tools">${[["refresh","ws_refresh"],["delete","ws_delete"],["format","ws_format"],["new","ws_new"],["load","ws_load"],["extend","ws_extend"]].map(([a,k])=>{
-        const off=!sel||(a==="delete"||a==="format")&&sel.unalloc||a==="new"&&!sel.unalloc||a==="extend";
+        const off=!sel||(a==="delete"||a==="format")&&sel.unalloc||a==="format"&&(sel.type==="System"||sel.type==="MSR")||a==="new"&&!sel.unalloc||a==="extend";   // EFI and MSR: never formatted by hand
         return `<button class="ws-link" data-w="${a}"${off?" disabled":""}>${t(k)}</button>`; }).join("")}</div>`; next="diskNext"; }
   else if(p==="installing"){ const k=WS.prog*COPY_STAGES.length, cur=Math.min(COPY_STAGES.length-1,Math.floor(k));
     body=`<h2>${t("ws_instH")}</h2><p>${t("ws_instP")}</p><ul class="ws-steps">${COPY_STAGES.map((s,i)=>`<li class="${i<cur?"done":i===cur?"cur":""}">${i<cur?"✓ ":""}${t(s)}${i===cur?` (${Math.floor((k-cur)*100)}%)`:""}</li>`).join("")}</ul>

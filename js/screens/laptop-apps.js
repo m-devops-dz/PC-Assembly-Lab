@@ -14,6 +14,11 @@ const LAP={app:null, note:null, tray:false, dlg:null, menu:false,
   web:{page:"home", q:"", rel:true, found:false, ed:"", edOk:false, lng:"", lngOk:false},
   dl:-1, iso:null,                                                  // download: -1 not started, then 0..1
   files:{loc:"dl", sel:null, clip:null}, copy:-1, ejected:false};
+/* the car challenge: a music stick formatted NTFS, which the car's screen can't read. The songs go to the Desktop first,
+   then the stick is formatted exFAT and the songs go back. CAR.stick / CAR.desk: the songs in each place. */
+const SONGS=[1,2,3,4,5,6,7,8,9].map(n=>n+".mp3");
+const CAR={stick:[...SONGS], desk:[], fs:"NTFS", label:"MUSIC"};
+const carOn=()=>IN.sc==="car";
 const LAP_LANGS=[["ar","Arabic"],["en","English"],["fr","French"],["de","German"],["tr","Turkish"]];
 const svgI=(d,extra="")=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}>${d}</svg>`;
 const OS_ICON={
@@ -26,11 +31,14 @@ const OS_ICON={
   usb:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="7" rx="1" fill="#b9c0c9"/><rect x="9" y="4.5" width="2" height="2" fill="#5f6875"/><rect x="13" y="4.5" width="2" height="2" fill="#5f6875"/><rect x="5.5" y="9" width="13" height="12.5" rx="2.5" fill="#d0313a"/></svg>`,
   iso:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#c7d3e3"/><circle cx="12" cy="12" r="10" fill="none" stroke="#7b8ba3" stroke-width="1"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="#7b8ba3"/><path d="M5.5 9a7 7 0 0 1 4-4" stroke="#fff" stroke-width="1.6" fill="none"/></svg>`,
   file:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8l4.5 4.5v14.5H6z" fill="#fff" stroke="#9aa5b4"/><path d="M14 2.5V7h4.5" fill="none" stroke="#9aa5b4"/></svg>`,
-  eject:svgI(`<path d="M5 15h14L12 6z" fill="currentColor"/><path d="M5 19h14"/>`)
+  eject:svgI(`<path d="M5 15h14L12 6z" fill="currentColor"/><path d="M5 19h14"/>`),
+  music:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8l4.5 4.5v14.5H6z" fill="#fff" stroke="#9aa5b4"/><path d="M11 17.5V10l4-1v6.5" fill="none" stroke="#e0612b" stroke-width="1.6"/><circle cx="9.8" cy="17.6" r="1.6" fill="#e0612b"/><circle cx="13.8" cy="15.6" r="1.6" fill="#e0612b"/></svg>`,
+  desk:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="1.5" fill="#2f7f8f"/><rect x="8" y="18.5" width="8" height="1.6" rx=".8" fill="#5f6875"/></svg>`
 };
 // the files on each drive. E: changes: personal files at first, empty once Ventoy is on it, then the ISO
 function lapFiles(loc){
   const F=(n,s,k)=>({n,s,k:k||"file"});
+  if(carOn()&&(loc==="e"||loc==="desk")) return (loc==="e"?CAR.stick:CAR.desk).map((n,i)=>F(n,(3.1+i*.4).toFixed(1)+" MB","music"));
   if(loc==="dl") return [F("invoice_2026.pdf","0.2 MB"),F("trip_photo.jpg","4.1 MB"),...(LAP.dl>=1?[F(LAP.iso,ISO_GB+" GB","iso")]:[])];
   if(loc==="c") return [F("Program Files","","folder"),F("Users","","folder"),F("Windows","","folder")];
   if(loc==="d") return [F(t("fl_d1"),"","folder"),F(t("fl_d2"),"","folder"),F(t("fl_d3"),"","folder")];
@@ -38,14 +46,14 @@ function lapFiles(loc){
   return STICK.iso?[F(LAP.iso,ISO_GB+" GB","iso")]:[];
 }
 const stickIn=()=>IN.stick==="laptop"&&!LAP.ejected;
-const eName=()=>t(STICK.boot?"fl_eB":"fl_e");
+const eName=()=>carOn()?(CAR.label||t("fl_usb"))+" (E:)":t(STICK.boot?"fl_eB":"fl_e");
 const isoName=()=>"Win11_25H2_"+(LAP_LANGS.find(l=>l[0]===LAP.web.lng)||LAP_LANGS[1])[1]+"_x64.iso";
 
 /* ---- drawing ---- */
 // an MBR stick already failed to boot once: MBR again is blocked, arrows lead to Options → GPT
 const lapMbrAgain=()=>IN.mbrFails>0&&LAP.dev==="E"&&LAP.style==="MBR";
 // the eject step is easy to miss: arrows on the taskbar's USB icon, then on "Eject" (hints on)
-const lapPoint=()=>S.hints&&S.glow&&inCur()==="eject"&&!LAP.ejected&&STICK.iso;
+const lapPoint=()=>S.hints&&S.glow&&inCur()==="eject"&&!LAP.ejected&&(STICK.iso||carOn());
 function lapRender(){
   if(SCR.dev!=="laptop") return;
   const focusQ=document.activeElement&&document.activeElement.id==="wbQ";
@@ -71,7 +79,7 @@ function lapTool(){
       ${LAP.menu?`<div class="tl-drop" role="menu"><p>${t("tl_style")}</p>${["MBR","GPT"].map(s=>`<button role="menuitemradio" aria-checked="${LAP.style===s}" data-a="style" data-v="${s}"${s==="GPT"&&lapMbrAgain()&&S.glow?' class="point"':""}><i>${LAP.style===s?"●":""}</i>${t("tl_"+s)}</button>`).join("")}<hr><p class="tl-sb">✓ ${t("tl_secure")}</p></div>`:""}</nav>
     <label class="tl-dev"><span>${t("tl_device")}</span><select data-a="dev"${busy?" disabled":""}>${devs.map(([v,l])=>`<option value="${v}"${LAP.dev===v?" selected":""}>${l}</option>`).join("")}</select></label>
     <div class="tl-ver"><div><small>${t("tl_pkg")}</small><b>1.0.99</b></div><div><small>${t("tl_dev")}</small><b>${inDev?"1.0.99":"—"}</b>${inDev?`<small class="pill">${STICK.boot}</small>`:""}</div></div>
-    <p class="tl-style"><span class="pill">${t("tl_style")}: ${LAP.style}</span><span class="pill">🔒 ${t("tl_secure")}</span></p>
+    <p class="tl-style"><span class="pill ${LAP.style==="MBR"?"bad":"ok"}">${t("tl_style")}: ${LAP.style}</span><span class="pill">🔒 ${t("tl_secure")}</span></p>
     <p class="tl-status">${t("tl_status")}: <b data-ptxt="tool"></b></p>
     <div class="pbar"><i data-prog="tool"></i></div>
     <div class="tl-btns"><button class="os-btn pri" data-a="install"${busy?" disabled":""}>${t("tl_install")}</button><button class="os-btn" disabled>${t("tl_update")}</button></div>
@@ -95,18 +103,30 @@ function lapWeb(){ const w=LAP.web;
       <div class="wb-url">${w.page==="ms"?"🔒 ":""}${url}</div></div>
     <div class="wb-page">${page}</div>
     ${LAP.dl>=0?`<div class="wb-dl">${OS_ICON.iso}<div><b>${LAP.iso}</b><small data-ptxt="dl"></small><div class="pbar"><i data-prog="dl"></i></div>${LAP.dl<1?`<small class="muted">${t("dl_fast")}</small>`:""}</div></div>`:""}</div>`; }
-function lapFilesApp(){ const f=LAP.files, list=lapFiles(f.loc);
-  const side=[["dl",OS_ICON.dl,t("fl_dl")],null,["c",OS_ICON.drive,t("fl_c")],["d",OS_ICON.drive,t("fl_d")],...(stickIn()?[["e",OS_ICON.usb,eName()]]:[])];
-  const locName={dl:t("fl_dl"),c:t("fl_c"),d:t("fl_d"),e:eName()}[f.loc];
-  return `<div class="fl"><div class="fl-tools"><button class="os-btn" data-a="fcopy"${f.sel?"":" disabled"}>${t("fl_copy")}</button><button class="os-btn" data-a="fpaste"${f.clip?"":" disabled"}>${t("fl_paste")}</button>
-      <span class="fl-path">${f.loc==="dl"?"":t("fl_pc")+" › "}${locName}</span></div>
+function lapFilesApp(){ const f=LAP.files, list=lapFiles(f.loc), car=carOn(), selOn=n=>f.sel==="*"||f.sel===n;
+  const side=[...(car?[["desk",OS_ICON.desk,t("fl_desk")]]:[]),["dl",OS_ICON.dl,t("fl_dl")],null,["c",OS_ICON.drive,t("fl_c")],["d",OS_ICON.drive,t("fl_d")],...(stickIn()?[["e",OS_ICON.usb,eName()]]:[])];
+  const locName={desk:t("fl_desk"),dl:t("fl_dl"),c:t("fl_c"),d:t("fl_d"),e:eName()}[f.loc];
+  return `<div class="fl"><div class="fl-tools">${car?`<button class="os-btn" data-a="fall"${list.length?"":" disabled"}>${t("fl_all")}</button>`:""}<button class="os-btn" data-a="fcopy"${f.sel?"":" disabled"}>${t("fl_copy")}</button><button class="os-btn" data-a="fpaste"${f.clip?"":" disabled"}>${t("fl_paste")}</button>${car&&f.loc==="e"?`<button class="os-btn${carPointFmt()?" point":""}" data-a="fmt">${t("fm_btn")}</button>`:""}
+      <span class="fl-path">${f.loc==="dl"||f.loc==="desk"?"":t("fl_pc")+" › "}${locName}</span></div>
     <div class="fl-main"><nav class="fl-side">${side.map(s=>s?`<button data-a="loc" data-v="${s[0]}" data-drop="${s[0]}" class="${f.loc===s[0]?"on":""}">${s[1]}<span>${s[2]}</span></button>`:`<p>${t("fl_pc")}</p>`).join("")}</nav>
       <div class="fl-list" data-drop="${f.loc}"><div class="fl-head"><span>${t("fl_name")}</span><span>${t("fl_size")}</span></div>
-        ${list.length?list.map(x=>`<button class="fl-item${f.sel===x.n?" on":""}" data-a="sel" data-v="${x.n}"${x.k==="iso"?` data-file="${x.n}"`:""}>${OS_ICON[x.k]}<span>${x.n}</span><small>${x.s}</small></button>`).join(""):`<p class="fl-empty">${t("fl_empty")}</p>`}</div></div>
-    <p class="fl-tip">${t("fl_tip")}</p></div>`; }
+        ${list.length?list.map(x=>`<button class="fl-item${selOn(x.n)?" on":""}" data-a="sel" data-v="${x.n}"${x.k==="iso"||x.k==="music"?` data-file="${x.n}"`:""}>${OS_ICON[x.k]}<span>${x.n}</span><small>${x.s}</small></button>`).join(""):`<p class="fl-empty">${t("fl_empty")}</p>`}</div></div>
+    <p class="fl-tip">${t(car?"fl_tipCar":"fl_tip")}</p></div>`; }
+// in the car challenge, Format… glows once the songs are safe on the Desktop
+const carPointFmt=()=>S.hints&&S.glow&&inCur()==="carFormat"&&CAR.desk.length===SONGS.length;
 function lapDlg(){ const d=LAP.dlg;
   if(d.kind==="warn") return `<div class="os-dlg-bg"><div class="os-dlg warn" role="alertdialog" aria-labelledby="dlgT"><h3 id="dlgT">⚠ ${t("tl_warnT")}</h3><p>${t("tl_warn")}</p><p class="dev"><b>${t(LAP.dev==="E"?"dv_E":"dv_D")}</b></p><p>${t("tl_warn2")}</p>
     <div class="os-dlg-btns"><button class="os-btn pri" data-a="wyes">${t("tl_yes")}</button><button class="os-btn" data-a="wno">${t("tl_no")}</button></div></div></div>`;
+  if(d.kind==="format") return `<div class="os-dlg-bg"><div class="os-dlg fmt" role="dialog" aria-labelledby="dlgT"><h3 id="dlgT">${t("fm_title",{d:eName()})}</h3>
+    <div class="dm-form"><span>${t("fm_cap")}</span><b>28.6 GB</b>
+      <label for="fmtFs">${t("dm_fs")}</label><select id="fmtFs" data-a="fmtFs">${[["NTFS","NTFS ("+t("dm_default")+")"],["FAT32","FAT32"],["exFAT","exFAT"]].map(([v,l])=>`<option value="${v}"${d.fs===v?" selected":""}>${l}</option>`).join("")}</select>
+      <span>${t("dm_alloc")}</span><b>${t("dm_default")}</b>
+      <label for="fmtLabel">${t("dm_label")}</label><input id="fmtLabel" value="${d.label.replace(/"/g,"&quot;")}" maxlength="11"></div>
+    <label class="ws-chk"><input type="checkbox" checked disabled> ${t("dm_quick")}</label>
+    <div class="os-dlg-btns"><button class="os-btn pri" data-a="fmtStart">${t("fm_start")}</button><button class="os-btn" data-a="dok">${t("os_close")}</button></div></div></div>`;
+  if(d.kind==="fmtWarn") return `<div class="os-dlg-bg"><div class="os-dlg warn" role="alertdialog" aria-labelledby="dlgT"><h3 id="dlgT">⚠ ${t("fm_title",{d:eName()})}</h3><p>${t("fm_warn")}</p>
+    <div class="os-dlg-btns"><button class="os-btn pri" data-a="fmtOk">${t("ok")}</button><button class="os-btn" data-a="dok">${t("ws_cancel")}</button></div></div></div>`;
+  if(d.kind==="busy") return `<div class="os-dlg-bg"><div class="os-dlg" role="dialog" aria-labelledby="dlgT"><h3 id="dlgT">${t(d.title,{n:d.n,d:d.d})}</h3><div class="pbar"><i data-prog="copy"></i></div></div></div>`;
   if(d.kind==="copy") return `<div class="os-dlg-bg"><div class="os-dlg" role="dialog" aria-labelledby="dlgT"><h3 id="dlgT">${t("fl_copying",{d:eName()})}</h3><p class="dev">${LAP.iso}</p><div class="pbar"><i data-prog="copy"></i></div><p class="muted" data-ptxt="copy"></p></div></div>`;
   return `<div class="os-dlg-bg"><div class="os-dlg" role="dialog" aria-labelledby="dlgT"><h3 id="dlgT">${t(d.title)}</h3><p>${t(d.text)}</p><div class="os-dlg-btns"><button class="os-btn pri" data-a="dok">${t("ok")}</button></div></div></div>`; }
 // progress bars and their text, updated in place while a tween runs (no full redraw)
@@ -120,7 +140,7 @@ function lapNote(title,text){ LAP.note=[title,text]; clearTimeout(lapNote.t); la
 
 /* ---- actions ---- */
 // Ventoy installing, the ISO downloading, the ISO copying: the window can't be closed or swapped until it's done
-const lapBusy=()=>LAP.tool==="busy"&&"tool"||LAP.dl>=0&&LAP.dl<1&&"web"||LAP.copy>=0&&LAP.copy<1&&"files"||"";
+const lapBusy=()=>LAP.tool==="busy"&&"tool"||LAP.dl>=0&&LAP.dl<1&&"web"||LAP.copy>=0&&LAP.copy<1&&"files"||LAP.dlg&&LAP.dlg.kind==="busy"&&"files"||"";
 function lapAct(a,v){
   const busy=lapBusy();
   if(busy&&(a==="min"||a==="open"&&v!==busy)){ toast(t("in_busyWait"),"err"); return; }
@@ -147,8 +167,14 @@ function lapAct(a,v){
     case "dl64": lapDownload(); return;
     case "loc": LAP.files.loc=v; LAP.files.sel=null; break;
     case "sel": LAP.files.sel=v; break;
-    case "fcopy": LAP.files.clip=LAP.files.sel; toast(t("fl_copied",{f:LAP.files.sel})); break;
-    case "fpaste": lapCopy(LAP.files.clip,LAP.files.loc); return;
+    case "fall": LAP.files.sel="*"; break;
+    case "fcopy": if(carOn()){ const names=carSel(); LAP.files.clip={from:LAP.files.loc,names}; toast(t("fl_copiedN",{n:names.length})); break; }
+      LAP.files.clip=LAP.files.sel; toast(t("fl_copied",{f:LAP.files.sel})); break;
+    case "fpaste": if(carOn()){ carPaste(LAP.files.clip,LAP.files.loc); return; } lapCopy(LAP.files.clip,LAP.files.loc); return;
+    case "fmt": LAP.dlg={kind:"format",fs:"NTFS",label:CAR.label||"MUSIC"}; break;
+    case "fmtFs": LAP.dlg.fs=v; return;
+    case "fmtStart": if(LAP.dlg.fs==="NTFS"){ toast(t("in_carNtfs"),"err"); return; } if(LAP.dlg.fs==="FAT32"){ toast(t("in_carFat"),"err"); return; } LAP.dlg={...LAP.dlg,kind:"fmtWarn"}; break;
+    case "fmtOk": carFormat(); return;
     case "tray": LAP.tray=!LAP.tray; break;
     case "eject": lapEject(v); return;
   }
@@ -193,10 +219,30 @@ function lapCopy(f,dest){
   LAP.dlg={kind:"copy"}; LAP.copy=0; lapRender();
   tween(6000,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; STICK.iso=true; LAP.dlg=null; LAP.files.loc="e"; LAP.files.sel=null; LAP.files.clip=null; lapRender(); inCheck(); });
 }
+// the selection in Files: one song, or all of them (Select all)
+const carSel=()=>LAP.files.sel==="*"?lapFiles(LAP.files.loc).map(x=>x.n):LAP.files.sel?[LAP.files.sel]:[];
+// copy songs (Paste, or a drop): from the stick to the Desktop, and back once the stick is exFAT
+function carPaste(clip,to){
+  if(!clip||!clip.names.length) return;
+  if(clip.from===to){ toast(t("in_sameFolder2")); return; }
+  if(to!=="desk"&&to!=="e"){ toast(t("in_carWhere")); return; }
+  if(to==="e"&&!stickIn()) return;
+  const dest=to==="e"?CAR.stick:CAR.desk, n=clip.names.length;
+  LAP.dlg={kind:"busy",title:"fl_copyingN",n,d:to==="e"?eName():t("fl_desk")}; LAP.copy=0; lapRender();
+  tween(1600,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; clip.names.forEach(x=>{ if(!dest.includes(x)) dest.push(x); }); dest.sort((a,b)=>parseInt(a)-parseInt(b));
+    LAP.dlg=null; LAP.files.loc=to; LAP.files.sel=null; lapRender(); inCheck(); });
+}
+// format the stick: before the songs are safe on the Desktop it's a mistake (and nothing happens)
+function carFormat(){ const d=LAP.dlg;
+  if(CAR.desk.length<SONGS.length){ LAP.dlg=null; lapRender(); inMistake("in_m_carLost"); return; }
+  LAP.dlg={kind:"busy",title:"fm_busy"}; LAP.copy=0; lapRender();
+  tween(1500,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; CAR.fs=d.fs; CAR.stick=[]; CAR.label=d.label.trim().toUpperCase();
+    LAP.dlg={kind:"info",title:"fm_titleS",text:"fm_done"}; lapRender(); inCheck(); });
+}
 function lapEject(v){
   LAP.tray=false;
   if(v==="D"){ lapRender(); toast(t("in_ejectD")); return; }
-  if(LAP.copy>=0&&LAP.copy<1){ lapRender(); toast(t("in_ejectBusy"),"err"); return; }
+  if(LAP.copy>=0&&LAP.copy<1||lapBusy()){ lapRender(); toast(t("in_ejectBusy"),"err"); return; }
   if(!inGate("eject")){ lapRender(); return; }
   LAP.ejected=true; LAP.dev="D"; LAP.tool="idle"; if(LAP.files.loc==="e") LAP.files.loc="dl";
   lapNote("os_safe","os_safeD"); lapRender(); toast(t("in_pullNow"),"ok");
@@ -213,7 +259,7 @@ scrBody.addEventListener("click",e=>{
   e.preventDefault(); startClock(); lapAct(el.dataset.a,el.dataset.v);
 });
 scrBody.addEventListener("change",e=>{ const el=e.target; if(SCR.dev==="laptop"&&el.tagName==="SELECT"&&el.dataset.a) lapAct(el.dataset.a,el.value); });
-scrBody.addEventListener("input",e=>{ if(e.target.id==="wbQ") LAP.web.q=e.target.value; });
+scrBody.addEventListener("input",e=>{ if(e.target.id==="wbQ") LAP.web.q=e.target.value; else if(e.target.id==="fmtLabel"&&LAP.dlg) LAP.dlg.label=e.target.value; });
 scrBody.addEventListener("submit",e=>{ e.preventDefault(); if(SCR.dev==="laptop") lapAct("go"); });
 let lapDrag=null;
 scrBody.addEventListener("pointerdown",e=>{ const it=e.target.closest("[data-file]"); if(SCR.dev!=="laptop"||!it) return; lapDrag={f:it.dataset.file,x:e.clientX,y:e.clientY,ghost:null,over:null}; });
@@ -228,6 +274,8 @@ window.addEventListener("pointermove",e=>{
 window.addEventListener("pointerup",()=>{
   const d=lapDrag; lapDrag=null; if(!d||!d.ghost) return;
   d.ghost.remove(); scrBody.classList.remove("dragging"); lapNoClick=performance.now()+350;
-  if(d.over){ d.over.classList.remove("over"); LAP.files.sel=d.f; lapCopy(d.f,d.over.dataset.drop); }
+  if(d.over){ d.over.classList.remove("over");
+    if(carOn()){ const names=LAP.files.sel==="*"?carSel():[d.f]; carPaste({from:LAP.files.loc,names},d.over.dataset.drop); return; }
+    LAP.files.sel=d.f; lapCopy(d.f,d.over.dataset.drop); }
 });
 SCREENS.laptop={view:()=>laptopView(), render:lapRender, back:()=>{ LAP.menu=LAP.tray=false; focus("inDesk",900); }};

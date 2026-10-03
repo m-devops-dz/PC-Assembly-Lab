@@ -6,16 +6,18 @@
    OW.fresh: the new Windows at the end, same desktop with a new wallpaper and the drives from the student's plan:
    C: (Windows) and the files partition if there is one. On a new PC (WS.disks "fresh") the SATA SSD has no partition, so
    Windows gives it no letter: C: and D: (Data, empty). On the customer's PC, D: stays their drive and the files are E:. */
-const OW={view:"lock", seen:false, openedD:false, shut:false, app:false, loc:"pc", sel:null, renaming:false, draft:"", start:false, fresh:false, checked:false};
+const OW={view:"lock", seen:false, openedD:false, shut:false, app:false, dm:false, loc:"pc", sel:null, renaming:false, draft:"", start:false, fresh:false, checked:false};   // dm: Disk Management open (disk-mgmt.js)
 // the drives This PC shows: sizes in GB
 function owDrives(){
+  if(IN.sc==="split") return dmDrives();                              // the one-partition challenge: what Disk Management made
   const d={k:"d",size:476.9,free:112.4};
   if(!OW.fresh) return [{k:"c",size:930.8,free:810.3},d];
   const pr=m2Prim(), c=pr[0]?pr[0].gb:931.4, used=WS.disks==="used";
   return [{k:"c",size:c,free:c-24.6},...(used?[d]:[]),...(pr[1]?[{k:used?"e":"d",size:pr[1].gb,free:pr[1].gb-.1}]:[])];
 }
 const owCustomer=k=>k==="d"&&(!OW.fresh||WS.disks==="used");      // D: is the customer's drive (their files, their name for it)
-const owName=k=>owCustomer(k)?(IN.label||t("ow_disk"))+" (D:)":t("ow_disk")+" ("+k.toUpperCase()+":)";
+const owName=k=>{ const dp=IN.sc==="split"&&DM.parts.find(p=>p.letter===k.toUpperCase()&&p.kind==="d"); if(dp) return dmName(dp);
+  return owCustomer(k)?(IN.label||t("ow_disk"))+" (D:)":t("ow_disk")+" ("+k.toUpperCase()+":)"; };
 const OW_RECYCLE=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.2 13.2a1.5 1.5 0 0 1-1.5 1.3H8.7a1.5 1.5 0 0 1-1.5-1.3z" fill="#cfe3f5" stroke="#6f8aa3"/><path d="M4.5 7h15M9.5 4h5" stroke="#6f8aa3" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 function owFiles(loc){
   if(loc==="c") return [["Program Files"],["Users"],["Windows"]].map(([n])=>({n,k:"folder"}));
@@ -27,10 +29,10 @@ function owRender(){
   if(OW.view==="lock") return `<div class="pc lock" data-o="unlock"><b>14:35</b><span>${t("pc_date")}</span><p>${t("pc_oldUser")} · ${t("ow_click")}</p><button class="pc-power" data-k="restart">${PWR_SVG} ${t("pc_restart")}</button></div>`;
   return `<div class="os old${OW.fresh?" fresh":""}">
     <div class="os-desk"><button class="os-ico" data-o="open">${OS_ICON.files}<span>${t("ow_explorer")}</span></button><button class="os-ico" data-o="bin">${OW_RECYCLE}<span>${t("ow_bin")}</span></button></div>
-    ${OW.app?owExplorer():""}
-    ${OW.start?`<div class="ow-start" role="menu"><p>${OW.fresh?WS.user:t("ow_user")}</p>${OW.fresh?"":`<button data-o="restart">↻ ${t("pc_restart")}</button><button data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`}</div>`:""}
+    ${OW.dm?dmWindow():OW.app?owExplorer():""}
+    ${OW.start?`<div class="ow-start" role="menu"><p>${OW.fresh?WS.user:t("ow_user")}</p>${OW.fresh?`<button data-o="dm">${DM_ICON} ${t("dm_title")}</button>`:`<button data-o="restart">↻ ${t("pc_restart")}</button><button data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`}</div>`:""}
     <footer class="os-bar"><div class="os-apps"><button data-o="start" class="${OW.start?"on":""} ow-startbtn" title="${t("ow_startMenu")}" aria-label="${t("ow_startMenu")}"><i></i><i></i><i></i></button>
-      <button data-o="open" class="${OW.app?"on":""}" title="${t("ow_explorer")}" aria-label="${t("ow_explorer")}">${OS_ICON.files}</button></div>
+      <button data-o="open" class="${OW.app&&!OW.dm?"on":""}" title="${t("ow_explorer")}" aria-label="${t("ow_explorer")}">${OS_ICON.files}</button>${OW.dm?`<button data-o="dm" class="on" title="${t("dm_title")}" aria-label="${t("dm_title")}">${DM_ICON}</button>`:""}</div>
       <div class="os-tray"><span>14:36</span></div></footer></div>`;
 }
 function owExplorer(){
@@ -50,7 +52,8 @@ function owAct(a,v){
   if(a!=="start") OW.start=false;
   switch(a){
     case "unlock": OW.view="desk"; OW.seen=true; break;
-    case "open": OW.app=true; OW.loc="pc"; OW.sel=null; if(OW.fresh) OW.checked=true; break;
+    case "open": OW.app=true; OW.dm=false; OW.loc="pc"; OW.sel=null; if(OW.fresh) OW.checked=true; if(DM.made) DM.checked=true; break;
+    case "dm": OW.dm=true; DM.opened=true; break;
     case "close": OW.app=false; OW.renaming=false; break;
     case "bin": toast(t("ow_binEmpty")); return;
     case "start": OW.start=!OW.start; break;

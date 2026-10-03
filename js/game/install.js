@@ -18,13 +18,17 @@ const IN_SCENARIOS={
   usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
   used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskNew","diskInstall"],disks:"used",stick:"ready",plan:1},
   plan:{steps:["diskPlan","diskNew","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
-  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true}
+  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true},
+  split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
+  car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true}
 };
-const IN_ORDER=["main","usb","used","plan","finish"];
+const IN_ORDER=["main","usb","used","plan","finish","split","car"];
 // the sidebar group a step belongs to
 const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
-  diskClean:"disk",diskPlan:"disk",diskNew:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end"};
+  diskClean:"disk",diskPlan:"disk",diskNew:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end",
+  dmOpen:"dm",dmShrink:"dm",dmNew:"dm",dmCheck:"dm",carCopy:"car",carFormat:"car",carBack:"car"};
+const inGroup=id=>IN.sc==="car"?"car":IN_GROUP_OF[id];
 const IN_SC_ID=IN_SCENARIOS[saved.inSc]?saved.inSc:"main";
 const IN={on:appMode==="install", sc:IN_SC_ID, cfg:IN_SCENARIOS[IN_SC_ID], step:0, gen:0,   // gen: goes up when the stick must be remade (STICK.gen must match)
   done:Array.isArray(saved.inDone)?saved.inDone:[],                 // scenarios finished this session
@@ -42,7 +46,9 @@ const IN_DONE={
   diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0, diskNew:()=>wsLayoutOk(),
   diskParts:()=>WS.seen.sys&&WS.seen.msr&&WS.seen.pri&&(IN.plan===1||WS.seen.files), diskInstall:()=>WS.installing,
   instCopy:()=>WS.copied, removeStick:()=>WS.copied&&IN.stick==="table", firstBoot:()=>WS.oobeDone,
-  userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh
+  userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh,
+  dmOpen:()=>DM.opened, dmShrink:()=>DM.shrunk, dmNew:()=>DM.made, dmCheck:()=>DM.checked,
+  carCopy:()=>CAR.desk.length===SONGS.length, carFormat:()=>CAR.fs==="exFAT", carBack:()=>CAR.fs==="exFAT"&&CAR.stick.length===SONGS.length
 };
 // Ctrl+H (and a scenario's starting point): the state each step leaves behind
 const gptStick=()=>Object.assign(STICK,{boot:"GPT",gen:IN.gen,iso:STICK.iso});
@@ -72,15 +78,22 @@ const IN_FINISH={
   firstBoot:()=>{ clearInterval(wsCopied.timer); if(IN.stick==="pc"&&IN.cfg.trap) stickPcOut(true); PC.boot++; PC.mode="setup"; WS.page="user"; WS.oobeDone=true; },
   userName:()=>{ WS.draft=WS.draft||t("ob_userPh"); wsUserDone(); },
   newDesk:()=>{ PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:true,loc:"pc",checked:true}); },
+  dmOpen:()=>{ OW.dm=true; DM.opened=true; },
+  dmShrink:()=>{ dmPart("c").gb-=400; DM.shrunk=true; DM.sel="u"; DM.dlg=null; },
+  dmNew:()=>{ if(!DM.parts.some(p=>p.id==="d")) DM.parts.push({id:"d",gb:dmFree(),fs:"NTFS",letter:"D",label:t("dm_labelSug"),kind:"d"}); DM.made=true; DM.dlg=null; DM.fmt=-1; },
+  dmCheck:()=>{ OW.dm=false; OW.app=true; OW.loc="pc"; DM.checked=true; },
+  carCopy:()=>{ CAR.desk=[...SONGS]; LAP.dlg=null; },
+  carFormat:()=>{ CAR.fs="exFAT"; CAR.stick=[]; CAR.label="MUSIC"; LAP.dlg=null; },
+  carBack:()=>{ CAR.stick=[...SONGS]; LAP.dlg=null; },
   login:()=>{ clearInterval(wsCopied.timer); WS.copied=WS.oobeDone=true; WS.user=WS.user||t("ob_userPh"); PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:false,loc:"pc"}); }
 };
 const inCur=()=>IN_STEPS[IN.step];
 // text that can name the customer's drive ({l}: what the student called it)
 const inT=(k,v)=>t(k,{l:IN.label||t("in_labelSug"),...v});
 // a step's title and explanation: some depend on the scenario (and partitioning on the plan)
-const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":"in_s_"+id;
+const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":id==="stickLaptop"&&IN.sc==="car"?"in_s_stickLaptopC":"in_s_"+id;
 const inStepT=id=>t(inStepK(id));
-const inStepD=id=>inT(id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
+const inStepD=id=>inT(id==="stickPc"&&IN.sc==="used"?"in_s_stickPcdU":id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
 // actions that belong to a later step wait for it; steps this scenario doesn't have are always open
 function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
 function inCheck(){
@@ -252,6 +265,7 @@ function inClick(d){
       if(IN.step<IS.eject){ toast(t("in_stickBusy")); return; }
       if(!LAP.ejected){ inMistake("in_m_pull"); return; }
       stickOut(false); return; }
+    if(IN.stick==="table"&&id==="stickPc"&&IN.sc==="used"){ focus("powerBtn",1000); stickToPc(inPort("front1"),false); return; }   // the customer's PC: straight into the front USB port
     if(IN.stick==="table"&&id==="stickPc"){ if(IN.picking) toast(t("in_pickPort")); else inStartPick(); return; }
     if(IN.stick==="pc"&&id==="removeStick"){ inQuiz(); return; }
     if(IN.stick==="pc"&&id==="instCopy"){ inMistake("in_m_pullEarly"); return; }
@@ -294,13 +308,18 @@ function inStart(){
   const c=IN.cfg; lapG.visible=!!c.laptop; inStick.visible=true; wsSetDisks(c.disks); IN.plan=c.plan||0;
   LAP.web.lng=lang==="ar"?"ar":"en";
   if(c.stick==="ready"){ Object.assign(STICK,{boot:"GPT",gen:0,iso:true}); LAP.iso=isoName(); LAP.dl=1; stickOut(true); }   // made earlier: lying by the PC
+  else if(c.stick==="none"){ inStick.visible=false; IN.stick="none"; }
   else stickOnMat();
+  if(IN.sc==="car"){ LAP.files.loc="e"; LAP.app="files"; }              // the music stick opens in Files
   showScreen(screenOff,0);
   const v=VIEWS.inDesk; camera.position.copy(viewPos(v.pos,v.tgt)); controls.target.set(...v.tgt); controls.update(); view="inDesk";
   if(c.start){                                                          // challenges that start inside Setup
     stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); IN_FINISH.setupGo(); WS.sel=m2U();
     if(c.start==="copy"){ IN_FINISH.diskNew(); IN_FINISH.diskInstall(); }
     setTimeout(()=>openScreen("pc"),700); }
+  if(c.start==="desktop"){                                              // the new PC, already on its desktop
+    powerUp(); PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk"}); WS.user=t("in_owner"); setTimeout(()=>openScreen("pc"),700); }
+  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc),{cls:"info"}),1400);
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
   else if(S.card&&(window.innerWidth<=860||isFs())) inStepCard();
@@ -310,7 +329,7 @@ function inStart(){
 function renderIN(){
   const el=document.getElementById("inPanel"); if(!IN.on){ el.hidden=true; return; } el.hidden=false;
   let h=`<p class="module-title">${t("in_title")}</p><h3 class="in-sc">${t("in_sc_"+IN.sc)}</h3><ol class="steps">`, grp=null;
-  IN_STEPS.forEach((id,i)=>{ if(IN_GROUP_OF[id]!==grp){ grp=IN_GROUP_OF[id]; h+=`<li class="group">${t("in_g_"+grp)}</li>`; }
+  IN_STEPS.forEach((id,i)=>{ if(inGroup(id)!==grp){ grp=inGroup(id); h+=`<li class="group">${t("in_g_"+grp)}</li>`; }
     const st=i<IN.step?"done":i===IN.step?"current":"todo", m=(S.stepMis[i]||0)>2?" warn":"";
     h+=`<li class="${st}${i<IN.step?m:""}"><span>${inStepT(id)}</span></li>`;
     if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${inStepT(id)}</h2><p>${inStepD(id)}</p>${id==="diskPlan"&&!IN.plan?`<p><button class="primary in-plan-btn" data-plan>${t("in_planPick")}</button></p>`:""}</div></li>`; });

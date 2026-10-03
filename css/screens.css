@@ -378,3 +378,28 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 /* arrows beside Ventoy's Options menu and its GPT item (there's no room above them) */
 .tl-menu .point::after, .tl-drop .point::after{ content:"◀"; left:calc(100% + 6px); bottom:auto; top:50%; transform:translateY(-50%); animation:none; }
 :root[dir="rtl"] .tl-menu .point::after, :root[dir="rtl"] .tl-drop .point::after{ content:"▶"; left:auto; right:calc(100% + 6px); }
+/* Ventoy: the partition style pill: red for MBR, green for GPT */
+.pill.bad{ background:#fde7e7; border-color:#d93025; color:#b3261e; }
+/* Disk Management (disk-mgmt.js) */
+.dm-wrap{ display:flex; flex-direction:column; gap:10px; padding:10px 12px; min-height:100%; background:#fff; }
+.dm-tools{ display:flex; gap:6px; flex-wrap:wrap; }
+.dm-list{ border:1px solid var(--os-line); border-radius:6px; overflow:auto; font-size:12.5px; }
+.dm-row{ display:grid; grid-template-columns:1.6fr .8fr .7fr .8fr 2.4fr .9fr; gap:8px; padding:5px 8px; border-bottom:1px solid #eef0f3; cursor:pointer; }
+.dm-row span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dm-row.dm-head{ background:#f0f2f5; color:#3b434d; cursor:default; font-weight:600; }
+.dm-row.on{ background:#cfe0fb; }
+.dm-disk{ display:grid; grid-template-columns:120px 1fr; border:1px solid #c9ced6; border-radius:6px; overflow:hidden; }
+.dm-dhead{ display:grid; align-content:center; gap:2px; padding:8px; background:#f0f2f5; font-size:12px; color:#3b434d; }
+.dm-dhead b{ color:#1b1f24; font-size:13px; }
+.dm-bar{ display:flex; min-width:0; }
+.dm-part{ min-width:70px; display:grid; align-content:start; gap:2px; padding:6px 8px; border:0; border-top:8px solid #2a56c4; border-inline-start:1px solid #c9ced6; background:#fff; text-align:start; font:inherit; font-size:12px; color:#1b1f24; cursor:pointer; overflow:hidden; }
+.dm-part b{ font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dm-part small{ color:#5d6672; font-size:11px; overflow:hidden; text-overflow:ellipsis; }
+.dm-part.u{ border-top-color:#1b1f24; background:repeating-linear-gradient(135deg,#fff 0 6px,#eef0f3 6px 12px); }
+.dm-part.on{ outline:2px dashed #1a56c4; outline-offset:-4px; background-color:#eef3fc; }
+.dm-form{ display:grid; grid-template-columns:auto minmax(120px,1fr); gap:8px 12px; align-items:center; margin:8px 0; }
+.dm-form input, .dm-form select{ font:inherit; padding:5px 6px; border:1px solid #b8bfc8; border-radius:4px; min-width:0; background:#fff; color:#1b1f24; }
+.dm-form b{ font-weight:600; }
+.ow-ctx button:disabled{ color:#a0a7b0; cursor:default; background:transparent; }
+.ow-start button svg{ display:inline-block; width:16px; height:16px; vertical-align:-3px; }
+@media (max-width: 860px){ .dm-row{ grid-template-columns:1.6fr .9fr .9fr; } .dm-row span:nth-child(2), .dm-row span:nth-child(3), .dm-row span:nth-child(5){ display:none; } .dm-disk{ grid-template-columns:1fr; } .dm-dhead{ grid-auto-flow:column; justify-content:start; gap:10px; } }

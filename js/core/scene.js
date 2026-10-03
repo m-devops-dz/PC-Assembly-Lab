@@ -12,7 +12,7 @@ renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap; ren
 vp.prepend(renderer.domElement);
 const scene=new T.Scene();
 const boardRoot=new T.Group(); scene.add(boardRoot);
-const camera=new T.PerspectiveCamera(36,1,0.5,200);
+const camera=new T.PerspectiveCamera(36,1,0.5,900);                  // far: beyond the farthest zoom-out (controls.maxDistance), so nothing gets sliced off
 const VIEWS={ cpu:{pos:[-0.6,25,6.2],tgt:[-2.5,0.6,-5]}, ram:{pos:[6.8,31,-3.8],tgt:[6.8,.5,-4.3]}, paste:{pos:[-4.6,23,-2.7],tgt:[-4.6,.5,-3.1]},
   bracket:{pos:[2.5,19,10],tgt:[-2.5,.5,-5]},                          // the whole socket and both bracket pieces, 45° from the front
   coolerTop:{pos:[-3,36,-2.4],tgt:[-3,1,-3]}, coolerDrop:{pos:[-1,24,19],tgt:[-1,1,-3]},   // placing the cooler: straight down; lowering it and the screws: 45° from the front
