@@ -75,7 +75,7 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .os .muted{ color:var(--os-muted); font-size:12.5px; }
 .os :focus-visible{ outline:2px solid var(--os-blue); outline-offset:2px; }
 
-/* BootUSB */
+/* Ventoy */
 .tl{ max-width:540px; margin:0 auto; padding:14px 18px 20px; display:grid; gap:14px; }
 .tl-menu{ position:relative; display:flex; gap:2px; padding-bottom:6px; border-bottom:1px solid var(--os-line); }
 .tl-menu > button, .tl-menu > span{ padding:4px 10px; border:0; border-radius:4px; background:transparent; font-size:13.5px; }
@@ -190,7 +190,7 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .in-card.good .quiz-card{ border-top-color:var(--ok); }
 .in-card.good .quiz-part{ color:var(--ok); }
 
-/* ---- the PC's monitor (pc-boot.js): POST, boot menu, BIOS, BootUSB menu, old Windows, Setup. BIOS text stays English. ---- */
+/* ---- the PC's monitor (pc-boot.js): POST, boot menu, BIOS, Ventoy menu, old Windows, Setup. BIOS text stays English. ---- */
 .scr[data-dev="pc"] .scr-frame{ padding:10px 10px 0; border-radius:10px; background:#141518; }
 .pcs{ position:absolute; inset:0; display:flex; flex-direction:column; background:#000; color:#e6e8eb; font-family:"Barlow", var(--font); }
 .pc{ position:relative; flex:1; min-height:0; overflow:hidden; display:grid; place-items:center; direction:ltr; }
@@ -364,3 +364,14 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .ow-ctx button:hover{ background:#eef2f8; }
 .ws-note.bad{ background:#ffe1df; color:#5c0d08; border-inline-start-color:var(--err); }
 .in-plan-btn{ margin-top:8px; }
+/* "click here" arrows inside the screens: F11 on the key row, the Windows ISO in Ventoy, the taskbar's USB icon and "Eject" */
+.point{ position:relative; outline:2px solid #ffc400 !important; outline-offset:2px; animation:hintGlow 1s infinite; }
+.point::after{ content:"▼"; position:absolute; left:50%; bottom:calc(100% + 4px); transform:translateX(-50%); color:#ffc400; font-size:22px; line-height:1;
+  text-shadow:0 1px 3px rgba(0,0,0,.6); pointer-events:none; animation:pointBob .7s ease-in-out infinite alternate; }
+@keyframes pointBob{ to{ transform:translate(-50%,-6px); } }
+.os-trayp .point::after{ content:"◀"; left:auto; bottom:auto; top:50%; inset-inline-end:8px; transform:translateY(-50%); animation:none; }
+:root[dir="rtl"] .os-trayp .point::after{ content:"▶"; }
+.pc-keys{ overflow:visible; }
+.pc.vt .point{ outline-offset:3px; }
+.pc-f11{ margin:16px 0 0; color:#ffc400; font-weight:700; font-size:clamp(15px,2.4vw,22px); text-align:center; animation:hintGlow 1s infinite; border-radius:6px; padding:2px 10px; direction:inherit; }
+@media (prefers-reduced-motion: reduce){ .point, .point::after, .pc-f11{ animation:none; } }

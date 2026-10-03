@@ -4,7 +4,7 @@
            UEFI only (CSM off, as Windows 11 needs), so picking anything there explains that and sends the student
            back to the laptop to remake it (inRedo)
    bios    BIOS setup (the EZ-mode picture from peripherals.js); Esc or F10 restarts
-   ventoy  BootUSB's menu: the ISO files on the stick; with one ISO it starts it after a few seconds by itself
+   ventoy  Ventoy's menu: the ISO files on the stick; the student picks the Windows ISO
    nodisk  a new PC with nothing to start from (no stick, empty drives)
    load    spinner; oldwin: the old Windows on the M.2 (old-windows.js): phase 2 on purpose, or no F11 / picked from the menu
    setup   Windows Setup (win-setup.js)
@@ -23,8 +23,11 @@ function pcPowerOn(){
   S.busy=true;
   tween(260,k=>{ powerBtn.position.x=CX1+.17-.12*Math.sin(k*Math.PI); },()=>{ S.busy=false; powerUp(); openScreen("pc"); pcPost(950); });
 }
+// main path: the logo stays up until F11 (an arrow points at it); elsewhere the few seconds run out
+const pcWaitF11=()=>IN.sc==="main"&&inCur()==="powerF11";
 function pcPost(delay=0){
-  const id=++PC.boot, dur=IN.stick==="pc"?POST_MS:3500; PC.mode="post"; PC.k=0; OW.view="lock"; OW.app=OW.start=OW.renaming=false; showScreen(screenOn); renderScreen();
+  const id=++PC.boot, dur=IN.stick==="pc"?POST_MS:3500;
+  if(pcWaitF11()){ PC.mode="post"; PC.k=0; OW.view="lock"; showScreen(screenOn); renderScreen(); return; } PC.mode="post"; PC.k=0; OW.view="lock"; OW.app=OW.start=OW.renaming=false; showScreen(screenOn); renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return;
     tween(dur,k=>{ if(PC.boot===id&&PC.mode==="post"){ PC.k=k; pcBar(); } },()=>{ if(PC.boot===id&&PC.mode==="post") pcBootDisk(true); }); },delay);
 }
@@ -64,11 +67,8 @@ function pcChoose(i){
   if(!STICK.iso){ inMistake("in_m_noIso",()=>inRedo(false)); return; }
   pcVentoy();
 }
-// BootUSB's menu, with a countdown to start the only ISO on the stick
-function pcVentoy(){ const id=PC.boot; PC.mode="ventoy"; PC.ventoySeen=true; PC.vt=4; renderScreen(); inCheck();
-  clearInterval(pcVentoy.timer);
-  pcVentoy.timer=setInterval(()=>{ if(PC.boot!==id||PC.mode!=="ventoy"||WS.installing){ clearInterval(pcVentoy.timer); return; }
-    if(!inCardEl.hidden) return; PC.vt--; if(PC.vt<=0){ clearInterval(pcVentoy.timer); pcIso(); } else renderScreen(); },1000); }
+// Ventoy's menu: the ISO files on the stick. It waits for the student to choose one (Enter or a click).
+function pcVentoy(){ PC.mode="ventoy"; PC.ventoySeen=true; renderScreen(); inCheck(); }
 function pcIso(){
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
@@ -78,17 +78,17 @@ function pcRender(){
   if(SCR.dev!=="pc") return;
   const m=PC.mode; let s="";
   if(m==="post"||m==="wait") s=`<div class="pc post"><b class="pc-msi">MSI</b><small>B450 GAMING PLUS MAX</small>
-      ${m==="wait"?`<p class="pc-hint on">Entering…</p>`:`<div class="pc-post-bar" title="${t("pc_window")}"><i id="pcBar"></i></div><p class="pc-hint">Press DEL key to enter SETUP, F11 to enter Boot Menu</p>`}</div>`;
+      ${m==="wait"?`<p class="pc-hint on">Entering…</p>`:`${pcWaitF11()?`<p class="pc-f11">${t("pc_f11Now")}</p>`:`<div class="pc-post-bar" title="${t("pc_window")}"><i id="pcBar"></i></div>`}<p class="pc-hint">Press DEL key to enter SETUP, F11 to enter Boot Menu</p>`}</div>`;
   else if(m==="menu") s=`<div class="pc menu"><div class="pc-menu"><p>Please select boot device:</p><ul>${pcEntries().map((e,i)=>`<li><button data-k="pick" data-v="${i}" class="${i===PC.sel?"on":""}">${e.l}</button></li>`).join("")}</ul>
       <p class="pc-foot">↑ and ↓ to move selection<br>ENTER to select boot device<br>ESC to boot using defaults</p></div></div>`;
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
-  else if(m==="ventoy") s=`<div class="pc vt"><header>BootUSB 1.0.99 · UEFI</header><ul><li><button class="on" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>${!WS.installing&&PC.vt>0?t("vt_auto",{s:PC.vt})+" · ":""}↑↓ Select · Enter Boot · F1 Help</footer></div>`;
+  else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
   else if(m==="oldwin") s=owRender();
   else if(m==="nodisk") s=`<div class="pc nodisk"><p>Reboot and Select proper Boot device<br>or Insert Boot Media in selected Boot device and press a key_</p><button class="pc-power" data-k="restart">↻ ${t("pc_restart")}</button></div>`;
   else if(m==="setup") s=wsRender();
   else s=`<div class="pc"></div>`;
-  const keys=PC_KEY_MODES.includes(m)?`<div class="pc-keys"><span>${t("pc_kb")}</span>${PC_KEYS.map(([k,l])=>`<button data-k="${k}"${k==="F11"?' class="fk"':""}>${l}</button>`).join("")}</div>`:"";
+  const keys=PC_KEY_MODES.includes(m)?`<div class="pc-keys"><span>${t("pc_kb")}</span>${PC_KEYS.map(([k,l])=>`<button data-k="${k}"${k==="F11"?` class="fk${m==="post"&&pcWaitF11()?" point":""}"`:""}>${l}</button>`).join("")}</div>`:"";
   scrBody.innerHTML=`<div class="pcs">${s}${keys}</div>`;
   pcBar(); const ren=document.getElementById("owName"); if(ren){ ren.focus(); ren.select(); }
 }

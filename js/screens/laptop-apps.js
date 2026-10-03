@@ -1,6 +1,6 @@
 /* ---------------- the laptop's screen (install mode, phase 1: make the install USB) ----------------
    A small desktop, inspired by Windows but not a copy of it, with three apps:
-   BootUSB  a Ventoy-style tool: pick the device, set the partition style, Install (it wipes the device)
+   Ventoy   pick the device, set the partition style, Install (it wipes the device)
    Browser  a search page, its results (one is an ad) and the official download page
    Files    Downloads and the drives: drag the ISO onto the stick, or Copy / Paste
    One app at a time fills the screen, so it works the same on a phone. The order is free: after every action
@@ -10,7 +10,7 @@ const ISO_GB=5.6;
 // what is on the stick: boot style "MBR"/"GPT" (null: never prepared), the install it came from (IN.gen), the ISO
 const STICK={boot:null, gen:0, iso:false};
 const LAP={app:null, note:null, tray:false, dlg:null, menu:false,
-  dev:"D", style:"MBR", tool:"idle", toolP:0,                       // BootUSB: the device list starts on the backup drive, like a real tool would
+  dev:"D", style:"MBR", tool:"idle", toolP:0,                       // Ventoy: the device list starts on the backup drive, like a real tool would
   web:{page:"home", q:"", rel:true, found:false, ed:"", edOk:false, lng:"", lngOk:false},
   dl:-1, iso:null,                                                  // download: -1 not started, then 0..1
   files:{loc:"dl", sel:null, clip:null}, copy:-1, ejected:false};
@@ -28,7 +28,7 @@ const OS_ICON={
   file:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8l4.5 4.5v14.5H6z" fill="#fff" stroke="#9aa5b4"/><path d="M14 2.5V7h4.5" fill="none" stroke="#9aa5b4"/></svg>`,
   eject:svgI(`<path d="M5 15h14L12 6z" fill="currentColor"/><path d="M5 19h14"/>`)
 };
-// the files on each drive. E: changes: personal files at first, empty once BootUSB is on it, then the ISO
+// the files on each drive. E: changes: personal files at first, empty once Ventoy is on it, then the ISO
 function lapFiles(loc){
   const F=(n,s,k)=>({n,s,k:k||"file"});
   if(loc==="dl") return [F("invoice_2026.pdf","0.2 MB"),F("trip_photo.jpg","4.1 MB"),...(LAP.dl>=1?[F(LAP.iso,ISO_GB+" GB","iso")]:[])];
@@ -42,6 +42,8 @@ const eName=()=>t(STICK.boot?"fl_eB":"fl_e");
 const isoName=()=>"Win11_25H2_"+(LAP_LANGS.find(l=>l[0]===LAP.web.lng)||LAP_LANGS[1])[1]+"_x64.iso";
 
 /* ---- drawing ---- */
+// the eject step is easy to miss: arrows on the taskbar's USB icon, then on "Eject" (hints on)
+const lapPoint=()=>S.hints&&S.glow&&inCur()==="eject"&&!LAP.ejected&&STICK.iso;
 function lapRender(){
   if(SCR.dev!=="laptop") return;
   const focusQ=document.activeElement&&document.activeElement.id==="wbQ";
@@ -49,8 +51,8 @@ function lapRender(){
     <div class="os-desk">${["files","web","tool"].map(a=>`<button class="os-ico" data-a="open" data-v="${a}">${OS_ICON[a]}<span>${t("app_"+a)}</span></button>`).join("")}</div>
     ${LAP.app?lapWin():""}${LAP.dlg?lapDlg():""}${LAP.note?`<div class="os-note" role="status">${OS_ICON.usb}<div><b>${t(LAP.note[0])}</b><span>${t(LAP.note[1])}</span></div></div>`:""}
     <footer class="os-bar"><div class="os-apps">${["files","web","tool"].map(a=>`<button data-a="open" data-v="${a}" class="${LAP.app===a?"on":""}" title="${t("app_"+a)}" aria-label="${t("app_"+a)}">${OS_ICON[a]}</button>`).join("")}</div>
-      <div class="os-tray">${stickIn()?`<button data-a="tray" class="${LAP.tray?"on":""}" title="${t("os_eject")}" aria-label="${t("os_eject")}">${OS_ICON.usb}</button>`:""}<span>14:32</span></div>
-      ${LAP.tray?`<div class="os-trayp"><p>${t("os_eject")}</p><button data-a="eject" data-v="E">${OS_ICON.eject}${t("os_ejectE")}</button><button data-a="eject" data-v="D">${OS_ICON.eject}${t("os_ejectD")}</button></div>`:""}</footer>
+      <div class="os-tray">${stickIn()?`<button data-a="tray" class="${LAP.tray?"on":""}${lapPoint()&&!LAP.tray?" point":""}" title="${t("os_eject")}" aria-label="${t("os_eject")}">${OS_ICON.usb}</button>`:""}<span>14:32</span></div>
+      ${LAP.tray?`<div class="os-trayp"><p>${t("os_eject")}</p><button data-a="eject" data-v="E"${lapPoint()?' class="point"':""}>${OS_ICON.eject}${t("os_ejectE")}</button><button data-a="eject" data-v="D">${OS_ICON.eject}${t("os_ejectD")}</button></div>`:""}</footer>
   </div>`;
   lapProg();
   if(focusQ){ const q=document.getElementById("wbQ"); if(q){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); } }
@@ -115,7 +117,11 @@ function lapProg(){ const v={tool:LAP.toolP,dl:Math.max(0,LAP.dl),copy:Math.max(
 function lapNote(title,text){ LAP.note=[title,text]; clearTimeout(lapNote.t); lapNote.t=setTimeout(()=>{ LAP.note=null; lapRender(); },6000); }
 
 /* ---- actions ---- */
+// Ventoy installing, the ISO downloading, the ISO copying: the window can't be closed or swapped until it's done
+const lapBusy=()=>LAP.tool==="busy"&&"tool"||LAP.dl>=0&&LAP.dl<1&&"web"||LAP.copy>=0&&LAP.copy<1&&"files"||"";
 function lapAct(a,v){
+  const busy=lapBusy();
+  if(busy&&(a==="min"||a==="open"&&v!==busy)){ toast(t("in_busyWait"),"err"); return; }
   if(a!=="menu"&&a!=="style") LAP.menu=false;
   if(a!=="tray"&&a!=="eject") LAP.tray=false;
   switch(a){
@@ -146,7 +152,7 @@ function lapAct(a,v){
   }
   lapRender(); inCheck();
 }
-// Install always wipes the device first (also a stick that already has BootUSB on it: the ISO goes too)
+// Install always wipes the device first (also a stick that already has Ventoy on it: the ISO goes too)
 function lapInstall(){
   if(LAP.tool==="busy"||!inGate("toolDevice")) return;
   if(LAP.dev==="E"&&LAP.style==="MBR"&&IN.mbrFails>0){
@@ -157,7 +163,7 @@ function lapInstall(){
     return; }
   LAP.dlg={kind:"warn"}; lapRender();
 }
-// "Yes" in the wipe warning: the backup drive is a big mistake (nothing really happens to it); the stick gets BootUSB
+// "Yes" in the wipe warning: the backup drive is a big mistake (nothing really happens to it); the stick gets Ventoy
 function lapWipe(){
   LAP.dlg=null;
   if(LAP.dev==="D"){ lapRender(); inMistake("in_m_wipeD"); return; }

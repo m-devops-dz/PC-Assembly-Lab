@@ -5,7 +5,7 @@
      main    plug the stick in → power on, F11 → pick the stick → click through Setup → Windows + Data on the M.2 →
              install → wait → sign in (name, "Hi", desktop)
    Everything else is a challenge the student picks from the list in the sidebar (each one starts from a fresh page):
-     usb     make the install stick on the laptop (BootUSB, official ISO, copy, eject); MBR passes but the stick is then
+     usb     make the install stick on the laptop (Ventoy, official ISO, copy, eject); MBR passes but the stick is then
              missing from the boot menu, and inRedo() sends the student back (laptop-apps.js, pc-boot.js)
      used    a customer's PC: look at the old Windows, name the drive with their files, then clean the M.2 without
              touching that drive (Delete/Format on it = a 60 s penalty) (old-windows.js, win-setup.js)
@@ -37,7 +37,7 @@ const IN_DONE={
   stickLaptop:()=>IN.stick==="laptop", toolDevice:()=>LAP.dev==="E"&&stickIn(), toolInstall:()=>!!STICK.boot&&STICK.gen===IN.gen,
   isoSearch:()=>LAP.web.found, isoDownload:()=>LAP.dl>=1, isoCopy:()=>STICK.iso, eject:()=>IN.stick==="table",
   oldBoot:()=>OW.seen, oldOpenD:()=>OW.openedD, oldRename:()=>!!IN.label, oldShutdown:()=>OW.shut,
-  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>PC.ventoySeen,
+  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>PC.setup,
   setupGo:()=>WS.custom,
   diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0, diskNew:()=>wsLayoutOk(),
   diskParts:()=>WS.seen.sys&&WS.seen.msr&&WS.seen.pri&&(IN.plan===1||WS.seen.files), diskInstall:()=>WS.installing,
