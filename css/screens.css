@@ -358,3 +358,9 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 /* sidebar: scenario name and the list of scenarios */
 .in-sc{ margin:-6px 0 0; font-family:var(--display); font-size:19px; }
 .in-ch .ts-pick .cur{ border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold); }
+/* File Explorer's right-click menu on a drive */
+.ow-ctx{ position:absolute; z-index:8; min-width:150px; display:grid; padding:4px; border-radius:8px; background:#fff; border:1px solid #d5d9df; box-shadow:0 10px 28px rgba(0,0,0,.3); }
+.ow-ctx button{ padding:8px 12px; border:0; border-radius:5px; background:transparent; text-align:start; font:inherit; color:#1b1f24; cursor:pointer; }
+.ow-ctx button:hover{ background:#eef2f8; }
+.ws-note.bad{ background:#ffe1df; color:#5c0d08; border-inline-start-color:var(--err); }
+.in-plan-btn{ margin-top:8px; }

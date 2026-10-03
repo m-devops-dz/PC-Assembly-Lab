@@ -56,9 +56,9 @@ function wsRender(){
     <h2>${t("ob_userH")}</h2><p class="ws-small">${t("ob_userP")}</p><input class="ws-key" id="wsUser" maxlength="20" value="${WS.draft.replace(/"/g,"&quot;")}" placeholder="${t("ob_userPh")}" aria-label="${t("ob_userH")}" autocomplete="off" style="direction:inherit">
     <span style="flex:1"></span><footer><button class="ws-next" data-w="userNext">${t("ws_next")}</button></footer></div></div></div>`;
   if(p==="hi") return `<div class="pc hi"><h2>${t("ob_hi",{n:WS.user})}</h2><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div><p>${t("ob_hiP")}</p></div>`;
-  if(p==="lang"){ const iso=t("lang_"+(LAP.web.lng||"en"));
+  if(p==="lang"||p==="again"){ const iso=t("lang_"+(LAP.web.lng||"en"));
     body=`<div class="ws-logo">${t("ws_brand")}</div>${[["ws_langI",iso],["ws_time",iso],["ws_kb",lang==="ar"?t("lang_ar"):"US"]].map(([k,v])=>`<label class="ws-f"><span>${t(k)}</span><select><option>${v}</option></select></label>`).join("")}
-      <p class="ws-small">${t("ws_langNote")}</p>`; next="langNext"; }
+      <p class="ws-small">${t("ws_langNote")}</p>`; next=p==="again"?"againNext":"langNext"; }
   else if(p==="start") body=`<div class="ws-logo big">${t("ws_brand")}</div><p class="ws-c"><button class="ws-now" data-w="now">${t("ws_now")}</button></p><p class="ws-c"><button class="ws-link" data-w="repair">${t("ws_repair")}</button></p>`;
   else if(p==="key"){ body=`<h2>${t("ws_keyH")}</h2><p>${t("ws_keyP")}</p><p class="ws-small">${t("ws_keyEx")}</p>
       <input class="ws-key" id="wsKey" value="${WS.key}" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" aria-label="${t("ws_keyH")}" autocomplete="off">
@@ -77,7 +77,7 @@ function wsRender(){
     body=`<h2>${t("ws_instH")}</h2><p>${t("ws_instP")}</p><ul class="ws-steps">${COPY_STAGES.map((s,i)=>`<li class="${i<cur?"done":i===cur?"cur":""}">${i<cur?"✓ ":""}${t(s)}${i===cur?` (${Math.floor((k-cur)*100)}%)`:""}</li>`).join("")}</ul>
       ${IN.slow?`<p class="ws-small">${t("ws_slow")}</p>`:""}<div class="ws-bar"><i style="width:${(WS.prog*100).toFixed(1)}%"></i></div>`; }
   else if(p==="restart") body=`<h2>${t("ws_rsH")}</h2><p>${t("ws_rsP",{s:WS.left})}</p><div class="ws-bar"><i style="width:${(100-WS.left/restartS()*100).toFixed(1)}%"></i></div>`;
-  const note=p==="disk"?wsNote():"";
+  const note=p==="disk"?wsNote():p==="again"?`<p class="ws-note bad">⚠ ${t("in_againNote")}</p>`:"";
   const hl=wsHl();
   return `<div class="pc ws${hl?" hl-"+hl:""}"><div class="ws-win"><header>${back?`<button data-w="back" aria-label="${t("wb_back")}">←</button>`:""}<span>${t("ws_title")}</span></header>
     <div class="ws-body">${body}</div>${WS.msg?`<p class="ws-msg">${t(WS.msg)}</p>`:""}
@@ -127,6 +127,7 @@ function wsAct(a,v){
     case "region": WS.region=+v; break;
     case "oobeYes": WS.oobeDone=true; WS.page="user"; toast(t("in_oobeOk"),"ok"); break;
     case "userNext": wsUserDone(); return;
+    case "againNext": toast(t("in_againHint"),"err"); return;
   }
   renderScreen(); inCheck();
 }
@@ -191,10 +192,15 @@ function wsRestart(){
   clearInterval(wsCopied.timer); if(WS.page!=="restart") return; WS.page="rebooting";
   const id=++PC.boot; PC.mode="load"; PC.loadMsg=""; renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return;
-    if(IN.stick==="pc"&&IN.cfg.trap){ PC.mode="ventoy"; renderScreen(); inMistake("in_m_stickIn"); return; }   // the challenge: the PC found the stick again
+    if(IN.stick==="pc"&&IN.cfg.trap){ PC.mode="ventoy"; renderScreen();   // the challenge: the PC found the stick again, and Setup starts over
+      setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; WS.page="again"; renderScreen();
+        inMistake("in_m_stickIn",()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }); },2500); return; }
     // otherwise Setup has put Windows Boot Manager first in the boot order, so the new Windows starts even with the stick in
     pcFirstBoot(); },1600);
 }
+// Setup started over from the stick, the stick is out now: the case's power button restarts the PC into the new Windows
+function pcRestartNew(){ S.busy=true;
+  tween(260,k=>{ powerBtn.position.x=CX1+.17-.12*Math.sin(k*Math.PI); },()=>{ S.busy=false; WS.page="rebooting"; openScreen("pc"); pcFirstBoot(); }); }
 // the new Windows starts from the M.2 for the first time
 function pcFirstBoot(){ const id=++PC.boot; PC.mode="load"; PC.loadMsg="pc_ready"; showScreen(screenOn); renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return; PC.loadMsg="pc_devices"; renderScreen(); },2200);

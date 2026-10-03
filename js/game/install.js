@@ -91,7 +91,8 @@ function inCheck(){
 function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen(); const id=inCur();
   if((id==="powerF11"||id==="oldBoot")&&!S.powered) setTimeout(()=>{ if(!S.busy&&!SCR.dev) focus("powerBtn",1000); },900);   // plugged in: over to the power button
   if(id==="diskPlan"&&!IN.plan) setTimeout(inPlanCard,700);
-  if(id==="removeStick"&&IN.stick==="pc") setTimeout(()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); },1800);   // copied: out to the stick
+  if(id==="removeStick"&&IN.stick==="pc") setTimeout(()=>inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
+    onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}),1200);   // copied: the countdown waits for this card, then out to the stick
   if(IN.step>=IN_STEPS.length){ setTimeout(inScDone,1200); return; }
   if(S.card&&(window.innerWidth<=860||isFs())) inStepCard(); }
 function inSkip(){
@@ -147,12 +148,9 @@ function inStepCard(){ if(IN.step>=IN_STEPS.length) return;
   const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
 // a scenario reloads the page, the way a troubleshooting case does: every one starts from a clean PC
 function inGo(id){ IN.sc=id; persist(); location.reload(); }
-const inNextSc=()=>IN_ORDER.find(k=>k!==IN.sc&&!IN.done.includes(k));
-// the end of a scenario: time, mistakes, and on to a challenge
+// the end of a scenario: congratulations, time and mistakes, OK (the list in the sidebar has the others)
 function inScDone(){ S.end=performance.now(); if(!IN.done.includes(IN.sc)) IN.done.push(IN.sc); persist(); renderIN();
-  const nx=inNextSc(), txt=inT("in_doneP_"+IN.sc)+"\n"+t("in_doneStats",{t:fmtTime(S.end-S.start),m:S.mistakes});
-  inCard(t("in_done"),t("in_sc_"+IN.sc),txt,{cls:"good choice",buttons:[...(nx?[{l:t("in_goNext",{s:t("in_sc_"+nx)}),pri:true,fn:()=>inGo(nx)}]:[]),
-    {l:t("in_stay"),fn:()=>{}}]}); }
+  inCard(t("in_sc_"+IN.sc),t("in_congrats"),inT("in_doneP_"+IN.sc)+"\n"+t("in_doneStats",{t:fmtTime(S.end-S.start),m:S.mistakes}),{cls:"good"}); }
 
 /* ---- the 3D side: the desk, the stick, the laptop, the PC's USB ports ---- */
 VIEWS.inDesk={pos:[124,78,10],tgt:[36,4,-46]};                       // laptop, PC and monitor
@@ -236,8 +234,8 @@ function stickPcOut(now){
   const p=inPort(IN.port), q=new T.Quaternion().setFromEuler(new T.Euler(0,-.4,0));
   const done=()=>{ IN.stick="table"; IN.port=null; inCheck();
     if(now) return;
-    if(PC.mode==="ventoy"&&WS.installing){ toast(t("in_restartNow")); setTimeout(()=>{ openScreen("pc"); pcFirstBoot(); },900); }
-    else setTimeout(()=>openScreen("pc"),700); };
+    if(WS.page==="again"){ toast(t("in_pressPower")); return; }        // Setup is starting over on the screen: the student restarts the PC
+    setTimeout(()=>openScreen("pc"),700); };
   if(now||!p){ inStick.position.copy(STICK_PC); inStick.quaternion.copy(q); done(); return; }
   const w=portWorld(p), out=w.p.clone().addScaledVector(w.out,3.5), q0=inStick.quaternion.clone(); S.busy=true;
   tween(450,k=>{ inStick.position.lerpVectors(w.p,out,k); },()=>{
@@ -259,6 +257,7 @@ function inClick(d){
   if((d.part==="rport"||d.part==="inPort")&&IN.stick==="pc"&&d.port===IN.port){ inClick({part:"inStick"}); return; }
   if(d.part==="rport"||d.part==="inPort"){ if(IN.picking) inPickPort(d.port); return; }
   if(d.part==="powerBtn"){
+    if(S.powered&&WS.page==="again"){ if(IN.stick==="pc"){ toast(t("in_stickFirst2"),"err"); return; } startClock(); pcRestartNew(); return; }   // Setup started over: restart it
     if(S.powered){ openScreen("pc"); return; }
     if(id!=="oldBoot"&&id!=="powerF11"&&!(IN.step>IS.powerF11)){ toast(t("in_notYet",{s:t("in_s_"+id)})); return; }
     startClock(); pcPowerOn(); return; }
@@ -272,6 +271,7 @@ function inArrow(){
   if(!S.glow||S.busy||SCR.dev||!inCardEl.hidden||IN.step>=IN_STEPS.length) return null;
   const id=inCur();
   if(inStickNext()) return wpos(inStick);
+  if(WS.page==="again") return wpos(powerBtn);                       // the stick is out: restart the PC
   if(id==="stickPc") return null;                                     // the free ports glow instead
   if(IN_LAPTOP_STEPS.includes(id)) return laptopView().tgt;
   if(id==="oldBoot"||id==="powerF11") return S.powered?screenView().tgt:wpos(powerBtn);
@@ -281,7 +281,7 @@ function inFrame(now){
   if(!IN.on) return;
   const pulse=.5+.5*Math.sin(now/450), id=inCur(), idle=S.glow&&!S.busy&&!SCR.dev;
   setGlow(inStickMat,idle&&inStickNext(),pulse);
-  setGlow(powerBtnMat,idle&&(id==="powerF11"||id==="oldBoot")&&!S.powered,pulse);
+  setGlow(powerBtnMat,idle&&((id==="powerF11"||id==="oldBoot")&&!S.powered||WS.page==="again"&&IN.stick!=="pc"),pulse);
   if(IN.picking) IN_PORTS.forEach(p=>{ p.mat.opacity=S.glow&&portFree(p)?.25+.45*pulse:0; });
 }
 function inStart(){
@@ -300,7 +300,8 @@ function inStart(){
     if(c.start==="copy"){ IN_FINISH.diskNew(); IN_FINISH.diskInstall(); }
     setTimeout(()=>openScreen("pc"),700); }
   S.stepAt=performance.now(); renderIN(); inCheck();
-  if(S.card&&(window.innerWidth<=860||isFs())) inStepCard();
+  if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
+  else if(S.card&&(window.innerWidth<=860||isFs())) inStepCard();
 }
 
 /* ---- sidebar: this scenario's steps, then the list of scenarios ---- */
@@ -310,13 +311,14 @@ function renderIN(){
   IN_STEPS.forEach((id,i)=>{ if(IN_GROUP_OF[id]!==grp){ grp=IN_GROUP_OF[id]; h+=`<li class="group">${t("in_g_"+grp)}</li>`; }
     const st=i<IN.step?"done":i===IN.step?"current":"todo", m=(S.stepMis[i]||0)>2?" warn":"";
     h+=`<li class="${st}${i<IN.step?m:""}"><span>${t("in_s_"+id)}</span></li>`;
-    if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${t("in_s_"+id)}</h2><p>${inStepD(id)}</p></div></li>`; });
+    if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${t("in_s_"+id)}</h2><p>${inStepD(id)}</p>${id==="diskPlan"&&!IN.plan?`<p><button class="primary in-plan-btn" data-plan>${t("in_planPick")}</button></p>`:""}</div></li>`; });
   h+=`</ol>`;
   if(IN.step>=IN_STEPS.length) h+=`<div class="ts-win"><b>${t("in_sc_"+IN.sc)} ✓</b><p>${inT("in_doneP_"+IN.sc)}</p><p class="ts-muted">${t("in_doneStats",{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes})}</p></div>`;
   h+=`<div class="in-ch"><p class="module-title">${t("in_chTitle")}</p><ol class="ts-pick">${IN_ORDER.map(k=>{ const d=IN.done.includes(k);
     return `<li><button data-sc="${k}" class="${d?"solved":""}${k===IN.sc?" cur":""}"><i>${d?"✓":k==="main"?"★":IN_ORDER.indexOf(k)}</i><b>${t("in_sc_"+k)}</b><span>${t("in_scd_"+k)}</span></button></li>`; }).join("")}</ol></div>`;
   el.innerHTML=h;
   el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>inGo(b.dataset.sc));
+  el.querySelectorAll("[data-plan]").forEach(b=>b.onclick=inPlanCard);
   const cur=el.querySelector("li.current"); if(cur&&window.innerWidth>860&&!isFs()) cur.scrollIntoView({block:"center"});
   document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+t("in_s_"+inCur());
 }

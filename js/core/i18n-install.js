@@ -110,7 +110,7 @@ Object.assign(I18N.en,{
   ow_disk:"Local Disk", ow_docs:"Documents", ow_uni:"University projects", ow_cv:"CV", ow_tax:"Shop accounts 2026",
   ow_click:"click to sign in", ow_explorer:"File Explorer", ow_bin:"Recycle Bin", ow_binEmpty:"The Recycle Bin is empty.",
   ow_user:"Customer", ow_shutdown:"Shut down", ow_startMenu:"Start", ow_free:"{f} free of {s}", ow_open:"Open", ow_rename:"Rename",
-  ow_tip:"Select a drive, then Open or Rename (or double-click a drive to open it).",
+  ow_tip:"Select a drive, then Open or Rename. Double-click a drive to open it, right-click it for a menu.",
   // phases 4 and 5: Windows Setup (win-setup.js)
   in_s_setupStart:"Choose the language, then Install now",
   in_s_setupStartd:"Setup asks for the language, the time format and the keyboard. Click Next, then Install now.",
@@ -203,8 +203,8 @@ Object.assign(I18N.en,{
   in_s_firstBootd:"After the restart the PC starts the new Windows from the M.2. On the first screen, check the region and click Yes.",
   in_m_pullEarly_t:"Setup is still copying",
   in_m_pullEarly:"Windows is being copied from the stick. Pulling it out now stops the copy halfway, and the install fails: you'd start again from the beginning.\nWait for “Windows needs to restart”.",
-  in_m_stickIn_t:"The PC started the installer again",
-  in_m_stickIn:"The stick was still in, so the PC started from it and BootUSB came back. Starting Setup again would begin a second install.\nTake the stick out: the PC then starts the new Windows from the M.2.",
+  in_m_stickIn_t:"Setup started all over again",
+  in_m_stickIn:"The stick was still in when the PC restarted, so the PC started from it and Windows Setup is beginning again from the first page.\nTake the stick out of the PC, then press the PC's power button to restart it: it starts the new Windows from the M.2.",
   in_stickIn2:"Windows is already copied. Take the stick out instead of starting Setup again.",
   in_q:"Question",
   in_q_t:"Why take the stick out now?",
@@ -281,7 +281,15 @@ Object.assign(I18N.en,{
   in_autoUsb:"No F11: the drives are empty, so the PC started from the stick by itself. On a PC with Windows on it you'd need F11.",
   in_useM2:"Windows goes on the M.2 (931.5 GB), the faster drive. Leave the SATA SSD for later.",
   in_ex_sata:"The SATA SSD (476.9 GB), empty. Windows goes on the faster M.2; this drive can hold files later.",
-  vt_auto:"Starting in {s} s"
+  vt_auto:"Starting in {s} s",
+  in_planPick:"Choose a plan",
+  in_congrats:"Congratulations!",
+  in_rmT:"Take the USB stick out",
+  in_rmP:"Windows is copied and Setup will restart the PC. Before it restarts, go back to the desk and pull the stick out of the PC.\nThe countdown starts when you click OK.",
+  in_againNote:"Setup started again from the stick. Don't go through it a second time: take the stick out and restart the PC.",
+  in_againHint:"Not again: take the stick out, then press the PC's power button to restart.",
+  in_pressPower:"Stick out. Now press the PC's power button to restart it.",
+  in_stickFirst2:"Take the stick out first, then restart."
 });
 Object.assign(I18N.ar,{
   mode_install:"تثبيت ويندوز", scr_back:"العودة إلى المكتب",
@@ -389,7 +397,7 @@ Object.assign(I18N.ar,{
   ow_disk:"قرص محلي", ow_docs:"المستندات", ow_uni:"مشاريع الجامعة", ow_cv:"السيرة الذاتية", ow_tax:"حسابات المحل 2026",
   ow_click:"انقر لتسجيل الدخول", ow_explorer:"مستكشف الملفات", ow_bin:"سلة المحذوفات", ow_binEmpty:"سلة المحذوفات فارغة.",
   ow_user:"الزبون", ow_shutdown:"إيقاف التشغيل", ow_startMenu:"ابدأ", ow_free:"{f} متاحة من {s}", ow_open:"فتح", ow_rename:"إعادة تسمية",
-  ow_tip:"حدد قرصًا ثم انقر «فتح» أو «إعادة تسمية» (أو انقر القرص نقرًا مزدوجًا لفتحه).",
+  ow_tip:"حدد قرصًا ثم انقر «فتح» أو «إعادة تسمية». انقر القرص نقرًا مزدوجًا لفتحه، أو بالزر الأيمن لعرض قائمة.",
   in_s_setupStart:"اختر اللغة، ثم «التثبيت الآن»",
   in_s_setupStartd:"يسأل برنامج الإعداد عن اللغة وتنسيق الوقت ولوحة المفاتيح. انقر «التالي» ثم «التثبيت الآن».",
   in_s_setupKey:"تخطَّ مفتاح المنتج",
@@ -481,8 +489,8 @@ Object.assign(I18N.ar,{
   in_s_firstBootd:"بعد إعادة التشغيل يقلع الحاسوب ويندوز الجديد من قرص M.2. في الشاشة الأولى تحقّق من المنطقة وانقر «نعم».",
   in_m_pullEarly_t:"برنامج الإعداد ما زال ينسخ",
   in_m_pullEarly:"يُنسخ ويندوز الآن من الفلاشة. نزعها الآن يوقف النسخ في منتصفه فيفشل التثبيت، وتبدأ من جديد.\nانتظر رسالة «يحتاج Windows إلى إعادة التشغيل».",
-  in_m_stickIn_t:"أقلع الحاسوب من المثبّت مرة أخرى",
-  in_m_stickIn:"كانت الفلاشة ما زالت موصولة، فأقلع الحاسوب منها وعاد BootUSB. تشغيل برنامج الإعداد من جديد يبدأ تثبيتًا ثانيًا.\nانزع الفلاشة: عندها يقلع الحاسوب ويندوز الجديد من قرص M.2.",
+  in_m_stickIn_t:"بدأ برنامج الإعداد من جديد",
+  in_m_stickIn:"كانت الفلاشة ما زالت موصولة حين أُعيد التشغيل، فأقلع الحاسوب منها وبدأ برنامج إعداد ويندوز من الصفحة الأولى.\nانزع الفلاشة من الحاسوب، ثم اضغط زر تشغيل الحاسوب لإعادة تشغيله: يقلع ويندوز الجديد من قرص M.2.",
   in_stickIn2:"نُسخ ويندوز مسبقًا. انزع الفلاشة بدل تشغيل برنامج الإعداد من جديد.",
   in_q:"سؤال",
   in_q_t:"لماذا ننزع الفلاشة الآن؟",
@@ -559,5 +567,13 @@ Object.assign(I18N.ar,{
   in_autoUsb:"لم تضغط F11: الأقراص فارغة، فأقلع الحاسوب من الفلاشة وحده. على حاسوب عليه ويندوز ستحتاج F11.",
   in_useM2:"يُثبَّت ويندوز على قرص M.2 ‏(931.5 جيجابايت)، الأسرع. اترك قرص SATA لاحقًا.",
   in_ex_sata:"قرص SATA ‏(476.9 جيجابايت)، فارغ. يُثبَّت ويندوز على قرص M.2 الأسرع؛ ويمكن لهذا القرص أن يحمل الملفات لاحقًا.",
-  vt_auto:"يبدأ خلال {s} ث"
+  vt_auto:"يبدأ خلال {s} ث",
+  in_planPick:"اختر خطة",
+  in_congrats:"تهانينا!",
+  in_rmT:"انزع فلاشة USB",
+  in_rmP:"نُسخ ويندوز وسيعيد برنامج الإعداد تشغيل الحاسوب. قبل أن يعيد التشغيل عُد إلى المكتب وانزع الفلاشة من الحاسوب.\nيبدأ العدّ التنازلي حين تنقر «حسنًا».",
+  in_againNote:"بدأ برنامج الإعداد من الفلاشة مرة أخرى. لا تعِد التثبيت: انزع الفلاشة وأعد تشغيل الحاسوب.",
+  in_againHint:"ليس مرة أخرى: انزع الفلاشة، ثم اضغط زر تشغيل الحاسوب لإعادة تشغيله.",
+  in_pressPower:"نُزعت الفلاشة. اضغط الآن زر تشغيل الحاسوب لإعادة تشغيله.",
+  in_stickFirst2:"انزع الفلاشة أولًا، ثم أعد التشغيل."
 });

@@ -53,7 +53,7 @@ function owAct(a,v){
     case "bin": toast(t("ow_binEmpty")); return;
     case "start": OW.start=!OW.start; break;
     case "loc": OW.loc=v; OW.sel=null; OW.renaming=false; if(v==="d") OW.openedD=true; break;
-    case "sel": if(OW.renaming) return; OW.sel=v; break;
+    case "sel": if(OW.renaming) return; OW.sel=v; owSelDom(); return;    // in place: a redraw would flicker and swallow the double-click
     case "openSel": OW.loc=OW.sel; if(OW.sel==="d") OW.openedD=true; OW.sel=null; break;
     case "ren": if(OW.sel==="c"){ toast(t("in_renameC")); return; } if(!inGate("oldRename")) return; OW.renaming=true; OW.draft=IN.label||t("ow_disk"); break;
     case "renOk": owRenameDone(); return;
@@ -62,6 +62,19 @@ function owAct(a,v){
   }
   renderScreen(); inCheck();
 }
+// selection drawn without a redraw: the tiles' highlight and the toolbar's Open / Rename
+function owSelDom(){
+  scrBody.querySelectorAll(".ow-drive").forEach(el=>el.classList.toggle("on",el.dataset.v===OW.sel));
+  scrBody.querySelectorAll('[data-o="openSel"],[data-o="ren"]').forEach(b=>{ b.disabled=!OW.sel; }); }
+// right-click (or a long press) on a drive: Open / Rename
+function owCtx(e,v){
+  owCtxClose(); OW.sel=v; owSelDom();
+  const os=scrBody.querySelector(".os"), r=os.getBoundingClientRect(), m=document.createElement("div");
+  m.className="ow-ctx"; m.setAttribute("role","menu");
+  m.innerHTML=`<button data-o="openSel" role="menuitem">${t("ow_open")}</button><button data-o="ren" role="menuitem">${t("ow_rename")}</button>`;
+  os.appendChild(m);
+  m.style.left=Math.min(e.clientX-r.left,r.width-m.offsetWidth-6)+"px"; m.style.top=Math.min(e.clientY-r.top,r.height-m.offsetHeight-6)+"px"; }
+function owCtxClose(){ scrBody.querySelectorAll(".ow-ctx").forEach(m=>m.remove()); }
 function owRenameDone(){
   const v=OW.draft.trim();
   if(!v||v===t("ow_disk")){ toast(t("in_labelEmpty")); return; }
@@ -75,10 +88,14 @@ function owShutdown(now){
 }
 scrBody.addEventListener("click",e=>{
   if(SCR.dev!=="pc"||PC.mode!=="oldwin") return;
+  const inCtx=!!e.target.closest(".ow-ctx"); owCtxClose();
   const el=e.target.closest("[data-o]"); if(!el||e.target.closest("[data-k]")) return;
   if(el.tagName==="INPUT"||e.target.tagName==="INPUT") return;
+  if(inCtx&&el.dataset.o==="openSel"&&OW.loc!=="pc") return;
   startClock(); owAct(el.dataset.o,el.dataset.v);
 });
+scrBody.addEventListener("contextmenu",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive");
+  if(!el||OW.renaming) return; e.preventDefault(); owCtx(e,el.dataset.v); });
 scrBody.addEventListener("dblclick",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive"); if(el&&!OW.renaming){ OW.sel=el.dataset.v; owAct("openSel"); } });
 scrBody.addEventListener("input",e=>{ if(e.target.id==="owName") OW.draft=e.target.value; });
 scrBody.addEventListener("keydown",e=>{ if(e.target.id!=="owName") return; if(e.key==="Enter"){ e.preventDefault(); owRenameDone(); } else if(e.key==="Escape"){ OW.renaming=false; renderScreen(); } });
