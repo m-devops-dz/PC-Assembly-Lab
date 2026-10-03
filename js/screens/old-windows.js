@@ -10,7 +10,7 @@ const OW={view:"lock", seen:false, openedD:false, shut:false, app:false, loc:"pc
 function owDrives(){
   const d={k:"d",size:476.9,free:112.4};
   if(!OW.fresh) return [{k:"c",size:930.8,free:810.3},d];
-  const pr=d1Prim(), c=pr[0]?pr[0].gb:931.4;
+  const pr=m2Prim(), c=pr[0]?pr[0].gb:931.4;
   return [{k:"c",size:c,free:c-24.6},d,...(pr[1]?[{k:"e",size:pr[1].gb,free:pr[1].gb-.1}]:[])];
 }
 const owName=k=>k==="d"?(IN.label||t("ow_disk"))+" (D:)":t("ow_disk")+" ("+k.toUpperCase()+":)";

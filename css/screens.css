@@ -13,9 +13,9 @@
 .scr-back{ position:absolute; top:12px; inset-inline-start:14px; display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.35); background:rgba(0,0,0,.45); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
 .scr-back svg{ width:18px; height:18px; }
 :root[dir="rtl"] .scr-back svg{ transform:scaleX(-1); }
-body.fs .scr-back{ inset-inline-start:50%; transform:translateX(-50%); }
-:root[dir="rtl"] body.fs .scr-back{ transform:translateX(50%); }
-@media (max-width: 860px){ .scr{ padding:54px 6px 6px; } .scr-frame{ padding:6px; border-radius:10px; } .scr-back span{ display:none; } }
+/* full screen: the step bar sits at the top start, so the close button moves to the top end, left of the ⛶ button, above everything */
+body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-index:17; }
+@media (max-width: 860px){ .scr{ padding:54px 6px 6px; } .scr-frame{ padding:6px; border-radius:10px; } body.fs .scr-back span{ display:none; } }
 @media (prefers-reduced-motion: reduce){ .scr, .scr-frame{ transition:none; } }
 
 /* ---- the laptop's desktop ---- */
@@ -349,3 +349,12 @@ body.fs .scr-back{ inset-inline-start:50%; transform:translateX(-50%); }
 .pc.hi h2{ margin:0; font-size:clamp(30px, 6vw, 54px); font-weight:400; color:#fff; overflow-wrap:anywhere; text-align:center; padding:0 12px; }
 .pc.hi p{ margin:0; color:#d6d0f0; text-align:center; padding:0 12px; }
 .pcs, .os{ color-scheme:light; }                                   /* the simulated screens are always light: their inputs too */
+/* the next button to click in Setup glows (wsHl) */
+.pc.ws.hl-langNext [data-w=langNext], .pc.ws.hl-now [data-w=now], .pc.ws.hl-nokey [data-w=nokey], .pc.ws.hl-edNext [data-w=edNext],
+.pc.ws.hl-ed5 [data-w=ed][data-v="5"], .pc.ws.hl-lic .ws-chk, .pc.ws.hl-licNext [data-w=licNext], .pc.ws.hl-custom [data-w=custom]{ animation:hintGlow 1s infinite; outline:2px solid #ffc400; outline-offset:2px; border-radius:4px; }
+@media (prefers-reduced-motion: reduce){ .pc.ws [class] { animation:none; } }
+.pc.nodisk{ direction:ltr; place-items:start; padding:18px; background:#000; color:#c9ced4; font-family:"Courier New", monospace; font-size:clamp(12px,2vw,16px); }
+.pc.nodisk p{ margin:0; }
+/* sidebar: scenario name and the list of scenarios */
+.in-sc{ margin:-6px 0 0; font-family:var(--display); font-size:19px; }
+.in-ch .ts-pick .cur{ border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold); }

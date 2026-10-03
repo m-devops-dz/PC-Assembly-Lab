@@ -1,41 +1,50 @@
 /* ---------------- Windows install mode ----------------
    A separate mode (header mode menu; the page reloads into it). The PC starts fully built with the case closed, the
-   keyboard and mouse in front of the monitor. Phases:
-   1 make the install USB on the laptop (laptop-apps.js)
-   2 check the PC's drives: the old Windows, name the customer's drive (old-windows.js)
-   3 start the PC from the stick: USB port, F11, boot menu (pc-boot.js)
-   4 Windows Setup, 5 partition the right drive: the M.2, not the customer's SATA SSD, split the way the student
-     chose (IN.plan: 1 Windows, 2 + files, 3 + room for Linux) (win-setup.js)
-   6 copy, take the stick out (a question first: why?), first start of the new Windows Steps are named (IN_STEPS); IN_DONE says when each one is done, and inCheck() moves on
-   after every action, so students can work in any order the real tools allow. Ctrl+H skips a step (IN_FINISH).
-   A stick made with MBR passes phase 1 but isn't in the boot menu: inRedo() sends the student back to the laptop, and
-   the steps that are still done (the ISO is downloaded) pass again on their own. */
-const IN={on:appMode==="install", step:0, gen:0,                 // gen: goes up when the stick must be remade (STICK.gen must match)
-  label:"", plan:0, quizDone:false, mbrFails:0,                    // mbrFails: times an MBR stick wasn't in the boot menu                                // plan: how the M.2 is split (1, 2 or 3 partitions)                                                       // the name the student gave the customer's drive D: (phase 2)
-  stick:"mat",                                                    // "mat" (start), "laptop", "table" (pulled out, in front of the PC), "pc"
-  port:null, slow:false, picking:false, phases:{}};               // the PC port it's in; slow: kept in a USB 2.0 port
-const IN_STEPS=["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject",
-  "oldBoot","oldOpenD","oldRename","oldShutdown",
-  "stickPc","powerF11","bootPick","isoPick",
-  "setupStart","setupKey","setupEdition","setupCustom",
-  "diskClean","diskPlan","diskNew","diskParts","diskInstall",
-  "instCopy","removeStick","firstBoot","userName","newDesk"];
+   keyboard and mouse in front of the monitor.
+   Scenarios (IN_SCENARIOS). The main one is short: the install stick is ready on the desk, the PC's drives are new.
+     main    plug the stick in → power on, F11 → pick the stick → click through Setup → Windows + Data on the M.2 →
+             install → wait → sign in (name, "Hi", desktop)
+   Everything else is a challenge the student picks from the list in the sidebar (each one starts from a fresh page):
+     usb     make the install stick on the laptop (BootUSB, official ISO, copy, eject); MBR passes but the stick is then
+             missing from the boot menu, and inRedo() sends the student back (laptop-apps.js, pc-boot.js)
+     used    a customer's PC: look at the old Windows, name the drive with their files, then clean the M.2 without
+             touching that drive (Delete/Format on it = a 60 s penalty) (old-windows.js, win-setup.js)
+     plan    choose how to split the M.2: Windows only / + files / + room for Linux, and what Windows adds (System, MSR)
+     finish  copy, take the stick out (why? a question), leave it in and the installer starts again, first start
+   Steps are named; a scenario lists the ones it uses. IN_DONE says when each is done and inCheck() moves on after every
+   action, so students can work in any order the real tools allow. Ctrl+H skips a step (IN_FINISH). */
+const IN_SCENARIOS={
+  main:{steps:["stickPc","powerF11","bootPick","setupGo","diskNew","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:2},
+  usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
+  used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskNew","diskInstall"],disks:"used",stick:"ready",plan:1},
+  plan:{steps:["diskPlan","diskNew","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
+  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true}
+};
+const IN_ORDER=["main","usb","used","plan","finish"];
+// the sidebar group a step belongs to
+const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
+  oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
+  diskClean:"disk",diskPlan:"disk",diskNew:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end"};
+const IN_SC_ID=IN_SCENARIOS[saved.inSc]?saved.inSc:"main";
+const IN={on:appMode==="install", sc:IN_SC_ID, cfg:IN_SCENARIOS[IN_SC_ID], step:0, gen:0,   // gen: goes up when the stick must be remade (STICK.gen must match)
+  done:Array.isArray(saved.inDone)?saved.inDone:[],                 // scenarios finished this session
+  label:"", plan:0, quizDone:false, mbrFails:0,                     // label: the name given to the customer's drive; plan: how the M.2 is split; mbrFails: MBR sticks missing from the boot menu
+  stick:"mat",                                                      // "mat" (blank, by the laptop), "laptop", "table" (on the desk by the PC), "pc"
+  port:null, slow:false, picking:false};                            // the PC port it's in; slow: kept in a USB 2.0 port
+const IN_STEPS=IN.cfg.steps;
 const IS={}; IN_STEPS.forEach((id,i)=>IS[id]=i);
-const IN_GROUPS=[[IS.stickLaptop,"in_g_usb"],[IS.oldBoot,"in_g_check"],[IS.stickPc,"in_g_boot"],[IS.setupStart,"in_g_setup"],[IS.diskClean,"in_g_disk"],[IS.instCopy,"in_g_end"]];
-const IN_PHASE_END={eject:1,oldShutdown:2,isoPick:3,setupCustom:4,diskInstall:5,newDesk:6};   // finishing these steps ends a phase: a card says so (once)
-const IN_LAST=6, IN_LATER=[];                           // the last phase built; phases still to come, listed greyed out
 const IN_DONE={
   stickLaptop:()=>IN.stick==="laptop", toolDevice:()=>LAP.dev==="E"&&stickIn(), toolInstall:()=>!!STICK.boot&&STICK.gen===IN.gen,
   isoSearch:()=>LAP.web.found, isoDownload:()=>LAP.dl>=1, isoCopy:()=>STICK.iso, eject:()=>IN.stick==="table",
   oldBoot:()=>OW.seen, oldOpenD:()=>OW.openedD, oldRename:()=>!!IN.label, oldShutdown:()=>OW.shut,
-  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen, bootPick:()=>PC.ventoySeen, isoPick:()=>PC.setup,
-  setupStart:()=>WS.started, setupKey:()=>WS.noKey, setupEdition:()=>WS.license&&WS.ed===WS_PRO, setupCustom:()=>WS.custom,
+  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>PC.ventoySeen,
+  setupGo:()=>WS.custom,
   diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0, diskNew:()=>wsLayoutOk(),
   diskParts:()=>WS.seen.sys&&WS.seen.msr&&WS.seen.pri&&(IN.plan===1||WS.seen.files), diskInstall:()=>WS.installing,
   instCopy:()=>WS.copied, removeStick:()=>WS.copied&&IN.stick==="table", firstBoot:()=>WS.oobeDone,
-  userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked
+  userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh
 };
-// Ctrl+H: the state each step leaves behind
+// Ctrl+H (and a scenario's starting point): the state each step leaves behind
 const gptStick=()=>Object.assign(STICK,{boot:"GPT",gen:IN.gen,iso:STICK.iso});
 const IN_FINISH={
   stickLaptop:()=>stickToLaptop(true), toolDevice:()=>{ LAP.app="tool"; LAP.dev="E"; },
@@ -50,49 +59,48 @@ const IN_FINISH={
   oldShutdown:()=>owShutdown(true),
   stickPc:()=>{ stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); },
   powerF11:()=>{ gptStick(); STICK.iso=true; if(!S.powered) powerUp(); PC.boot++; PC.mode="menu"; PC.sel=0; PC.menuSeen=true; },
-  bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.mode="ventoy"; PC.ventoySeen=true; },
-  isoPick:()=>{ PC.boot++; PC.mode="setup"; PC.setup=true; WS.page="lang"; },
-  setupStart:()=>{ WS.started=true; WS.page="key"; }, setupKey:()=>{ WS.noKey=true; WS.page="edition"; },
-  setupEdition:()=>{ WS.ed=WS_PRO; WS.license=true; WS.page="type"; }, setupCustom:()=>{ WS.custom=true; WS.page="disk"; },
-  diskClean:()=>{ WS.parts=WS.parts.filter(p=>!(p.drive===1&&p.old)); WS.cleaned=true; WS.sel="d1u"; WS.dlg=null; },
+  bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.mode="setup"; PC.ventoySeen=PC.setup=true; WS.page="lang"; },
+  setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
+  diskClean:()=>{ WS.parts=WS.parts.filter(p=>!(p.drive===WS.m2&&p.old)); WS.cleaned=true; WS.sel=m2U(); WS.dlg=null; },
   diskPlan:()=>{ IN.plan=IN.plan||1; inCardEl.hidden=true; },
-  diskNew:()=>{ WS.parts=WS.parts.filter(p=>p.drive===0||p.old); const plan=IN.plan;
-    wsNew(plan===1?D1_GB:200); if(plan===2) wsNew(D1_GB); if(plan===3) wsNew(wsNewRoom()-150); },
+  diskNew:()=>{ WS.parts=WS.parts.filter(p=>p.drive!==WS.m2||p.old); WS.dlg=null; const plan=IN.plan||1;
+    wsNew(plan===1?999:200,true); if(plan===2) wsNew(999,true); if(plan===3) wsNew(wsNewRoom()-150,true); },
   diskParts:()=>{ WS.seen={sys:1,msr:1,pri:1,files:1}; },
   diskInstall:()=>{ WS.sel="p1"; WS.installing=true; WS.page="installing"; WS.prog=0; wsCopy(); },
   instCopy:()=>{ WS.prog=1; if(!WS.copied) wsCopied(); },
   removeStick:()=>stickPcOut(true),
-  firstBoot:()=>{ clearInterval(wsCopied.timer); if(IN.stick==="pc") stickPcOut(true); PC.boot++; PC.mode="setup"; WS.page="user"; WS.oobeDone=true; },
+  firstBoot:()=>{ clearInterval(wsCopied.timer); if(IN.stick==="pc"&&IN.cfg.trap) stickPcOut(true); PC.boot++; PC.mode="setup"; WS.page="user"; WS.oobeDone=true; },
   userName:()=>{ WS.draft=WS.draft||t("ob_userPh"); wsUserDone(); },
-  newDesk:()=>{ PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:true,loc:"pc",checked:true}); }
+  newDesk:()=>{ PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:true,loc:"pc",checked:true}); },
+  login:()=>{ clearInterval(wsCopied.timer); WS.copied=WS.oobeDone=true; WS.user=WS.user||t("ob_userPh"); PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:false,loc:"pc"}); }
 };
 const inCur=()=>IN_STEPS[IN.step];
-// text that can name the customer's drive ({l}: what the student called it in phase 2)
+// text that can name the customer's drive ({l}: what the student called it)
 const inT=(k,v)=>t(k,{l:IN.label||t("in_labelSug"),...v});
-// a step's explanation; partitioning depends on the plan the student picked
-const inStepD=id=>inT(id==="diskNew"&&IN.plan?"in_s_diskNewd"+IN.plan:"in_s_"+id+"d");
-function inGate(id){ if(IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
+// a step's explanation: partitioning depends on the scenario and the plan
+const inStepD=id=>inT(id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):"in_s_"+id+"d");
+// actions that belong to a later step wait for it; steps this scenario doesn't have are always open
+function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
 function inCheck(){
-  let moved=false, phase=0;
+  let moved=false;
   while(IN.step<IN_STEPS.length&&IN_DONE[inCur()]()){ const id=inCur();
     S.stepMs[IN.step]=performance.now()-(S.stepAt||performance.now()); toast(t("in_okStep",{s:t("in_s_"+id)}),"ok");
-    if(IN_PHASE_END[id]&&!IN.phases[IN_PHASE_END[id]]) phase=IN.phases[IN_PHASE_END[id]]=IN_PHASE_END[id];
     IN.step++; moved=true; }
-  if(moved) inStepChanged(phase);
+  if(moved) inStepChanged();
 }
-function inStepChanged(phase){ S.stepAt=performance.now(); renderIN(); renderScreen();
-  if((IN.step===IS.powerF11||IN.step===IS.oldBoot)&&!S.powered) setTimeout(()=>{ if(!S.busy&&!SCR.dev) focus("powerBtn",1000); },900);   // plugged in: over to the power button
-  if(IN.step===IS.diskPlan&&!IN.plan) setTimeout(inPlanCard,700);
-  if(IN.step===IS.removeStick&&IN.stick==="pc") setTimeout(()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); },1800);   // copied: out to the stick
-  if(phase){ setTimeout(()=>inPhaseDone(phase),1200); return; }
-  if(IN.step<IN_STEPS.length&&S.card&&(window.innerWidth<=860||isFs())) inStepCard(); }
+function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen(); const id=inCur();
+  if((id==="powerF11"||id==="oldBoot")&&!S.powered) setTimeout(()=>{ if(!S.busy&&!SCR.dev) focus("powerBtn",1000); },900);   // plugged in: over to the power button
+  if(id==="diskPlan"&&!IN.plan) setTimeout(inPlanCard,700);
+  if(id==="removeStick"&&IN.stick==="pc") setTimeout(()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); },1800);   // copied: out to the stick
+  if(IN.step>=IN_STEPS.length){ setTimeout(inScDone,1200); return; }
+  if(S.card&&(window.innerWidth<=860||isFs())) inStepCard(); }
 function inSkip(){
   if(IN.step>=IN_STEPS.length) return;
   if(S.busy||LAP.dlg&&LAP.dlg.kind!=="info"){ toast(t("e_skipBusy")); return; }
   const at=IN.step; startClock(); IN_FINISH[inCur()]();                // a finisher may move the steps on by itself (owShutdown)
   if(IN.step===at&&!IN_DONE[inCur()]()){ IN.step++; inStepChanged(); }   // should not happen; never get stuck
   else inCheck();
-  toast(t("ok_skipped"),"ok");
+  renderScreen(); toast(t("ok_skipped"),"ok");
 }
 function inMistake(key,onOk){ mistake(); shakeRed(); inCard(t("in_err"),inT(key+"_t"),inT(key),{onOk}); }
 // the serious one: the customer's files would be gone. A mistake, plus a minute to read why before going on.
@@ -105,8 +113,8 @@ function inRedo(wipe){
   PC.menuSeen=PC.ventoySeen=false; IN.step=IS.stickLaptop;
   toast(t("in_redo")); inStepChanged();
 }
-// how to split the M.2: asked once the old partitions are gone
-function inPlanCard(){ if(IN.plan||IN.step!==IS.diskPlan) return; if(!inCardEl.hidden){ setTimeout(inPlanCard,700); return; }   // after any card that is up
+// how to split the M.2 (the plan challenge)
+function inPlanCard(){ if(IN.plan||inCur()!=="diskPlan") return; if(!inCardEl.hidden){ setTimeout(inPlanCard,700); return; }   // after any card that is up
   inCard(t("in_note"),t("in_plan_t"),inT("in_plan"),{cls:"info choice",buttons:[3,2,1].map(n=>({l:t("in_plan"+n),pri:true,
     fn:()=>{ IN.plan=n; toast(t("in_planOk"+n),"ok"); renderIN(); inCheck(); }}))}); }
 // why take the stick out? asked before it comes out (once); a wrong answer is a mistake and the question comes back
@@ -117,8 +125,8 @@ function inQuiz(){
     if(k==="a"){ IN.quizDone=true; toast(t("in_q_ok"),"ok"); stickPcOut(false); }
     else { mistake(); shakeRed(); toast(t("in_q_no"),"err"); setTimeout(inQuiz,500); } }}))});
 }
-/* a card over the 3D view: mistakes, a choice (buttons: [{l,fn,pri}]) or the end of a phase.
-   opt: {cls, buttons, onOk} */
+/* a card over the 3D view: mistakes, a choice (buttons: [{l,fn,pri}]) or the end of a scenario.
+   opt: {cls, buttons, onOk, wait (seconds before OK works)} */
 const inCardEl=document.getElementById("inCard"), icBtns=document.getElementById("icBtns"), icOk=document.getElementById("icOk");
 let icOnOk=null;
 function inCard(top,title,text,opt={}){ document.getElementById("icNum").textContent=top; document.getElementById("icTitle").textContent=title;
@@ -137,9 +145,14 @@ function inStepCard(){ if(IN.step>=IN_STEPS.length) return;
   document.getElementById("scNum").textContent=t("stepN",{n:IN.step+1,m:IN_STEPS.length});
   document.getElementById("scTitle").textContent=t("in_s_"+inCur()); document.getElementById("scText").textContent=inStepD(inCur());
   const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
-function inPhaseDone(n){ const last=IN.step>=IN_STEPS.length; if(last) S.end=performance.now(); renderIN();
-  inCard(t("in_phase",{n}),t("in_p"+n+"_t"),inT("in_p"+n,{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes}),
-    {cls:"good",onOk:()=>{ if(!last&&S.card&&(window.innerWidth<=860||isFs())) inStepCard(); }}); }
+// a scenario reloads the page, the way a troubleshooting case does: every one starts from a clean PC
+function inGo(id){ IN.sc=id; persist(); location.reload(); }
+const inNextSc=()=>IN_ORDER.find(k=>k!==IN.sc&&!IN.done.includes(k));
+// the end of a scenario: time, mistakes, and on to a challenge
+function inScDone(){ S.end=performance.now(); if(!IN.done.includes(IN.sc)) IN.done.push(IN.sc); persist(); renderIN();
+  const nx=inNextSc(), txt=inT("in_doneP_"+IN.sc)+"\n"+t("in_doneStats",{t:fmtTime(S.end-S.start),m:S.mistakes});
+  inCard(t("in_done"),t("in_sc_"+IN.sc),txt,{cls:"good choice",buttons:[...(nx?[{l:t("in_goNext",{s:t("in_sc_"+nx)}),pri:true,fn:()=>inGo(nx)}]:[]),
+    {l:t("in_stay"),fn:()=>{}}]}); }
 
 /* ---- the 3D side: the desk, the stick, the laptop, the PC's USB ports ---- */
 VIEWS.inDesk={pos:[124,78,10],tgt:[36,4,-46]};                       // laptop, PC and monitor
@@ -232,66 +245,78 @@ function stickPcOut(now){
 }
 // clicks in the 3D view (input.js hands them all here in this mode)
 function inClick(d){
-  if(S.busy) return;
+  if(S.busy) return; const id=inCur();
   if(d.part==="inStick"){ startClock();
-    if(IN.step===IS.stickLaptop&&IN.stick!=="laptop"){ stickToLaptop(false); return; }
+    if(id==="stickLaptop"&&IN.stick!=="laptop"){ stickToLaptop(false); return; }
     if(IN.stick==="laptop"){
       if(IN.step<IS.eject){ toast(t("in_stickBusy")); return; }
       if(!LAP.ejected){ inMistake("in_m_pull"); return; }
       stickOut(false); return; }
-    if(IN.stick==="table"&&IN.step===IS.stickPc){ if(IN.picking) toast(t("in_pickPort")); else inStartPick(); return; }
-    if(IN.stick==="pc"&&IN.step===IS.removeStick){ inQuiz(); return; }
-    if(IN.stick==="pc"&&IN.step===IS.instCopy){ inMistake("in_m_pullEarly"); return; }
-    toast(IN.stick==="pc"?t("in_stickBusy"):t("in_notYet",{s:t("in_s_"+inCur())})); return; }
+    if(IN.stick==="table"&&id==="stickPc"){ if(IN.picking) toast(t("in_pickPort")); else inStartPick(); return; }
+    if(IN.stick==="pc"&&id==="removeStick"){ inQuiz(); return; }
+    if(IN.stick==="pc"&&id==="instCopy"){ inMistake("in_m_pullEarly"); return; }
+    toast(IN.stick==="pc"?t("in_stickBusy"):t("in_notYet",{s:t("in_s_"+id)})); return; }
   if((d.part==="rport"||d.part==="inPort")&&IN.stick==="pc"&&d.port===IN.port){ inClick({part:"inStick"}); return; }
   if(d.part==="rport"||d.part==="inPort"){ if(IN.picking) inPickPort(d.port); return; }
   if(d.part==="powerBtn"){
     if(S.powered){ openScreen("pc"); return; }
-    if(IN.step!==IS.oldBoot&&IN.step<IS.powerF11){ toast(t("in_notYet",{s:t("in_s_"+inCur())})); return; }
+    if(id!=="oldBoot"&&id!=="powerF11"&&!(IN.step>IS.powerF11)){ toast(t("in_notYet",{s:t("in_s_"+id)})); return; }
     startClock(); pcPowerOn(); return; }
   if(d.part==="monitor"){ if(S.powered) openScreen("pc"); else toast(t("in_pcOff")); return; }
-  if(d.part==="laptop"){ if(IN.stick!=="laptop"&&IN.step<=IS.stickLaptop){ toast(t("in_e_stickFirst")); return; } startClock(); openScreen("laptop"); return; }
+  if(d.part==="laptop"&&IN.cfg.laptop){ if(IN.stick!=="laptop"&&id==="stickLaptop"){ toast(t("in_e_stickFirst")); return; } startClock(); openScreen("laptop"); return; }
 }
-// the pointer arrow: what to click next in the 3D view (nothing while a screen is up)
+const IN_LAPTOP_STEPS=["toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject"];
+const inStickNext=()=>{ const id=inCur(); return id==="stickLaptop"&&IN.stick!=="laptop"||id==="eject"&&LAP.ejected||id==="stickPc"&&!IN.picking||id==="removeStick"&&IN.stick==="pc"; };
+// the pointer arrow: what to click next in the 3D view (nothing while a screen or a card is up)
 function inArrow(){
   if(!S.glow||S.busy||SCR.dev||!inCardEl.hidden||IN.step>=IN_STEPS.length) return null;
-  const s=IN.step;
-  if(s===IS.stickLaptop||(s===IS.eject&&LAP.ejected)||(s===IS.stickPc&&!IN.picking)) return wpos(inStick);
-  if(s===IS.stickPc) return null;                                     // the free ports glow instead
-  if(s===IS.removeStick&&IN.stick==="pc") return wpos(inStick);
-  if(s>=IS.powerF11||s>=IS.oldBoot&&s<IS.stickPc) return S.powered?screenView().tgt:wpos(powerBtn);
-  return laptopView().tgt;
+  const id=inCur();
+  if(inStickNext()) return wpos(inStick);
+  if(id==="stickPc") return null;                                     // the free ports glow instead
+  if(IN_LAPTOP_STEPS.includes(id)) return laptopView().tgt;
+  if(id==="oldBoot"||id==="powerF11") return S.powered?screenView().tgt:wpos(powerBtn);
+  return S.powered?screenView().tgt:null;                             // everything else happens on the monitor
 }
 function inFrame(now){
   if(!IN.on) return;
-  const pulse=.5+.5*Math.sin(now/450), s=IN.step, idle=S.glow&&!S.busy&&!SCR.dev;
-  setGlow(inStickMat,idle&&(s===IS.stickLaptop&&IN.stick!=="laptop"||s===IS.eject&&LAP.ejected||s===IS.stickPc&&!IN.picking||s===IS.removeStick&&IN.stick==="pc"),pulse);
-  setGlow(powerBtnMat,idle&&(s===IS.powerF11||s===IS.oldBoot)&&!S.powered,pulse);
+  const pulse=.5+.5*Math.sin(now/450), id=inCur(), idle=S.glow&&!S.busy&&!SCR.dev;
+  setGlow(inStickMat,idle&&inStickNext(),pulse);
+  setGlow(powerBtnMat,idle&&(id==="powerF11"||id==="oldBoot")&&!S.powered,pulse);
   if(IN.picking) IN_PORTS.forEach(p=>{ p.mat.opacity=S.glow&&portFree(p)?.25+.45*pulse:0; });
 }
 function inStart(){
   document.body.classList.add("in-mode");
   tsBuildAll();                                                          // the whole build, as in troubleshooting
   sideG.visible=true; panelScrews.forEach(g=>g.visible=true);           // ...but the case stays closed: this PC is finished
-  inPlaceDeskSet(); inMakePorts(); lapG.visible=true; inStick.visible=true; stickOnMat();
+  inPlaceDeskSet(); inMakePorts();
+  const c=IN.cfg; lapG.visible=!!c.laptop; inStick.visible=true; wsSetDisks(c.disks); IN.plan=c.plan||0;
+  LAP.web.lng=lang==="ar"?"ar":"en";
+  if(c.stick==="ready"){ Object.assign(STICK,{boot:"GPT",gen:0,iso:true}); LAP.iso=isoName(); LAP.dl=1; stickOut(true); }   // made earlier: lying by the PC
+  else stickOnMat();
   showScreen(screenOff,0);
   const v=VIEWS.inDesk; camera.position.copy(viewPos(v.pos,v.tgt)); controls.target.set(...v.tgt); controls.update(); view="inDesk";
-  S.stepAt=performance.now(); renderIN();
+  if(c.start){                                                          // challenges that start inside Setup
+    stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); IN_FINISH.setupGo(); WS.sel=m2U();
+    if(c.start==="copy"){ IN_FINISH.diskNew(); IN_FINISH.diskInstall(); }
+    setTimeout(()=>openScreen("pc"),700); }
+  S.stepAt=performance.now(); renderIN(); inCheck();
   if(S.card&&(window.innerWidth<=860||isFs())) inStepCard();
 }
 
-/* ---- sidebar ---- */
+/* ---- sidebar: this scenario's steps, then the list of scenarios ---- */
 function renderIN(){
   const el=document.getElementById("inPanel"); if(!IN.on){ el.hidden=true; return; } el.hidden=false;
-  let h=`<p class="module-title">${t("in_title")}</p><ol class="steps">`;
-  IN_STEPS.forEach((id,i)=>{ const g=IN_GROUPS.find(([at])=>at===i); if(g) h+=`<li class="group">${t(g[1])}</li>`;
+  let h=`<p class="module-title">${t("in_title")}</p><h3 class="in-sc">${t("in_sc_"+IN.sc)}</h3><ol class="steps">`, grp=null;
+  IN_STEPS.forEach((id,i)=>{ if(IN_GROUP_OF[id]!==grp){ grp=IN_GROUP_OF[id]; h+=`<li class="group">${t("in_g_"+grp)}</li>`; }
     const st=i<IN.step?"done":i===IN.step?"current":"todo", m=(S.stepMis[i]||0)>2?" warn":"";
     h+=`<li class="${st}${i<IN.step?m:""}"><span>${t("in_s_"+id)}</span></li>`;
     if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${t("in_s_"+id)}</h2><p>${inStepD(id)}</p></div></li>`; });
   h+=`</ol>`;
-  if(IN.step>=IN_STEPS.length) h+=`<div class="ts-win"><b>${t("in_p"+IN_LAST+"_t")}</b><p>${inT("in_p"+IN_LAST,{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes})}</p></div>`;
-  if(IN_LATER.length) h+=`<div class="in-later"><p class="module-title">${t("in_soon")}</p><ul>${IN_LATER.map(k=>`<li>${t(k)}</li>`).join("")}</ul></div>`;
+  if(IN.step>=IN_STEPS.length) h+=`<div class="ts-win"><b>${t("in_sc_"+IN.sc)} ✓</b><p>${inT("in_doneP_"+IN.sc)}</p><p class="ts-muted">${t("in_doneStats",{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes})}</p></div>`;
+  h+=`<div class="in-ch"><p class="module-title">${t("in_chTitle")}</p><ol class="ts-pick">${IN_ORDER.map(k=>{ const d=IN.done.includes(k);
+    return `<li><button data-sc="${k}" class="${d?"solved":""}${k===IN.sc?" cur":""}"><i>${d?"✓":k==="main"?"★":IN_ORDER.indexOf(k)}</i><b>${t("in_sc_"+k)}</b><span>${t("in_scd_"+k)}</span></button></li>`; }).join("")}</ol></div>`;
   el.innerHTML=h;
+  el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>inGo(b.dataset.sc));
   const cur=el.querySelector("li.current"); if(cur&&window.innerWidth>860&&!isFs()) cur.scrollIntoView({block:"center"});
-  document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_p"+IN_LAST+"_t"):(IN.step+1)+"/"+IN_STEPS.length+" · "+t("in_s_"+inCur());
+  document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+t("in_s_"+inCur());
 }

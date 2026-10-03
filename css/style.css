@@ -271,7 +271,7 @@ details.specs summary{ cursor:pointer; font-weight:600; }
 .fs-panel{ flex:none; width:34px; height:34px; border-radius:50%; border:0; background:var(--gold); color:var(--gold-ink); display:grid; place-items:center; cursor:pointer; }
 .fs-panel svg{ width:18px; height:18px; }
 body.fs .app{ height:100vh; height:100dvh; grid-template-rows:1fr; }
-body.fs header{ display:none; }
+body.fs .app > header{ display:none; }               /* only the app header: the simulated windows have <header> title bars too */
 body.fs .work{ display:flex; flex-direction:column; overflow:hidden; }
 body.fs .stage, body.fs.no-tray .stage{ order:0; flex:1; height:auto; min-height:0; grid-template-rows:1fr auto; }
 body.fs.no-tray .stage{ grid-template-rows:1fr; }
