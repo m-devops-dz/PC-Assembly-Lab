@@ -403,3 +403,10 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .ow-ctx button:disabled{ color:#a0a7b0; cursor:default; background:transparent; }
 .ow-start button svg{ display:inline-block; width:16px; height:16px; vertical-align:-3px; }
 @media (max-width: 860px){ .dm-row{ grid-template-columns:1.6fr .9fr .9fr; } .dm-row span:nth-child(2), .dm-row span:nth-child(3), .dm-row span:nth-child(5){ display:none; } .dm-disk{ grid-template-columns:1fr; } .dm-dhead{ grid-auto-flow:column; justify-content:start; gap:10px; } }
+/* Files (car challenge): the arrow beside an item of the right-click menu */
+.ow-ctx .point::after{ content:"◀"; left:auto; right:6px; bottom:auto; top:50%; transform:translateY(-50%); animation:none; }
+:root[dir="rtl"] .ow-ctx .point::after{ content:"▶"; right:auto; left:6px; }
+.fl-item .ow-ren{ flex:1; min-width:0; }
+/* the stick's row in the Files sidebar: the arrow sits inside the row, not over the one above */
+.fl-side .point::after{ content:"◀"; left:auto; right:6px; bottom:auto; top:50%; transform:translateY(-50%); animation:none; }
+:root[dir="rtl"] .fl-side .point::after{ content:"▶"; right:auto; left:6px; }

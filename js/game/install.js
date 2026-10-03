@@ -48,7 +48,7 @@ const IN_DONE={
   instCopy:()=>WS.copied, removeStick:()=>WS.copied&&IN.stick==="table", firstBoot:()=>WS.oobeDone,
   userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh,
   dmOpen:()=>DM.opened, dmShrink:()=>DM.shrunk, dmNew:()=>DM.made, dmCheck:()=>DM.checked,
-  carCopy:()=>CAR.desk.length===SONGS.length, carFormat:()=>CAR.fs==="exFAT", carBack:()=>CAR.fs==="exFAT"&&CAR.stick.length===SONGS.length
+  carCopy:()=>carSaved(), carFormat:()=>CAR.fs==="exFAT", carBack:()=>CAR.fs==="exFAT"&&SONGS.every(s=>CAR.stick.includes(s))
 };
 // Ctrl+H (and a scenario's starting point): the state each step leaves behind
 const gptStick=()=>Object.assign(STICK,{boot:"GPT",gen:IN.gen,iso:STICK.iso});
