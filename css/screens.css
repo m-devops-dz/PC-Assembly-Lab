@@ -375,3 +375,6 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .pc.vt .point{ outline-offset:3px; }
 .pc-f11{ margin:16px 0 0; color:#ffc400; font-weight:700; font-size:clamp(15px,2.4vw,22px); text-align:center; animation:hintGlow 1s infinite; border-radius:6px; padding:2px 10px; direction:inherit; }
 @media (prefers-reduced-motion: reduce){ .point, .point::after, .pc-f11{ animation:none; } }
+/* arrows beside Ventoy's Options menu and its GPT item (there's no room above them) */
+.tl-menu .point::after, .tl-drop .point::after{ content:"◀"; left:calc(100% + 6px); bottom:auto; top:50%; transform:translateY(-50%); animation:none; }
+:root[dir="rtl"] .tl-menu .point::after, :root[dir="rtl"] .tl-drop .point::after{ content:"▶"; left:auto; right:calc(100% + 6px); }

@@ -247,11 +247,8 @@ Object.assign(I18N.en,{
   ob_hiP:"This might take a few minutes. Don't turn off your PC.",
   in_userEmpty:"Type a name first.",
   in_warn:"Warning",
-  in_mbrAgain_t:"MBR again?",
-  in_mbrAgain:"Last time a stick made with MBR didn't show up in the PC's boot menu: the PC starts in UEFI mode only, and UEFI boots from GPT.\nMake it with GPT this time?",
-  in_mbrUseGpt:"Switch to GPT",
-  in_mbrKeep:"Keep MBR",
-  in_gptSet:"Partition style: GPT.",
+  in_mbrAgain_t:"This PC won't start from an MBR stick",
+  in_mbrAgain:"Last time the stick made with MBR wasn't in the boot menu at all. This PC starts in UEFI mode only, and UEFI boots from GPT, so an MBR stick will never start it.\nOpen Options (the arrow shows where), set Partition style to GPT, then click Install.",
   in_sc_main:"Install Windows",
   in_sc_usb:"Challenge: make the install USB",
   in_sc_used:"Challenge: reinstall a customer's PC",
@@ -291,7 +288,10 @@ Object.assign(I18N.en,{
   in_pressPower:"Stick out. Now press the PC's power button to restart it.",
   in_stickFirst2:"Take the stick out first, then restart.",
   in_busyWait:"Wait until it finishes: closing it now would stop it.",
-  pc_f11Now:"Press F11 now to open the boot menu"
+  pc_f11Now:"Press F11 now to open the boot menu",
+  in_usbDone:"Challenge done: the stick boots. Install Windows itself in the main “Install Windows” path.",
+  in_s_bootPickU:"Choose the stick in the boot menu",
+  in_s_bootPickUd:"Choose the stick's entry, the one that starts with “UEFI:”. If Ventoy's menu with your ISO appears, the stick works: that's the end of this challenge."
 });
 Object.assign(I18N.ar,{
   mode_install:"تثبيت ويندوز", scr_back:"العودة إلى المكتب",
@@ -535,11 +535,8 @@ Object.assign(I18N.ar,{
   ob_hiP:"قد يستغرق هذا بضع دقائق. لا تطفئ الكمبيوتر.",
   in_userEmpty:"اكتب اسمًا أولًا.",
   in_warn:"تحذير",
-  in_mbrAgain_t:"MBR مرة أخرى؟",
-  in_mbrAgain:"في المرة السابقة لم تظهر الفلاشة المجهزة بنمط MBR في قائمة الإقلاع: الحاسوب يقلع بوضع UEFI فقط، وUEFI يقلع من GPT.\nهل تجهّزها بنمط GPT هذه المرة؟",
-  in_mbrUseGpt:"التبديل إلى GPT",
-  in_mbrKeep:"الإبقاء على MBR",
-  in_gptSet:"نمط التقسيم: GPT.",
+  in_mbrAgain_t:"هذا الحاسوب لن يقلع من فلاشة MBR",
+  in_mbrAgain:"في المرة السابقة لم تظهر الفلاشة المجهزة بنمط MBR في قائمة الإقلاع أبدًا. هذا الحاسوب يقلع بوضع UEFI فقط، وUEFI يقلع من GPT، فلن تُقلعه فلاشة MBR أبدًا.\nافتح «الخيارات» (يشير إليها السهم)، واجعل نمط التقسيم GPT، ثم انقر «تثبيت».",
   in_sc_main:"تثبيت ويندوز",
   in_sc_usb:"تحدٍّ: جهّز فلاشة التثبيت",
   in_sc_used:"تحدٍّ: أعد تثبيت حاسوب زبون",
@@ -579,5 +576,8 @@ Object.assign(I18N.ar,{
   in_pressPower:"نُزعت الفلاشة. اضغط الآن زر تشغيل الحاسوب لإعادة تشغيله.",
   in_stickFirst2:"انزع الفلاشة أولًا، ثم أعد التشغيل.",
   in_busyWait:"انتظر حتى ينتهي: إغلاقه الآن يوقفه.",
-  pc_f11Now:"اضغط F11 الآن لفتح قائمة الإقلاع"
+  pc_f11Now:"اضغط F11 الآن لفتح قائمة الإقلاع",
+  in_usbDone:"اكتمل التحدي: الفلاشة تُقلع. ثبّت ويندوز نفسه في المسار الرئيسي «تثبيت ويندوز».",
+  in_s_bootPickU:"اختر الفلاشة في قائمة الإقلاع",
+  in_s_bootPickUd:"اختر مدخل الفلاشة الذي يبدأ بـ «UEFI:». إن ظهرت قائمة Ventoy وفيها ملفك فالفلاشة تعمل: وهنا ينتهي هذا التحدي."
 });

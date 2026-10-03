@@ -37,7 +37,7 @@ const IN_DONE={
   stickLaptop:()=>IN.stick==="laptop", toolDevice:()=>LAP.dev==="E"&&stickIn(), toolInstall:()=>!!STICK.boot&&STICK.gen===IN.gen,
   isoSearch:()=>LAP.web.found, isoDownload:()=>LAP.dl>=1, isoCopy:()=>STICK.iso, eject:()=>IN.stick==="table",
   oldBoot:()=>OW.seen, oldOpenD:()=>OW.openedD, oldRename:()=>!!IN.label, oldShutdown:()=>OW.shut,
-  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>PC.setup,
+  stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>IN.sc==="usb"?PC.ventoySeen:PC.setup,
   setupGo:()=>WS.custom,
   diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0, diskNew:()=>wsLayoutOk(),
   diskParts:()=>WS.seen.sys&&WS.seen.msr&&WS.seen.pri&&(IN.plan===1||WS.seen.files), diskInstall:()=>WS.installing,
@@ -59,7 +59,7 @@ const IN_FINISH={
   oldShutdown:()=>owShutdown(true),
   stickPc:()=>{ stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); },
   powerF11:()=>{ gptStick(); STICK.iso=true; if(!S.powered) powerUp(); PC.boot++; PC.mode="menu"; PC.sel=0; PC.menuSeen=true; },
-  bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.mode="setup"; PC.ventoySeen=PC.setup=true; WS.page="lang"; },
+  bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.ventoySeen=true; if(IN.sc==="usb"){ PC.mode="ventoy"; return; } PC.mode="setup"; PC.setup=true; WS.page="lang"; },
   setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
   diskClean:()=>{ WS.parts=WS.parts.filter(p=>!(p.drive===WS.m2&&p.old)); WS.cleaned=true; WS.sel=m2U(); WS.dlg=null; },
   diskPlan:()=>{ IN.plan=IN.plan||1; inCardEl.hidden=true; },
@@ -77,14 +77,16 @@ const IN_FINISH={
 const inCur=()=>IN_STEPS[IN.step];
 // text that can name the customer's drive ({l}: what the student called it)
 const inT=(k,v)=>t(k,{l:IN.label||t("in_labelSug"),...v});
-// a step's explanation: partitioning depends on the scenario and the plan
-const inStepD=id=>inT(id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):"in_s_"+id+"d");
+// a step's title and explanation: some depend on the scenario (and partitioning on the plan)
+const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":"in_s_"+id;
+const inStepT=id=>t(inStepK(id));
+const inStepD=id=>inT(id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
 // actions that belong to a later step wait for it; steps this scenario doesn't have are always open
 function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
 function inCheck(){
   let moved=false;
   while(IN.step<IN_STEPS.length&&IN_DONE[inCur()]()){ const id=inCur();
-    S.stepMs[IN.step]=performance.now()-(S.stepAt||performance.now()); toast(t("in_okStep",{s:t("in_s_"+id)}),"ok");
+    S.stepMs[IN.step]=performance.now()-(S.stepAt||performance.now()); toast(t("in_okStep",{s:inStepT(id)}),"ok");
     IN.step++; moved=true; }
   if(moved) inStepChanged();
 }
@@ -144,7 +146,7 @@ icOk.onclick=inCardOk;
 inCardEl.addEventListener("keydown",e=>{ if(e.key==="Escape"&&icBtns.hidden) inCardOk(); });
 function inStepCard(){ if(IN.step>=IN_STEPS.length) return;
   document.getElementById("scNum").textContent=t("stepN",{n:IN.step+1,m:IN_STEPS.length});
-  document.getElementById("scTitle").textContent=t("in_s_"+inCur()); document.getElementById("scText").textContent=inStepD(inCur());
+  document.getElementById("scTitle").textContent=inStepT(inCur()); document.getElementById("scText").textContent=inStepD(inCur());
   const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
 // a scenario reloads the page, the way a troubleshooting case does: every one starts from a clean PC
 function inGo(id){ IN.sc=id; persist(); location.reload(); }
@@ -310,8 +312,8 @@ function renderIN(){
   let h=`<p class="module-title">${t("in_title")}</p><h3 class="in-sc">${t("in_sc_"+IN.sc)}</h3><ol class="steps">`, grp=null;
   IN_STEPS.forEach((id,i)=>{ if(IN_GROUP_OF[id]!==grp){ grp=IN_GROUP_OF[id]; h+=`<li class="group">${t("in_g_"+grp)}</li>`; }
     const st=i<IN.step?"done":i===IN.step?"current":"todo", m=(S.stepMis[i]||0)>2?" warn":"";
-    h+=`<li class="${st}${i<IN.step?m:""}"><span>${t("in_s_"+id)}</span></li>`;
-    if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${t("in_s_"+id)}</h2><p>${inStepD(id)}</p>${id==="diskPlan"&&!IN.plan?`<p><button class="primary in-plan-btn" data-plan>${t("in_planPick")}</button></p>`:""}</div></li>`; });
+    h+=`<li class="${st}${i<IN.step?m:""}"><span>${inStepT(id)}</span></li>`;
+    if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${inStepT(id)}</h2><p>${inStepD(id)}</p>${id==="diskPlan"&&!IN.plan?`<p><button class="primary in-plan-btn" data-plan>${t("in_planPick")}</button></p>`:""}</div></li>`; });
   h+=`</ol>`;
   if(IN.step>=IN_STEPS.length) h+=`<div class="ts-win"><b>${t("in_sc_"+IN.sc)} ✓</b><p>${inT("in_doneP_"+IN.sc)}</p><p class="ts-muted">${t("in_doneStats",{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes})}</p></div>`;
   h+=`<div class="in-ch"><p class="module-title">${t("in_chTitle")}</p><ol class="ts-pick">${IN_ORDER.map(k=>{ const d=IN.done.includes(k);
@@ -320,5 +322,5 @@ function renderIN(){
   el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>inGo(b.dataset.sc));
   el.querySelectorAll("[data-plan]").forEach(b=>b.onclick=inPlanCard);
   const cur=el.querySelector("li.current"); if(cur&&window.innerWidth>860&&!isFs()) cur.scrollIntoView({block:"center"});
-  document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+t("in_s_"+inCur());
+  document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+inStepT(inCur());
 }

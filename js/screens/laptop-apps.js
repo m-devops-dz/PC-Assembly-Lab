@@ -42,6 +42,8 @@ const eName=()=>t(STICK.boot?"fl_eB":"fl_e");
 const isoName=()=>"Win11_25H2_"+(LAP_LANGS.find(l=>l[0]===LAP.web.lng)||LAP_LANGS[1])[1]+"_x64.iso";
 
 /* ---- drawing ---- */
+// an MBR stick already failed to boot once: MBR again is blocked, arrows lead to Options → GPT
+const lapMbrAgain=()=>IN.mbrFails>0&&LAP.dev==="E"&&LAP.style==="MBR";
 // the eject step is easy to miss: arrows on the taskbar's USB icon, then on "Eject" (hints on)
 const lapPoint=()=>S.hints&&S.glow&&inCur()==="eject"&&!LAP.ejected&&STICK.iso;
 function lapRender(){
@@ -65,8 +67,8 @@ function lapTool(){
   const busy=LAP.tool==="busy", inDev=LAP.dev==="E"&&stickIn()&&STICK.boot;
   const devs=[["D",t("dv_D")],...(stickIn()?[["E",t("dv_E")]]:[])];
   return `<div class="tl">
-    <nav class="tl-menu"><button data-a="menu" aria-expanded="${LAP.menu}">${t("tl_opt")} ▾</button><span>${t("tl_lang")}</span>
-      ${LAP.menu?`<div class="tl-drop" role="menu"><p>${t("tl_style")}</p>${["MBR","GPT"].map(s=>`<button role="menuitemradio" aria-checked="${LAP.style===s}" data-a="style" data-v="${s}"><i>${LAP.style===s?"●":""}</i>${t("tl_"+s)}</button>`).join("")}<hr><p class="tl-sb">✓ ${t("tl_secure")}</p></div>`:""}</nav>
+    <nav class="tl-menu"><button data-a="menu" aria-expanded="${LAP.menu}"${lapMbrAgain()&&!LAP.menu&&S.glow?' class="point"':""}>${t("tl_opt")} ▾</button><span>${t("tl_lang")}</span>
+      ${LAP.menu?`<div class="tl-drop" role="menu"><p>${t("tl_style")}</p>${["MBR","GPT"].map(s=>`<button role="menuitemradio" aria-checked="${LAP.style===s}" data-a="style" data-v="${s}"${s==="GPT"&&lapMbrAgain()&&S.glow?' class="point"':""}><i>${LAP.style===s?"●":""}</i>${t("tl_"+s)}</button>`).join("")}<hr><p class="tl-sb">✓ ${t("tl_secure")}</p></div>`:""}</nav>
     <label class="tl-dev"><span>${t("tl_device")}</span><select data-a="dev"${busy?" disabled":""}>${devs.map(([v,l])=>`<option value="${v}"${LAP.dev===v?" selected":""}>${l}</option>`).join("")}</select></label>
     <div class="tl-ver"><div><small>${t("tl_pkg")}</small><b>1.0.99</b></div><div><small>${t("tl_dev")}</small><b>${inDev?"1.0.99":"—"}</b>${inDev?`<small class="pill">${STICK.boot}</small>`:""}</div></div>
     <p class="tl-style"><span class="pill">${t("tl_style")}: ${LAP.style}</span><span class="pill">🔒 ${t("tl_secure")}</span></p>
@@ -155,12 +157,7 @@ function lapAct(a,v){
 // Install always wipes the device first (also a stick that already has Ventoy on it: the ISO goes too)
 function lapInstall(){
   if(LAP.tool==="busy"||!inGate("toolDevice")) return;
-  if(LAP.dev==="E"&&LAP.style==="MBR"&&IN.mbrFails>0){
-    const go=()=>{ LAP.dlg={kind:"warn"}; lapRender(); };
-    inCard(t("in_warn"),t("in_mbrAgain_t"),t("in_mbrAgain"),{cls:"info choice",buttons:[
-      {l:t("in_mbrUseGpt"),pri:true,fn:()=>{ LAP.style="GPT"; toast(t("in_gptSet"),"ok"); go(); }},
-      {l:t("in_mbrKeep"),fn:go}]});
-    return; }
+  if(lapMbrAgain()){ inCard(t("in_warn"),t("in_mbrAgain_t"),t("in_mbrAgain"),{cls:"info",onOk:lapRender}); return; }
   LAP.dlg={kind:"warn"}; lapRender();
 }
 // "Yes" in the wipe warning: the backup drive is a big mistake (nothing really happens to it); the stick gets Ventoy

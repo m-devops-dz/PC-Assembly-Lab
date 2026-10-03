@@ -24,7 +24,7 @@ function pcPowerOn(){
   tween(260,k=>{ powerBtn.position.x=CX1+.17-.12*Math.sin(k*Math.PI); },()=>{ S.busy=false; powerUp(); openScreen("pc"); pcPost(950); });
 }
 // main path: the logo stays up until F11 (an arrow points at it); elsewhere the few seconds run out
-const pcWaitF11=()=>IN.sc==="main"&&inCur()==="powerF11";
+const pcWaitF11=()=>IN.sc==="main"&&!PC.setup&&["powerF11","bootPick"].includes(inCur());
 function pcPost(delay=0){
   const id=++PC.boot, dur=IN.stick==="pc"?POST_MS:3500;
   if(pcWaitF11()){ PC.mode="post"; PC.k=0; OW.view="lock"; showScreen(screenOn); renderScreen(); return; } PC.mode="post"; PC.k=0; OW.view="lock"; OW.app=OW.start=OW.renaming=false; showScreen(screenOn); renderScreen();
@@ -61,7 +61,8 @@ const pcBiosCache={};
 function pcBiosTex(){ const k=stickUefi()?"usb":"none"; return pcBiosCache[k]||(pcBiosCache[k]=biosTex(stickUefi()?{usb:"ok"}:{})); }
 function pcChoose(i){
   const e=pcEntries()[i];
-  if(IN.stick==="pc"&&STICK.boot!=="GPT"){ IN.mbrFails++; inMistake("in_m_mbrMissing",()=>inRedo(true)); return; }   // the stick should be in this list, and isn't
+  if(IN.stick==="pc"&&STICK.boot!=="GPT"){ IN.mbrFails++; mistake(); shakeRed();      // read why before going back: OK after 30 s
+    inCard(t("in_err"),inT("in_m_mbrMissing_t"),inT("in_m_mbrMissing"),{wait:30,onOk:()=>inRedo(true)}); return; }   // the stick should be in this list, and isn't
   if(e.id==="setup"){ pcBios(); return; }
   if(e.id==="win"){ pcBootDisk(false); return; }
   if(!STICK.iso){ inMistake("in_m_noIso",()=>inRedo(false)); return; }
@@ -70,6 +71,7 @@ function pcChoose(i){
 // Ventoy's menu: the ISO files on the stick. It waits for the student to choose one (Enter or a click).
 function pcVentoy(){ PC.mode="ventoy"; PC.ventoySeen=true; renderScreen(); inCheck(); }
 function pcIso(){
+  if(IN.sc==="usb"){ toast(t("in_usbDone"),"ok"); return; }            // the challenge was the stick: it boots, that's the end
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; PC.setup=true; WS.page="lang"; renderScreen(); inCheck(); },2600); }
@@ -79,10 +81,10 @@ function pcRender(){
   const m=PC.mode; let s="";
   if(m==="post"||m==="wait") s=`<div class="pc post"><b class="pc-msi">MSI</b><small>B450 GAMING PLUS MAX</small>
       ${m==="wait"?`<p class="pc-hint on">Entering…</p>`:`${pcWaitF11()?`<p class="pc-f11">${t("pc_f11Now")}</p>`:`<div class="pc-post-bar" title="${t("pc_window")}"><i id="pcBar"></i></div>`}<p class="pc-hint">Press DEL key to enter SETUP, F11 to enter Boot Menu</p>`}</div>`;
-  else if(m==="menu") s=`<div class="pc menu"><div class="pc-menu"><p>Please select boot device:</p><ul>${pcEntries().map((e,i)=>`<li><button data-k="pick" data-v="${i}" class="${i===PC.sel?"on":""}">${e.l}</button></li>`).join("")}</ul>
+  else if(m==="menu") s=`<div class="pc menu"><div class="pc-menu"><p>Please select boot device:</p><ul>${pcEntries().map((e,i)=>`<li><button data-k="pick" data-v="${i}" class="${i===PC.sel?"on":""}${e.id==="usb"&&IN.sc==="main"&&S.glow?" point":""}">${e.l}</button></li>`).join("")}</ul>
       <p class="pc-foot">↑ and ↓ to move selection<br>ENTER to select boot device<br>ESC to boot using defaults</p></div></div>`;
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
-  else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
+  else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&IN.sc!=="usb"?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
   else if(m==="oldwin") s=owRender();
   else if(m==="nodisk") s=`<div class="pc nodisk"><p>Reboot and Select proper Boot device<br>or Insert Boot Media in selected Boot device and press a key_</p><button class="pc-power" data-k="restart">↻ ${t("pc_restart")}</button></div>`;
