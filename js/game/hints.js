@@ -90,7 +90,7 @@ function demoHeld(done){
   S.busy=true; tween(1100,go,()=>setTimeout(()=>tween(900,k=>go(1-k),()=>{ go(0); S.busy=false; done(); }),900));
 }
 function useHint(){
-  if(S.step>=STEPS||TS.on) return;
+  if(S.step>=STEPS||!BUILD_MODE) return;
   if(S.busy||dragging){ toast(t("e_hintBusy")); return; }
   if(S.hintsLeft<=0){ toast(t("e_noHints"),"err"); return; }
   const info=hintInfo(); if(!info) return;
@@ -131,10 +131,10 @@ const gpuCableNag=now=>S.step===ST.gpuPower&&!S.held&&!S.busy&&now-S.stepAt>2000
 // called every frame from the render loop
 function updateHints(now){
   if(hintUntil&&(now>hintUntil||S.step!==hintStep)) hintUntil=0;
-  const info=hintUntil&&!TS.on?hintInfo():null, lines=TS.on?null:coachLines();
-  let pos=TS.on?tsArrow():info&&info.pos;
-  if(!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
-  if(!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
+  const info=hintUntil&&BUILD_MODE?hintInfo():null, lines=BUILD_MODE?coachLines():null;
+  let pos=TS.on?tsArrow():IN.on?inArrow():info&&info.pos;
+  if(BUILD_MODE&&!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
+  if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
   if(!pos&&S.glow&&gpuCableNag(now)){ CONN.gpu8.a.outer.updateMatrixWorld(true); pos=wpos(CONN.gpu8.a.outer); }
   hintArrow.visible=hintRing.visible=!!pos;
   if(pos){ const s=camera.position.distanceTo(pos)*.07, k=(now%1100)/1100;

@@ -65,9 +65,9 @@ function drawTag(it){ if(tagFor===it.id+lang) return; tagFor=it.id+lang; const g
   const w=Math.min(W-8,g.measureText(s).width+64); g.fillStyle="rgba(14,20,26,.88)"; roundRect(g,(W-w)/2,6,w,H-22,40); g.fill();
   g.strokeStyle="#4ea1ff"; g.lineWidth=5; g.stroke(); g.fillStyle="#fff"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(s,W/2,6+(H-22)/2+2,W-40);
   tagTex.needsUpdate=true; }
-const tableShown=it=>!TS.on&&!S.used[it.id]&&S.step<=ST[it.until];
+const tableShown=it=>BUILD_MODE&&!S.used[it.id]&&S.step<=ST[it.until];
 // the part the current step takes from the table (the first free RAM stick for the RAM steps)
-function tableNeed(){ if(S.step>=STEPS||TS.on) return null;
+function tableNeed(){ if(S.step>=STEPS||!BUILD_MODE) return null;
   return TABLE_ITEMS.find(it=>tableShown(it)&&(it.until===STEP_IDS[S.step]||it.until==="ram2"&&S.step===ST.ram1)&&(it.id!=="ram1"||S.used.ram0))||null; }
 const tableItem=id=>TABLE_ITEMS.find(it=>it.id===id);
 function tablePos(id){ const it=tableItem(id); return it?V3(it.rest.x,it.rest.y+it.size.y/2+.2,it.rest.z):null; }

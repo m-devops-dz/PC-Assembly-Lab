@@ -9,6 +9,8 @@ const plugMetal=new T.MeshStandardMaterial({color:0xc4c9cf,metalness:.9,roughnes
 /* keyboard (behind the case, clear of the desk space where its plug lies) and mouse (beyond the bottom).
    1 unit = 1 cm. The keyboard's long side runs along z; the typist sits at −x, so its back (F-row, cable) faces +x and the case. */
 const KB_POS=V3(-44,0,L.z-20), MOUSE_POS=V3(-43,0,L.z+10), MOUSE_YAW=.12;   // mouse on the typist's right (+z), beside the number pad
+// keyboard and mouse share one group: install mode (install.js) turns the pair to face the monitor
+const kbSet=new T.Group(); periG.add(kbSet);
 const KB_U=1.905, KB_W=45.4, KB_D=15.4, KB_PLATE=1.06, KB_TILT=.05;         // key pitch, body length (z) and depth (x), plate top, back-up tilt
 // full-size ANSI layout, rows back to front. A string is a 1u key; [label,w,h] a wider/taller key; [null,w] a gap.
 const KB_ROWS=(()=>{ const k=s=>s.split(" ");
@@ -23,7 +25,7 @@ const KB_ROWS=(()=>{ const k=s=>s.split(" ");
 // keyboard lights: backlit legends and the lock LEDs stay dark until the PC powers on (keyboardLights)
 let kbLegendMat=null; const kbLeds=[];
 (function keyboard(){
-  const kbG=new T.Group(); kbG.position.set(KB_POS.x,KB_D/2*KB_TILT,KB_POS.z); kbG.rotation.z=KB_TILT; periG.add(kbG);   // lifted so the front edge rests on the desk
+  const kbG=new T.Group(); kbG.position.set(KB_POS.x,KB_D/2*KB_TILT,KB_POS.z); kbG.rotation.z=KB_TILT; kbSet.add(kbG);   // lifted so the front edge rests on the desk
   // rounded, bevelled body
   const r=1.1, w=KB_D-.4, d=KB_W-.4, sh=new T.Shape(); sh.moveTo(-w/2+r,-d/2);
   sh.lineTo(w/2-r,-d/2); sh.quadraticCurveTo(w/2,-d/2,w/2,-d/2+r); sh.lineTo(w/2,d/2-r); sh.quadraticCurveTo(w/2,d/2,w/2-r,d/2);
@@ -68,7 +70,7 @@ let kbLegendMat=null; const kbLeds=[];
    near-parallel sides, wide palm, round tail) and a side profile, with steep rounded walls. Black diamond grip tape on both
    buttons and both sides, white wheel housing with a black ribbed wheel, 2 white thumb buttons, grey snake mark on the palm.
    The green status LED in front of the wheel lights once the PC is on (updateMouseLed, loop.js). */
-const mouseG=new T.Group(); mouseG.position.copy(MOUSE_POS); mouseG.rotation.y=MOUSE_YAW; periG.add(mouseG);
+const mouseG=new T.Group(); mouseG.position.copy(MOUSE_POS); mouseG.rotation.y=MOUSE_YAW; kbSet.add(mouseG);
 let mouseLedMat=null;
 (function mouse(){
   // x along the length (nose +x), z across, cm. halfW: top-view half width; topH: height along the centre line.
@@ -192,7 +194,7 @@ const screenMat=new T.MeshStandardMaterial({map:screenOff,roughness:.3,metalness
   mesh(box(12,.6,18),periGrey,[0,.3,0],monG);                                                           // foot
   mesh(box(2,20,4),periGrey,[-1,10,0],monG);                                                            // neck
   mesh(box(2,33,56),periBlack,[.4,26,0],monG);                                                          // bezel
-  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2;
+  const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2; s.userData={part:"monitor"};   // install mode: click to look at it
   monG.traverse(o=>{ o.castShadow=false; }); })();   // its shadow falls past the edge of the sun's shadow area and showed as a cut-off dark rectangle on the desk
 function showScreen(tex,glow=.9){ screenMat.map=tex; screenMat.emissiveMap=tex; screenMat.emissiveIntensity=glow; screenMat.needsUpdate=true; }
 // monitor centre and a camera spot square in front of it (a little above, inside the orbit controls' lowest angle)
@@ -252,9 +254,9 @@ const coil=(ratio,n)=>(a,b)=>{ const a1=a.clone().setY(.3), b1=b.clone().setY(.3
   return pts(lo); };
 Object.assign(CONN,{
   usbKb:{id:"usbKb",mat:periCable(0x1b1c1f),radius:.18,mesh:null,a:makeUsbPlug("usbKb"),outside:true,
-    anchor:()=>V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13), anchorDir:()=>V3(1,0,0), via:coil(2.2,5)},
+    anchor:()=>(kbSet.updateMatrixWorld(true),kbSet.localToWorld(V3(KB_POS.x+KB_D/2+.8,1.3,KB_POS.z+13))), anchorDir:()=>V3(1,0,0).applyQuaternion(kbSet.quaternion), via:coil(2.2,5)},
   usbMouse:{id:"usbMouse",mat:periCable(0x1b1c1f),radius:.14,mesh:null,a:makeUsbPlug("usbMouse"),outside:true,
-    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)), via:coil(2.2,5)},
+    anchor:()=>(mouseG.updateMatrixWorld(true),mouseG.localToWorld(V3(6.3,.5,0))), anchorDir:()=>V3(Math.cos(MOUSE_YAW),0,-Math.sin(MOUSE_YAW)).applyQuaternion(kbSet.quaternion), via:coil(2.2,5)},
   hdmi:{id:"hdmi",mat:periCable(0x111214),radius:.25,mesh:null,a:makeHdmiPlug("hdmi"),outside:true,
     anchor:()=>(monG.updateMatrixWorld(true),monG.localToWorld(V3(-2.1,12,0))), anchorDir:()=>V3(0,-1,0),
     via:()=>[monG.localToWorld(V3(-7.5,.4,10)),V3(CX1+2,.3,CZ0-4),V3(CX0-4,.3,CZ0-4)]},       // down the monitor's neck, off its foot, then along the desk around the top of the case

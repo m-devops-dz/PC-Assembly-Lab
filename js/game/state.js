@@ -12,7 +12,8 @@ const STEP_GROUPS=[[ST.leverUp,"g_desk"],[ST.psu,"g_case"],[ST.dataSsd,"g_power"
 const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr",ST.dataSsd,ST.frontPanel],["m_cab",ST.frontPanel,STEPS]];
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
 if(saved.lang==="ar") lang="ar";
-let appMode=saved.mode==="trouble"?"trouble":"build";                  // "trouble": troubleshooting mode (trouble.js)
+let appMode=["trouble","install"].includes(saved.mode)?saved.mode:"build";   // "trouble": troubleshooting mode (trouble.js), "install": Windows install (install.js)
+const BUILD_MODE=appMode==="build";                                   // the other modes start fully built and skip the build-only helpers
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
   tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights

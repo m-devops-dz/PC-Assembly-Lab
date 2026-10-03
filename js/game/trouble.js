@@ -215,4 +215,3 @@ function renderTS(){
   el.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>tsVerdict(b.dataset.v==="bad"));
   el.querySelectorAll("[data-act=list]").forEach(b=>b.onclick=()=>tsGo(null));
 }
-document.getElementById("modeBtn").onclick=()=>{ appMode=TS.on?"build":"trouble"; persist(); location.reload(); };

@@ -51,6 +51,7 @@ const finishStep={
   powerOn:powerOnNow
 };
 function skipStep(){
+  if(IN.on){ inSkip(); return; }
   if(S.step>=STEPS||TS.on) return;
   if(S.busy||dragging){ toast(t("e_skipBusy")); return; }
   const id=STEP_IDS[S.step]; startClock();

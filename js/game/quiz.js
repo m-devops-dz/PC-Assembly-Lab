@@ -7,7 +7,7 @@
 const quizEl=document.getElementById("quiz"), quizChoices=document.getElementById("quizChoices"), quizMsg=document.getElementById("quizMsg");
 let quiz=null;   // {id, retry, from (S.fromTable when it was asked), order, wrong:Set, right}
 function quizOk(id,retry){
-  if(!S.quiz||S.quizDone[id]||TS.on) return true;
+  if(!S.quiz||S.quizDone[id]||!BUILD_MODE) return true;
   quiz={id,retry,from:S.fromTable&&S.fromTable.clone(),order:["a","b","c"].sort(()=>Math.random()-.5),wrong:new Set(),right:false};
   S.busy=true; hideStepCard(); quizEl.hidden=false; renderQuiz(); quizChoices.firstChild.focus();
   return false;

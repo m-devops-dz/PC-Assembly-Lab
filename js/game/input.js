@@ -8,7 +8,8 @@ function setNDC(e){ const r=renderer.domElement.getBoundingClientRect(); ndc.set
 // (troubleshooting mode hides the side panel; the check below is a safety net)
 function pick(e){ setNDC(e); const hits=ray.intersectObjects(scene.children,true);
   // choosing a port: plugs already seated next to it (USB above the board's HDMI) must not swallow the click
-  if(S.connPick){ const h=hits.find(h=>(h.object.userData.part==="rport"||h.object.userData.part==="sport")&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }
+  if(S.connPick){ const h=hits.find(h=>(h.object.userData.part==="rport"||h.object.userData.part==="sport"||h.object.userData.part==="inPort")&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }
+  if(IN.on){ const h=hits.find(h=>h.object.userData.part==="inStick"&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }   // install mode: the stick wins over cables in front of it
   for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(TS.on&&o.userData.part==="sidePanel") continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
   return null; }
 function grabbable(p){
@@ -48,6 +49,7 @@ window.addEventListener("pointerup",e=>{
     const p=pick(e);
     if(S.step===ST.board&&!S.held&&!S.busy){ setNDC(e); const hits=ray.intersectObjects([boardRoot],true).filter(h=>visible(h.object)); if(hits.length){ pickBoard(); downXY=null; return; } }
     if(p&&TS.on){ tsClick(p.d); downXY=null; return; }
+    if(IN.on){ if(p) inClick(p.d); downXY=null; return; }
     if(p){ const d=p.d;
       if(d.part==="lever") clickLever(); else if(d.part==="slot") clickSlot(d.slot); else if(d.part==="bracket") clickBracket();
       else if(d.part==="screw") clickScrew(d.screw); else if(d.part==="m2screw") clickM2Screw(); else if(d.part==="conn") clickConn(d.conn);

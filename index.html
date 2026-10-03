@@ -6,6 +6,7 @@
 <title>PC Assembly Lab: B450 Gaming Plus Max build</title>
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/screens.css">
 </head>
 <body>
 <div class="app">
@@ -25,7 +26,10 @@
         </div>
       </div>
       <button class="chip-btn" id="offlineBtn" data-i18n="off_btn"></button>
-      <button class="chip-btn" id="modeBtn"></button>
+      <div class="settings mode-menu">
+        <button class="chip-btn" id="modeBtn" aria-expanded="false" aria-controls="modePop"></button>
+        <div class="set-pop mode-pop" id="modePop" hidden><button data-mode="build"></button><button data-mode="trouble"></button><button data-mode="install"></button></div>
+      </div>
       <button class="chip-btn" id="langBtn"></button>
       <button class="chip-btn" id="resetBtn" data-i18n="reset"></button>
     </div>
@@ -34,6 +38,7 @@
   <div class="work">
     <aside>
       <div class="ts" id="tsPanel" hidden></div>
+      <div class="ts in" id="inPanel" hidden></div>
       <div class="lessons">
         <p class="module-title" data-i18n="lessons"></p>
         <ul class="modules" id="modules"></ul>
@@ -110,6 +115,19 @@
             <p class="quiz-msg" id="quizMsg" aria-live="polite"></p>
           </div>
         </div>
+        <div class="scr" id="scr" hidden>
+          <div class="scr-frame"><div class="scr-body" id="scrBody"></div></div>
+          <button class="scr-back" id="scrBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span data-i18n="scr_back"></span></button>
+        </div>
+        <div class="quiz step-card in-card" id="inCard" hidden>
+          <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="icTitle">
+            <p class="quiz-part" id="icNum"></p>
+            <h2 id="icTitle"></h2>
+            <div class="sc-text" id="icText"></div>
+            <div class="fa-btns" id="icBtns" hidden></div>
+            <button class="primary" id="icOk" data-i18n="ok"></button>
+          </div>
+        </div>
         <div class="loadmsg" id="loadMsg"><div><b>Loading the 3D workbench…</b></div></div>
         <div class="done" id="done">
           <div class="done-card">
@@ -133,6 +151,7 @@
 <script src="vendor/OrbitControls.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/i18n.js"></script>
+<script src="js/core/i18n-install.js"></script>
 <script src="js/core/helpers.js"></script>
 <script src="js/core/layout.js"></script>
 <script src="js/core/textures.js"></script>
@@ -164,6 +183,7 @@
 <script src="js/parts/front-panel.js"></script>
 <script src="js/parts/peripherals.js"></script>
 <script src="js/parts/power-strip.js"></script>
+<script src="js/parts/laptop.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="js/game/photos.js"></script>
 <script src="js/game/state.js"></script>
@@ -182,6 +202,12 @@
 <script src="js/game/settings.js"></script>
 <script src="js/game/quiz.js"></script>
 <script src="js/game/trouble.js"></script>
+<script src="js/screens/screen.js"></script>
+<script src="js/screens/laptop-apps.js"></script>
+<script src="js/screens/pc-boot.js"></script>
+<script src="js/screens/old-windows.js"></script>
+<script src="js/screens/win-setup.js"></script>
+<script src="js/game/install.js"></script>
 <script src="js/game/offline.js"></script>
 <script src="js/game/loop.js"></script>
 </body>

@@ -42,7 +42,7 @@ function frame(now){
   fpRing.visible=S.glow&&st===ST.frontPanel&&!S.busy;
   if(fpRing.visible){ const k=(now%900)/900; fpRing.scale.setScalar(1+2.2*k); fpRing.material.opacity=.95*(1-k); }
   setGlow(panelFrameMat,st===ST.closeCase&&!S.busy,pulse);
-  setGlow(powerBtnMat,TS.on?(TS.phase==="power"||TS.phase==="retry")&&!S.busy:st===ST.powerOn&&!S.powered,pulse);
+  setGlow(powerBtnMat,TS.on?(TS.phase==="power"||TS.phase==="retry")&&!S.busy:BUILD_MODE&&st===ST.powerOn&&!S.powered,pulse);
   // rear ports: glow the ones that fit the cable being plugged in (after a motherboard-HDMI warning, only the card's)
   RPORTS.forEach(p=>{ const fits=S.connPick==="usb"?p.kind==="usb"&&!p.used:S.connPick==="hdmi"?(p.kind==="hdmiGpu"||(p.kind==="hdmiMb"&&!S.hdmiWarned)):false;
     p.mat.opacity=S.glow&&S.hints&&fits&&!S.held?.25+.45*pulse:0; });
@@ -80,11 +80,11 @@ function frame(now){
   if(S.powered&&S.caseFanOn) rearBlades.rotation.x-=dt*10;
   if(S.powered) gpuFans.forEach(r=>r.rotation.z-=dt*9);
   if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); updateStepMark(); }
-  updateHints(now); updateTable(now); tsFrame(now); updateCaseRgb(now,dt); updateDeskRgb(dt); updateMouseLed();
+  updateHints(now); updateTable(now); tsFrame(now); inFrame(now); updateCaseRgb(now,dt); updateDeskRgb(dt); updateMouseLed();
   controls.update(); renderer.render(scene,camera);
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);
 }
-applyLang(); setStep(0); if(TS.on) tsStart();
+applyLang(); setStep(0); if(TS.on) tsStart(); if(IN.on) inStart();
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(drawThumbs);
 requestAnimationFrame(frame);

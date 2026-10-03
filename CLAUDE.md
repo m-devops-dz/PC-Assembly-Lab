@@ -3,6 +3,7 @@
 Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). Plain HTML + three.js r147, no build step. All libraries and fonts are local in `vendor/`, so it runs offline. Open `index.html` directly in a browser.
 
 ## How the code is wired
+- Modes: `appMode` (state.js) is `build`, `trouble` or `install`; `BUILD_MODE` guards the build-only helpers (hints, quiz, parts table, step card). The header mode menu (ui.js) reloads the page into the chosen mode.
 - Every file in `js/` is a **classic `<script>`** (not an ES module), loaded in the order listed in `index.html`. They all share one global scope: a `const`/`let`/`function` declared in one file is visible in every later file.
 - **Load order matters.** Top-level code may only use things from files loaded *before* it. Code that runs inside functions later on (event handlers, the render loop) can use anything.
 - New file: add a `<script src>` tag to `index.html` in the right position.
@@ -15,7 +16,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 - A new step needs: an id in `STEP_IDS`, its text in both languages, a `viewFor` case if it needs its own camera, and a `finishStep` entry in `skip.js`.
 
 ## File map
-- `css/style.css`: all styling
+- `css/style.css`: all styling, except `css/screens.css`: the HTML screens (overlay, the laptop's desktop and apps)
 - `vendor/`: three.js r147 + OrbitControls, JSZip 3.10.1, and the fonts (`vendor/fonts/fonts.css` + woff2, latin and arabic subsets). Don't link CDNs again: the page must work offline.
 - `themes/real-parts.zip`: built-in photo theme 1, loaded by default (photos named after `PHOTO_SLOTS`, plus `theme.json` and `CREDITS.txt`). Theme 2 is `themes/theme2.zip`. The list is `BUILTIN_THEMES` in `photos.js`.
 - `themes/<name>.zip.js`: the same zip as base64, for when the page is opened from a file (`fetch()` is blocked on `file://`). Regenerate it whenever a theme zip changes:
@@ -23,6 +24,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
 - `js/core/`
   - `config.js`: `PHOTO_URLS`
   - `i18n.js`: all UI text, English and Arabic (`I18N.en` / `I18N.ar`), plus `t()`
+  - `i18n-install.js`: install mode's text, added to the same `I18N.en` / `I18N.ar` (`in_*`, and `os_*`, `tl_*`, `wb_*`, `ms_*`, `fl_*` for the laptop's apps)
   - `helpers.js`: rng, canvas textures, tweens (`tween`, `animTo`)
   - `layout.js`: board dimensions, socket and DIMM positions
   - `textures.js`: generated canvas textures
@@ -32,8 +34,15 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - motherboard, rear-io, board-headers, socket, dimm-slots, pcie-latch
   - cpu, ram, fan-headers, thermal-paste, cooler
   - cables, m2-ssd (the socket hides the SSD's gold fingers; the removed screw lies on the parts mat at `M2_TABLE`), cmos-battery, case (white), side-panel, case-fans (red LED rear fan, `updateCaseRgb`: lit only when powered and SYS_FAN1 is plugged in), psu, gpu, wifi-card
-  - sata-connectors, sata-ssd, connector-cables, front-panel (power button lead, front USB lead to JUSB3, the USB stick used in troubleshooting), peripherals (keyboard, Razer Viper-style white mouse (`updateMouseLed`: green status LED, lit only when powered), monitor, rear port targets), power-strip (EU 4-socket strip on the desk: the PC power cord `CONN.ac` starts there; the monitor's power cable is plugged in at both ends)
+  - sata-connectors, sata-ssd, connector-cables, front-panel (power button lead, front USB lead to JUSB3, the USB stick used in troubleshooting), peripherals (keyboard and mouse in one group `kbSet`, which install mode turns to face the monitor; Razer Viper-style white mouse (`updateMouseLed`: green status LED, lit only when powered), monitor, rear port targets), power-strip (EU 4-socket strip on the desk: the PC power cord `CONN.ac` starts there; the monitor's power cable is plugged in at both ends)
+  - laptop (install mode only): `lapG` on the parts mat, its screen (`laptopView`), the backup drive plugged into its left side, and the install stick `inStick` (`lapPortWorld`: its port on the right side)
   - cable tubes go through `cableGeo` (connector-cables.js), which keeps them above the case floor / desk
+- `js/screens/` (loaded after trouble.js): HTML screens. Up close, a 3D screen gives way to an HTML page over the view
+  - `screen.js`: `openScreen(dev)` / `closeScreen()`; each screen is `SCREENS[dev]` = `{view, render, back}`
+  - `laptop-apps.js`: the laptop's desktop (`LAP` state, `lapRender`, `lapAct`): BootUSB (Ventoy-style), the browser (search, official download page), Files (drag or Copy/Paste the ISO). `STICK` is what's on the stick (boot style, ISO, `gen`). MBR is allowed here on purpose: phase 2 catches it
+  - `old-windows.js`: phase 2, the old Windows on the M.2 (`OW` state, `owRender`): lock screen, File Explorer (C: = M.2, D: = SATA with the customer's files), Rename D: (stored as `IN.label`), Start → Restart / Shut down
+  - `win-setup.js`: phases 4–6, Windows Setup (`WS` state, `wsRender`): language → Install now → no product key → Pro + license → Custom → disk page. On purpose the SATA SSD is Drive 0 (its partition shows `IN.label`) and the M.2 is Drive 1. Next on the customer's partition = mistake; Delete/Format it = `inPenalty` (60 s). A note under the window explains the selected row. The M.2 is split by the student's plan (`IN.plan`: 1 Windows, 2 + files, 3 + Linux space left unallocated + files); sizes typed in New are checked by `wsNew` (`WIN_MIN`/`WIN_MAX`/`LINUX_MIN`), `wsLayoutOk` says when it matches. Phase 6: copy (`wsCopy`, slower on USB 2.0) → restart countdown → `oobe` (region) → `user` (name, `WS.user`) → `hi` (5 s) → the new desktop (old-windows.js with `OW.fresh`: new wallpaper, drives sized by the plan)
+  - `pc-boot.js`: the PC's monitor (`PC` state, `pcRender`): POST with the F11 window (`POST_MS`), boot menu (an MBR stick isn't listed: UEFI only), BIOS (DEL), BootUSB's ISO menu, the old Windows on the M.2 (missed F11), Setup loading. Keys: real keyboard or the key row under the screen
 - `js/game/`
   - `state.js`: step order (`STEP_IDS`, `ST`, `STEPS`, `viewFor`, `setStep`), state `S`, `HELD`. Per-step mistakes/time (`S.stepMis`, `S.stepMs`, `stepMark`): the sidebar circle turns orange after 3 mistakes in a step, red after 60 s
   - `take-parts.js`: picking parts up from the tray (`takeCPU`, `takeRAM`, …)
@@ -50,6 +59,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `hints.js`: help: pointer arrow (always on the socket lever), first-part coach card (lever + CPU flip/rotate/drag/lower), Hint button (5 per build, H key; points at the next target, demos the move with a held part then puts it back)
   - `quiz.js`: part quiz: the first time a part is taken, a card asks what it does (3 answers, shuffled). Wrong = mistake + page shake and red flash (`shakeRed`). Each take function calls `quizOk(id, retry)` after `gate()`. Text `q_<id>` (name), `q_<id>_a` (right), `_b`/`_c`. Off via Settings (`S.quiz`, persisted) and in troubleshooting mode. A new takeable part can get a quiz by adding the text and a `quizOk` call
   - `trouble.js`: troubleshooting mode (header button, remembered in sessionStorage as `mode`): starts fully built with one fault. `TS_CASES` is the numbered case list ([symptom, fault]); `TS_SYMPTOMS` is each symptom's checklist; `TS_CHECKS` has each check's camera, fault and fix. Solved cases are kept in sessionStorage (`tsDone`); a case always starts from a fresh page load (`tsGo` sets `tsNext` and reloads). New case: add it to `TS_CASES`, give the fault a `TS_CHECKS` entry with `fault`/`fix`, and add `ts_c_`/`ts_l_`/`ts_w_`/`ts_fix_` text. Text is `ts_*` in i18n. The side panel stays off in this mode. CMOS case: battery-level badges (`batLow`/`batFull`), and the fix swaps the cell via the parts mat (`tsSwapBattery`).
+  - `install.js`: Windows install mode (mode menu, remembered as `mode`). Starts fully built, case closed. Its own steps: `IN_STEPS` / `IS.<id>`, text `in_s_<id>` / `in_s_<id>d`; `IN_DONE` says when a step is done and `inCheck()` advances after every action; `IN_FINISH` is Ctrl+H. Mistakes: `inMistake(key)` (card with `<key>_t` title and `<key>` text). All 6 phases are built: 1 make the USB, 2 check the drives (old Windows), 3 USB port + F11 + boot menu, 4 Setup, 5 partitions (plan card `inPlanCard`), 6 copy + remove the stick (question `inQuiz`; pulling it during the copy or leaving it in at the restart = mistakes) + first start, user name, new desktop. After an MBR stick has failed once (`IN.mbrFails`), choosing MBR again in BootUSB shows a warning (switch to GPT or keep MBR); the loop can repeat. Text that names the customer's drive uses `{l}` through `inT()`. PC ports: `IN_PORTS` (rear `RPORTS` + two front ones); a USB 2.0 port asks "move or keep (slower)" (`IN.slow`); keyboard and mouse move to the USB 3 pair under LAN in this mode, so both USB 2.0 ports are free; picking starts zoomed on them, the USB 2.0 card zooms out to every port (`inAllPorts`). `inRedo()` sends the student back to the laptop (MBR stick, or no ISO); steps still done pass again by themselves. `inCard(top,title,text,{cls,buttons,onOk})`
   - `offline.js`: the "Download offline" header button: zips the page and every local file it loads (read from the page's own tags, plus fonts and theme zips)
   - `table.js`: parts waiting on the desk (`TABLE_ITEMS`: clones of the real parts). Click → pops up and spins with a name tag, then calls the take function with `S.fromTable` set so `spawn`/`takeCPU` fly the real part in from there. With the parts bar off, the camera glides to `VIEWS.table` when a step needs a part. A new takeable part needs a `TABLE_ITEMS` entry
   - `settings.js`: header ⚙ menu: parts bar (`S.tray`, off by default; `body.no-tray`) and RGB lights (`S.rgb`), both saved by `persist`

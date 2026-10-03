@@ -46,7 +46,7 @@ function updateTray(){
   if(want&&(want.offsetTop<el.scrollTop||want.offsetTop+want.offsetHeight>el.scrollTop+el.clientHeight)) el.scrollTo({top:want.offsetTop-2,behavior:"smooth"});
 }
 function renderSteps(){
-  const ol=document.getElementById("steps"), exp=renderSteps.exp||(renderSteps.exp=document.querySelector(".explain"));
+  const ol=document.getElementById("steps"), exp=renderSteps.exp||(renderSteps.exp=document.querySelector("aside > .explain"));
   const box=document.createElement("li"); box.className="exp"; box.appendChild(exp);   // the explanation sits right under the current step
   ol.innerHTML="";
   for(let i=0;i<STEPS;i++){
@@ -58,10 +58,10 @@ function renderSteps(){
   const fin=S.step>=STEPS; if(fin) ol.appendChild(box);
   document.getElementById("expTitle").textContent=fin?t("doneTitle"):t("s_"+STEP_IDS[S.step]);
   document.getElementById("expText").textContent=fin?t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}):t("s_"+STEP_IDS[S.step]+"d");
-  if(typeof TS==="undefined"||!TS.on) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
+  if(BUILD_MODE) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
   if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
   if(S.step!==renderSteps.shown){ renderSteps.shown=S.step;
-    if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&!TS.on){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
+    if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&BUILD_MODE){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
     else if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
   else if(!stepCard.hidden) showStepCard();   // language change: redraw it
 }
@@ -69,7 +69,7 @@ function renderSteps(){
 // with an OK button (Settings can turn it off). Tapping the step name in the full-screen bar opens it again.
 const stepCard=document.getElementById("stepCard");
 function showStepCard(){
-  if((typeof TS!=="undefined"&&TS.on)||S.step>=STEPS) return;
+  if(!BUILD_MODE||S.step>=STEPS) return;
   document.getElementById("scNum").textContent=t("stepN",{n:S.step+1,m:STEPS});
   document.getElementById("scTitle").textContent=t("s_"+STEP_IDS[S.step]);
   document.getElementById("scText").textContent=t("s_"+STEP_IDS[S.step]+"d");
@@ -83,7 +83,7 @@ document.getElementById("faYes").onclick=()=>answerFsAsk(true);
 document.getElementById("faNo").onclick=()=>answerFsAsk(false);
 fsAsk.addEventListener("keydown",e=>{ if(e.key==="Escape") answerFsAsk(false); });
 stepCard.addEventListener("keydown",e=>{ if(e.key==="Escape") hideStepCard(); });
-document.getElementById("fsStep").onclick=()=>{ if(!TS.on) showStepCard(); };
+document.getElementById("fsStep").onclick=()=>{ if(IN.on) inStepCard(); else if(BUILD_MODE) showStepCard(); };
 // the current step's circle turns orange after 3 mistakes and red after a minute (checked live from the render loop)
 function updateStepMark(){ const li=renderSteps.cur, fs=document.getElementById("fsStep"), m=li&&li.isConnected?stepMark(S.step):"";
   document.getElementById("fsMis").textContent=S.mistakes; if(S.start) document.getElementById("fsTime").textContent=fmtTime((S.end||performance.now())-S.start);
@@ -115,11 +115,20 @@ function applyLang(){
   document.getElementById("langBtn").textContent=lang==="ar"?"English":"عربي";
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
-  document.getElementById("modeBtn").textContent=t(appMode==="trouble"?"mode_build":"mode_trouble"); if(typeof TS!=="undefined") renderTS(); if(typeof renderQuiz!=="undefined") renderQuiz();
+  renderModeMenu(); if(typeof TS!=="undefined") renderTS(); if(typeof IN!=="undefined"){ renderIN(); renderScreen(); } if(typeof renderQuiz!=="undefined") renderQuiz();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
   renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn(); renderFsBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
+/* mode menu (header): build, troubleshooting, Windows install. Every mode starts from a fresh page load. */
+const modeBtn=document.getElementById("modeBtn"), modePop=document.getElementById("modePop");
+function renderModeMenu(){ modeBtn.innerHTML=`<span>${t("mode_"+appMode)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+  modePop.querySelectorAll("[data-mode]").forEach(b=>{ b.textContent=t("mode_"+b.dataset.mode); b.setAttribute("aria-current",b.dataset.mode===appMode); }); }
+function openModeMenu(open){ modePop.hidden=!open; modeBtn.setAttribute("aria-expanded",open); }
+modeBtn.onclick=e=>{ e.stopPropagation(); openModeMenu(modePop.hidden); };
+modePop.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{ openModeMenu(false); if(b.dataset.mode===appMode) return; appMode=b.dataset.mode; persist(); location.reload(); });
+document.addEventListener("click",e=>{ if(!modePop.hidden&&!modePop.contains(e.target)) openModeMenu(false); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!modePop.hidden){ openModeMenu(false); modeBtn.focus(); } });
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };
 document.getElementById("glowBtn").onclick=()=>{ S.glow=!S.glow; persist(); applyLang(); };
 const brightIn=document.getElementById("bright"); brightIn.value=S.bright; renderer.toneMappingExposure=S.bright;
@@ -145,7 +154,7 @@ const PANEL_ICON={open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 function showFsPanel(open){ document.body.classList.toggle("fs-open",open); panelBtn.setAttribute("aria-expanded",open);
   panelBtn.innerHTML=PANEL_ICON[open?"close":"open"]; panelBtn.title=t(open?"fsClose":"fsPanel"); panelBtn.setAttribute("aria-label",panelBtn.title);
   document.querySelector("aside").style.top=open?Math.round(document.getElementById("fsBar").getBoundingClientRect().bottom+8)+"px":"";
-  if(open&&renderSteps.cur&&!TS.on) renderSteps.cur.scrollIntoView({block:"center"}); }
+  if(open&&renderSteps.cur&&BUILD_MODE) renderSteps.cur.scrollIntoView({block:"center"}); }
 fsBtn.onclick=()=>setFs(!isFs());
 panelBtn.onclick=e=>{ e.stopPropagation(); showFsPanel(!document.body.classList.contains("fs-open")); };
 // leaving the browser's full screen (Esc, back gesture) also leaves ours
@@ -154,7 +163,7 @@ window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&isFs()&&!document.fu
 // a tap on the 3D view closes the sidebar overlay
 vp.addEventListener("pointerdown",e=>{ if(document.body.classList.contains("fs-open")&&e.target===renderer.domElement) showFsPanel(false); });
 document.getElementById("againBtn").onclick=()=>{ document.getElementById("done").classList.remove("show"); };
-document.getElementById("viewBtn").onclick=()=>focus(viewFor(S.step),700);
+document.getElementById("viewBtn").onclick=()=>focus(IN.on?"inDesk":viewFor(S.step),700);
 document.getElementById("topBtn").onclick=()=>topView();
 document.getElementById("rotL").onclick=()=>rotate(1);
 document.getElementById("rotR").onclick=()=>rotate(-1);
