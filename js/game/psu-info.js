@@ -67,7 +67,7 @@ function piBuild(){ const it=piItem(); if(PI.built||!it) return; PI.built=true;
   const hole=c.localToWorld(PI_HOLE.clone()), da=c.localToWorld(PI_HOLE.clone().add(V3(1,0,0))).sub(hole).normalize();
   const face=it.rest.x+it.size.x/2, gapZ=2.2, tot=PI.sets.reduce((a,st)=>a+st.w,0)+gapZ*(PI.sets.length-1); let z=it.rest.z+4-tot/2;
   PI.sets.forEach((st,i)=>{
-    st.home.set(face+7+i*1.2,st.y,z+st.w/2); z+=st.w+gapZ;
+    st.home.set(face+13+i*1.5,st.y,z+st.w/2); z+=st.w+gapZ;
     st.g.position.copy(st.home); st.g.updateMatrixWorld(true);
     const B=st.g.localToWorld(V3(st.id==="sata"?-1.05:-1.3,0,0));
     st.E=hole.clone().add(V3(0,(i%2-.5)*.5,(i-1.5)*.35)); st.da=da;             // four bundles side by side in the hole
@@ -78,18 +78,22 @@ function piBuild(){ const it=piItem(); if(PI.built||!it) return; PI.built=true;
   });
 }
 // (re)draw a set's wires from the cable hole to its plug(s), wherever the plug (or its loose half) is now
+// sleeved like the build's cables (drawBundle): one thick covered cable along the set's line, opening just behind the
+// plug into one wire per pin. A 4+4 / 6+2 set shares one sleeve; the loose half's wires leave it with the half.
 function piDraw(st){
-  st.g.updateMatrixWorld(true); const E=st.E, da=st.da, pts=st.curve.points; let n=0;
-  const wire=(p,r)=>{ const geo=cableGeo(p,r*st.sc,40,5); let m=st.wires[n++];
+  st.g.updateMatrixWorld(true); const E=st.E, pts=st.curve.points; let n=0;
+  const put=(p,r,seg,rad)=>{ const geo=cableGeo(p,r,seg,rad); let m=st.wires[n++];
     if(!m){ m=new T.Mesh(geo,piWireMat); m.castShadow=true; m.userData={part:st.part,k:st.k,m0:piWireMat}; m.visible=st.g.visible; scene.add(m); st.wires.push(m); }
     else { m.geometry.dispose(); m.geometry=geo; } };
-  st.plugs.forEach(P=>{ const db=plugBackDir(P);
-    const mid=st.curve.getPoint(.5);
-    if(!P.pins){ const b=plugBack(P); wire([E,pts[1],mid,b.clone().addScaledVector(db,2.6),b],.16); return; }
-    P.pins.forEach(pin=>{ const tip=P.inner.localToWorld(pin.clone()), o=V3(0,pin.y*.3,pin.z*.3).multiplyScalar(st.sc);   // tight in the hole, spreading toward the plug
-      const spread=tip.clone().sub(P.inner.localToWorld(V3(pin.x,0,0)));
-      wire([E.clone().add(o),pts[1].clone().add(o),mid.clone().add(o.clone().lerp(spread,.5)),tip.clone().addScaledVector(db,2.6),tip],.085); });   // straight into each pin, no loop
-  });
+  const P0=st.plugs[0], db=plugBackDir(P0), mid=st.curve.getPoint(.5);
+  if(!P0.pins){ const b=plugBack(P0); put([E,pts[1],mid,b.clone().addScaledVector(db,2.6),b],.16*st.sc,40,6); return; }
+  const back=P0.inner.localToWorld(V3(P0.pins[0].x,0,0)), split=back.clone().addScaledVector(db,SLEEVE_OPEN*st.sc);
+  const pinN=st.plugs.reduce((t,P)=>t+P.pins.length,0);
+  const lead=split.clone().addScaledVector(db,3.2*st.sc);
+  put([E,pts[1],pts[1].clone().lerp(lead,.5).setY(Math.max(lead.y,Math.min(pts[1].y,lead.y+1))),lead,split],.085*st.sc*Math.sqrt(pinN)*1.15,48,10);
+  st.plugs.forEach(P=>{ const dbP=plugBackDir(P);
+    P.pins.forEach(pin=>{ const tip=P.inner.localToWorld(pin.clone()), off=tip.clone().sub(back).multiplyScalar(.25);
+      put([split.clone().add(off),tip.clone().addScaledVector(dbP,1.1*st.sc),tip],.085*st.sc,12,5); }); });
 }
 /* the real PSU (psuG) from "Put the PSU in the case" until the build's own connector cables take over (the SATA steps,
    showConnCables): its own set of the same cables, real size, fixed to it, so they come along while it's carried and

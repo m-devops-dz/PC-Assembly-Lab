@@ -60,7 +60,7 @@ function drawConn(c){
   psuG.updateMatrixWorld(true); c.a.outer.updateMatrixWorld(true); if(c.b) c.b.outer.updateMatrixWorld(true);
   if(c.id==="data"){ if(!c.a.outer.visible) return; a=plugBack(c.a); da=plugBackDir(c.a); b=plugBack(c.b); db=plugBackDir(c.b); }
   else { if(!c.a.outer.visible) return;
-    const psuOff={power:V3(7.3,3,-2),atx24:V3(7.3,3,1),cpu8:V3(7.3,3,-4),gpu8:V3(7.3,5.5,2.6)}[c.id];
+    const psuOff={power:V3(7.3,3.25,-2.3),atx24:V3(7.3,2.75,-2.3),cpu8:V3(7.3,3.25,-1.7),gpu8:V3(7.3,2.75,-1.7)}[c.id];   // all out of the one cable hole (psuG 7.1, 3, -2)
     if(c.anchor){ a=c.anchor(); da=c.anchorDir(); } else { a=psuG.localToWorld(psuOff); da=V3(1,0,0).applyQuaternion(psuG.quaternion); }
     b=plugBack(c.a); db=plugBackDir(c.a); }
   const mid=a.clone().lerp(b,.5); mid.y=(c.a.loose&&c.looseY)||(c.overY??Math.max(Math.min(a.y,b.y)-1,.7));   // overY: arch over the GPU instead of sagging
@@ -70,32 +70,33 @@ function drawConn(c){
   const geo=cableGeo(pts,c.radius);
   if(!c.mesh){ c.mesh=new T.Mesh(geo,c.mat); c.mesh.castShadow=true; c.mesh.userData={part:"conn",conn:c.id}; scene.add(c.mesh); } else { c.mesh.geometry.dispose(); c.mesh.geometry=geo; }
 }
-// one wire per pin: they leave the plug straight and parallel, then gather into a tighter bundle toward the PSU
+// sleeved like a real modular cable: one thick covered cable from the PSU hole to just behind the plug, where it opens
+// into one wire per pin running straight into the plug. Mesh 0 is the sleeve, the rest are the wires.
+const SLEEVE_OPEN=2.6;                                                      // how far behind the plug the sleeve ends
 function drawBundle(c,a,da,mid,db){
-  const P=c.a, q=P.inner.getWorldQuaternion(new T.Quaternion());
-  const py=V3(0,1,0).applyQuaternion(q), pz=V3(0,0,1).applyQuaternion(q);                  // plug's row / column axes
-  let uy=V3(0,1,0), uz=V3(0,0,1).applyQuaternion(psuG.quaternion);                          // same axes at the PSU face
-  if(uy.dot(py)<0) uy.negate(); if(uz.dot(pz)<0) uz.negate();                              // keep wire order so the bundle doesn't cross over
-  if(!c.group){ c.group=new T.Group(); scene.add(c.group); }
-  P.pins.forEach((pin,i)=>{
-    const tip=P.inner.localToWorld(pin.clone()), oP=uy.clone().multiplyScalar(pin.y*.45).addScaledVector(uz,pin.z*.45);
-    const oMid=oP.clone().lerp(tip.clone().sub(P.inner.localToWorld(V3(pin.x,0,0))),.4);
-    const pts=[a.clone().add(oP),inCase(a.clone().addScaledVector(da,1.6).add(oP)),inCase(mid.clone().add(oMid)),inCase(tip.clone().addScaledVector(db,2.2)),tip];
-    const geo=cableGeo(pts,c.radius,36,5);
-    let m=c.group.children[i];
-    if(!m){ m=new T.Mesh(geo,c.mat); m.castShadow=true; m.userData={part:"conn",conn:c.id}; c.group.add(m); } else { m.geometry.dispose(); m.geometry=geo; }
-  });
+  const P=c.a; if(!c.group){ c.group=new T.Group(); scene.add(c.group); }
+  const back=P.inner.localToWorld(V3(P.pins[0].x,0,0)), split=back.clone().addScaledVector(db,SLEEVE_OPEN), R=c.radius*Math.sqrt(P.pins.length)*1.15;
+  const ar=P.loose&&c.looseAround||c.around, way=ar?ar.map(w=>inCase(w.clone())):[inCase(mid.clone())];
+  const put=(k,geo)=>{ let m=c.group.children[k];
+    if(!m){ m=new T.Mesh(geo,c.mat); m.castShadow=true; m.userData={part:"conn",conn:c.id}; c.group.add(m); } else { m.geometry.dispose(); m.geometry=geo; } };
+  put(0,cableGeo([a,inCase(a.clone().addScaledVector(da,1.6)),...way,inCase(split.clone().addScaledVector(db,3.2).setY(Math.max(split.y,P.loose?3.2:0))),split],R,64,10));   // long lead-in: a gentle bend into the plug
+  P.pins.forEach((pin,i)=>{ const tip=P.inner.localToWorld(pin.clone()), off=tip.clone().sub(back).multiplyScalar(.25);   // wires fan out of the sleeve's end
+    put(i+1,cableGeo([split.clone().add(off),tip.clone().addScaledVector(db,1.1),tip],c.radius,12,5)); });
 }
 // loose: lying on the tray, not yet picked up (clickConn / seatConnNow clear it). A loose plug's wires may arch higher (looseY).
 function layLoose(p,pos,yaw,roll){ p.loose=true; p.outer.visible=true; p.outer.position.copy(pos); p.outer.rotation.set(0,yaw,0); p.inner.rotation.x=roll; }
 // plugs that lie loose to the right of the board: their wires arch over the board (looseY) instead of lying on it
 CONN.atx24.looseY=4.2; CONN.gpu8.looseY=4.2;
+// the 24-pin's header is on the far side of the graphics card (it stands up across the board, x −16…8 at z ≈ −45):
+// its wires go round the card's free end, between the card and the board's edge, never through it
+CONN.atx24.around=[V3(4,4.6,L.z+13.5),V3(11.4,5.2,L.z+5)];
+CONN.gpu8.looseAround=[V3(4.75,4.6,L.z+14.16),V3(12.15,5.2,L.z+5.66)];       // lying loose: alongside the 24-pin, 1 apart, so the two never cross                  // high enough to clear the parts on the board
 function showConnCables(){
   layLoose(CONN.data.a,V3(19.6,.75,L.z+9.6),2.4,Math.PI/2); layLoose(CONN.data.b,V3(17.2,.75,L.z+11),.4,Math.PI/2);
   layLoose(CONN.power.a,V3(9,.75,L.z+15.3),.1,Math.PI/2);   // cable end toward the PSU, so the wire leaves it straight
-  layLoose(CONN.atx24.a,V3(19.5,.95,L.z-6.5),Math.PI,0);
+  layLoose(CONN.atx24.a,V3(24.5,.95,L.z-6.5),0,0);       // back toward the board, where its cable comes from: no hairpin
   layLoose(CONN.cpu8.a,V3(-5.6,4.6,L.z-9.8),Math.PI/2,0);           // on the corner of the cooler shroud, so it isn't hidden under the cooler
-  layLoose(CONN.gpu8.a,V3(20.5,.95,L.z-.5),Math.PI,0);     // well clear of the SATA ports (L.z+6.8 / +8.4), so its wires don't dip over them
+  layLoose(CONN.gpu8.a,V3(24.5,.95,L.z-.5),0,0);     // well clear of the SATA ports (L.z+6.8 / +8.4), so its wires don't dip over them
   Object.values(CONN).forEach(drawConn);
 }
 // where each connection goes: port frame, and which plug
