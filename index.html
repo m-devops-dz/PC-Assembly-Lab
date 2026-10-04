@@ -107,6 +107,13 @@
             <div class="fa-btns"><button class="primary" id="faYes" data-i18n="fa_yes"></button><button class="chip-btn" id="faNo" data-i18n="fa_no"></button></div>
           </div>
         </div>
+        <div class="quiz step-card" id="verAsk" hidden>
+          <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="vaTitle">
+            <h2 id="vaTitle" data-i18n="va_title"></h2>
+            <p class="sc-text" id="vaText"></p>
+            <div class="fa-btns"><button class="primary" id="vaOpen" data-i18n="va_open"></button><button class="chip-btn" id="vaLater" data-i18n="va_later"></button><button class="chip-btn" id="vaNever" data-i18n="va_never"></button></div>
+          </div>
+        </div>
         <div class="quiz" id="quiz" hidden>
           <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
             <button class="quiz-x" id="quizX"><span aria-hidden="true">×</span></button>
@@ -150,6 +157,7 @@
 <script src="js/core/boot-errors.js"></script>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
+<script src="version.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/i18n.js"></script>
 <script src="js/core/i18n-install.js"></script>
@@ -212,6 +220,7 @@
 <script src="js/screens/win-setup.js"></script>
 <script src="js/game/install.js"></script>
 <script src="js/game/offline.js"></script>
+<script src="js/game/version-check.js"></script>
 <script src="js/game/loop.js"></script>
 </body>
 </html>

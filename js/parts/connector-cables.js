@@ -72,16 +72,38 @@ function drawConn(c){
 }
 // sleeved like a real modular cable: one thick covered cable from the PSU hole to just behind the plug, where it opens
 // into one wire per pin running straight into the plug. Mesh 0 is the sleeve, the rest are the wires.
-const SLEEVE_OPEN=2.6;                                                      // how far behind the plug the sleeve ends
+const SLEEVE_OPEN=3.4;                                                      // how far behind the plug the sleeve ends
+// one wire out of the sleeve's end into its pin, bound to the plug's own frame (its row / column axes), so the wires keep
+// their order and stay straight when the plug turns: they start packed in the sleeve's cross-section, in the same pattern
+// as the pins, and run straight back along the plug's axis into the pin. span: the plug's pin pattern half-width.
+// bend: {corner, tw}: the wires rise straight out of the plug to the corner, then turn (uncovered, in parallel) toward
+// the sleeve's end, which lies along tw. Without it they run straight from the sleeve's end into the plug.
+function sleeveWire(P,pin,split,db,R,span,bend){
+  const q=P.inner.getWorldQuaternion(new T.Quaternion()), py=V3(0,1,0).applyQuaternion(q), pz=V3(0,0,1).applyQuaternion(q), k=R*.72/span;
+  const tip=P.inner.localToWorld(pin.clone()), lane=py.clone().multiplyScalar(pin.y).addScaledVector(pz,pin.z);   // the pin's offset in the plug
+  const behind=tip.clone().addScaledVector(db,.9);
+  if(!bend){ const start=split.clone().addScaledVector(py,pin.y*k).addScaledVector(pz,pin.z*k);
+    return [start,start.clone().lerp(behind,.5),behind,tip]; }             // straight: no arch
+  // packed in the sleeve's cross-section (the lane with its part along the sleeve removed), turning together at the corner
+  const across=lane.clone().addScaledVector(bend.tw,-lane.dot(bend.tw)), start=split.clone().addScaledVector(across,k);
+  const turn=bend.corner.clone().add(lane.clone().multiplyScalar(.85));
+  return [start,start.clone().lerp(turn,.5).add(across.clone().multiplyScalar(.3)),turn,behind,tip];
+}
+const pinSpan=(Ps,dz=()=>0)=>Math.max(.2,...Ps.flatMap(P=>P.pins.map(p=>Math.hypot(p.y,p.z+dz(P)))));   // dz: a plug's offset inside its set (4+4 halves)
 function drawBundle(c,a,da,mid,db){
   const P=c.a; if(!c.group){ c.group=new T.Group(); scene.add(c.group); }
-  const back=P.inner.localToWorld(V3(P.pins[0].x,0,0)), split=back.clone().addScaledVector(db,SLEEVE_OPEN), R=c.radius*Math.sqrt(P.pins.length)*1.15;
+  const span=pinSpan([P]), open=Math.max(SLEEVE_OPEN,span*2.4), R=c.radius*Math.sqrt(P.pins.length)*1.15;
+  const back=P.inner.localToWorld(V3(P.pins[0].x,0,0));
   const ar=P.loose&&c.looseAround||c.around, way=ar?ar.map(w=>inCase(w.clone())):[inCase(mid.clone())];
+  // the sleeve stops short and off to the side the cable comes from; the last stretch, with the bend, is bare wires
+  const tw=way[way.length-1].clone().sub(back); tw.addScaledVector(db,-tw.dot(db));
+  const bend=tw.length()>1?{corner:back.clone().addScaledVector(db,open*.7),tw:tw.normalize()}:null;
+  const split=bend?bend.corner.clone().addScaledVector(bend.tw,open*.9).addScaledVector(db,open*.25):back.clone().addScaledVector(db,open);
+  const lead=bend?split.clone().addScaledVector(bend.tw,3):split.clone().addScaledVector(db,3.2).setY(Math.max(split.y+3.2*db.y,P.loose?3.2:0));
   const put=(k,geo)=>{ let m=c.group.children[k];
     if(!m){ m=new T.Mesh(geo,c.mat); m.castShadow=true; m.userData={part:"conn",conn:c.id}; c.group.add(m); } else { m.geometry.dispose(); m.geometry=geo; } };
-  put(0,cableGeo([a,inCase(a.clone().addScaledVector(da,1.6)),...way,inCase(split.clone().addScaledVector(db,3.2).setY(Math.max(split.y,P.loose?3.2:0))),split],R,64,10));   // long lead-in: a gentle bend into the plug
-  P.pins.forEach((pin,i)=>{ const tip=P.inner.localToWorld(pin.clone()), off=tip.clone().sub(back).multiplyScalar(.25);   // wires fan out of the sleeve's end
-    put(i+1,cableGeo([split.clone().add(off),tip.clone().addScaledVector(db,1.1),tip],c.radius,12,5)); });
+  put(0,cableGeo([a,inCase(a.clone().addScaledVector(da,1.6)),...way,inCase(lead),split],R,64,10));
+  P.pins.forEach((pin,i)=>put(i+1,cableGeo(sleeveWire(P,pin,split,db,R,span,bend),c.radius,18,5)));   // bare wires out of the sleeve, in pin order
 }
 // loose: lying on the tray, not yet picked up (clickConn / seatConnNow clear it). A loose plug's wires may arch higher (looseY).
 function layLoose(p,pos,yaw,roll){ p.loose=true; p.outer.visible=true; p.outer.position.copy(pos); p.outer.rotation.set(0,yaw,0); p.inner.rotation.x=roll; }

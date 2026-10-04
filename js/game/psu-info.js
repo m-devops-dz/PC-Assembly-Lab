@@ -91,9 +91,12 @@ function piDraw(st){
   const pinN=st.plugs.reduce((t,P)=>t+P.pins.length,0);
   const lead=split.clone().addScaledVector(db,3.2*st.sc);
   put([E,pts[1],pts[1].clone().lerp(lead,.5).setY(Math.max(lead.y,Math.min(pts[1].y,lead.y+1))),lead,split],.085*st.sc*Math.sqrt(pinN)*1.15,48,10);
+  const R=.085*st.sc*Math.sqrt(pinN)*1.15, span=pinSpan(st.plugs,P=>P.outer.position.z)*st.sc;
   st.plugs.forEach(P=>{ const dbP=plugBackDir(P);
-    P.pins.forEach(pin=>{ const tip=P.inner.localToWorld(pin.clone()), off=tip.clone().sub(back).multiplyScalar(.25);
-      put([split.clone().add(off),tip.clone().addScaledVector(dbP,1.1*st.sc),tip],.085*st.sc,12,5); }); });
+    P.pins.forEach(pin=>{ const p=pin.clone(); p.z+=P.outer.position.z;               // a 4+4 / 6+2 half: its pins sit beside the other half's
+      const pts=sleeveWire(P,pin,split,dbP,R,span), q=P0.inner.getWorldQuaternion(new T.Quaternion());
+      pts[0]=split.clone().addScaledVector(V3(0,1,0).applyQuaternion(q),p.y*st.sc*R*.72/span).addScaledVector(V3(0,0,1).applyQuaternion(q),p.z*st.sc*R*.72/span);
+      put(pts,.085*st.sc,14,5); }); });
 }
 /* the real PSU (psuG) from "Put the PSU in the case" until the build's own connector cables take over (the SATA steps,
    showConnCables): its own set of the same cables, real size, fixed to it, so they come along while it's carried and
