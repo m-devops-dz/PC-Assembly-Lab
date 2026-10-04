@@ -10,7 +10,7 @@ function seatConnNow(){
   const job=connJob(S.step);
   if(job.choose&&!job.port){ job.port=job.choose==="usb"?RPORTS.find(p=>p.kind==="usb"&&!p.used):rport("hdmiGpu1"); }
   const w=portWorld(job.port), P=job.plug;
-  P.outer.visible=true; P.outer.quaternion.copy(w.q); P.outer.position.copy(w.p).addScaledVector(w.out,-.3); P.inner.rotation.x=0;
+  P.loose=false; P.outer.visible=true; P.outer.quaternion.copy(w.q); P.outer.position.copy(w.p).addScaledVector(w.out,-.3); P.inner.rotation.x=0;
   S.roll=0; S.job=null; drawConn(job.c);
   if(job.choose){ job.port.used=true; S.connPort=null; S.connPick=null; }
   if(job.pick){ SPORTS.find(s=>s.port===job.port).used=true; S.connPort=null; S.connPick=null; }
@@ -34,7 +34,7 @@ const finishStep={
   m2In:()=>{ S.used.m2=true; S.rot.m2=0; m2G.visible=true; m2G.position.set(M2_SEAT.x,.45,M2Z); m2G.rotation.set(0,0,0); },
   m2Screw:()=>{ m2Screw.position.set(M2_SCREW.x,M2_SCREW_Y.fastened,M2Z); m2Screw.rotation.set(0,0,0); S.m2screw="fastened"; },
   battery:()=>{ S.used.battery=true; S.batFlip=0; batFlip.rotation.z=0; batG.visible=true; batG.rotation.y=0; batG.position.set(BAT_POS.x,BAT_SEAT,BAT_POS.z); },
-  psu:()=>{ S.used.psu=true; S.rot.psu=0; psuG.visible=true; psuG.position.copy(PSU_POS); psuG.rotation.y=0; psuScrews.forEach(g=>{ g.visible=true; g.position.x=CX0-.1; }); },
+  psu:()=>{ S.used.psu=true; S.rot.psu=0; psuG.visible=true; psuG.position.copy(PSU_POS); psuG.rotation.set(0,0,0); psuScrews.forEach(g=>{ g.visible=true; g.position.x=CX0-.1; }); },
   board:()=>{ boardRoot.position.copy(L); boardRoot.rotation.set(0,0,0); S.rot.board=0; },
   boardScrews:()=>{ S.used.screws=true; boardScrews.forEach(m=>{ m.visible=true; m.position.y=MB_SCREW_Y; }); S.mbScrews=BOARD_HOLES.length; mbScrewHints.visible=false; },
   pcieLatch:()=>{ pcieLatch.rotation.z=PCIE_OPEN; },

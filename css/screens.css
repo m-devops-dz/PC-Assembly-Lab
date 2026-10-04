@@ -381,6 +381,8 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 /* Ventoy: the partition style pill: red for MBR, green for GPT */
 .pill.bad{ background:#fde7e7; border-color:#d93025; color:#b3261e; }
 /* Disk Management (disk-mgmt.js) */
+.dm-hint{ margin:4px 0 0; padding:6px 10px; border-radius:6px; background:#e8f0fe; color:#1a3d7a; font-size:13px; font-weight:600; }
+.dm-hint.err{ background:#fdecea; color:#a3261c; }
 .dm-wrap{ display:flex; flex-direction:column; gap:10px; padding:10px 12px; min-height:100%; background:#fff; }
 .dm-tools{ display:flex; gap:6px; flex-wrap:wrap; }
 .dm-list{ border:1px solid var(--os-line); border-radius:6px; overflow:auto; font-size:12.5px; }

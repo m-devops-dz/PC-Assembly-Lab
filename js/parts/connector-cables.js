@@ -63,7 +63,7 @@ function drawConn(c){
     const psuOff={power:V3(7.3,3,-2),atx24:V3(7.3,3,1),cpu8:V3(7.3,3,-4),gpu8:V3(7.3,5.5,2.6)}[c.id];
     if(c.anchor){ a=c.anchor(); da=c.anchorDir(); } else { a=psuG.localToWorld(psuOff); da=V3(1,0,0).applyQuaternion(psuG.quaternion); }
     b=plugBack(c.a); db=plugBackDir(c.a); }
-  const mid=a.clone().lerp(b,.5); mid.y=c.overY??Math.max(Math.min(a.y,b.y)-1,.7);   // overY: arch over the GPU instead of sagging
+  const mid=a.clone().lerp(b,.5); mid.y=(c.a.loose&&c.looseY)||(c.overY??Math.max(Math.min(a.y,b.y)-1,.7));   // overY: arch over the GPU instead of sagging
   if(c.a.pins) return drawBundle(c,a,da,mid,db);
   const keep=c.outside?(p=>p):inCase;                                     // desk cables (keyboard, mouse, monitor) run outside the case
   const pts=[a,keep(a.clone().addScaledVector(da,1.2)),...(c.via?c.via(a,b):[keep(mid)]),keep(b.clone().addScaledVector(db,1.2)),b];   // via: route around the case
@@ -86,13 +86,16 @@ function drawBundle(c,a,da,mid,db){
     if(!m){ m=new T.Mesh(geo,c.mat); m.castShadow=true; m.userData={part:"conn",conn:c.id}; c.group.add(m); } else { m.geometry.dispose(); m.geometry=geo; }
   });
 }
-function layLoose(p,pos,yaw,roll){ p.outer.visible=true; p.outer.position.copy(pos); p.outer.rotation.set(0,yaw,0); p.inner.rotation.x=roll; }
+// loose: lying on the tray, not yet picked up (clickConn / seatConnNow clear it). A loose plug's wires may arch higher (looseY).
+function layLoose(p,pos,yaw,roll){ p.loose=true; p.outer.visible=true; p.outer.position.copy(pos); p.outer.rotation.set(0,yaw,0); p.inner.rotation.x=roll; }
+// plugs that lie loose to the right of the board: their wires arch over the board (looseY) instead of lying on it
+CONN.atx24.looseY=4.2; CONN.gpu8.looseY=4.2;
 function showConnCables(){
   layLoose(CONN.data.a,V3(19.6,.75,L.z+9.6),2.4,Math.PI/2); layLoose(CONN.data.b,V3(17.2,.75,L.z+11),.4,Math.PI/2);
   layLoose(CONN.power.a,V3(9,.75,L.z+15.3),.1,Math.PI/2);   // cable end toward the PSU, so the wire leaves it straight
-  layLoose(CONN.atx24.a,V3(18.0,.95,L.z-1.0),Math.PI,0);
+  layLoose(CONN.atx24.a,V3(19.5,.95,L.z-6.5),Math.PI,0);
   layLoose(CONN.cpu8.a,V3(-5.6,4.6,L.z-9.8),Math.PI/2,0);           // on the corner of the cooler shroud, so it isn't hidden under the cooler
-  layLoose(CONN.gpu8.a,V3(19.5,.95,L.z+4.5),Math.PI,0);
+  layLoose(CONN.gpu8.a,V3(20.5,.95,L.z-.5),Math.PI,0);     // well clear of the SATA ports (L.z+6.8 / +8.4), so its wires don't dip over them
   Object.values(CONN).forEach(drawConn);
 }
 // where each connection goes: port frame, and which plug

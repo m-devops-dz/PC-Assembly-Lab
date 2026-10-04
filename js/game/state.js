@@ -89,7 +89,8 @@ const HELD={
   paste:{obj:()=>pasteG,step:0,hover:PASTE_HOVER,snap:(x,z)=>nearPt(x,z,SX,SZ,.9)?{x:SX,z:SZ,key:"p",msg:t("ok_snapPaste")}:null},
   cooler:{obj:()=>coolerYaw,step:Math.PI/2,hover:COOLER_HOVER,snap:(x,z)=>nearPt(x,z,SX,SZ,1.5)?{x:SX,z:SZ,key:"c",msg:t("ok_snapCooler")}:null},
   m2:{obj:()=>m2G,step:Math.PI,hover:M2_HOVER,snap:(x,z)=>nearPt(x,z,M2_SEAT.x-2,M2_SEAT.z,3)?{x:M2_SEAT.x,z:M2_SEAT.z,key:"m",msg:t("ok_snapM2")}:null},
-  psu:{obj:()=>psuG,step:Math.PI/2,hover:PSU_HOVER,snap:(x,z)=>nearPt(x,z,PSU_POS.x,PSU_POS.z,3.5)?{x:PSU_POS.x,z:PSU_POS.z,key:"u",msg:t("ok_snapPsu")}:null},
+  // PSU: flips over about its back-to-front axis (fan toward the bottom vent, or into the case); its back always faces the rear wall
+  psu:{obj:()=>psuG,step:Math.PI,axis:"x",hover:PSU_HOVER,snap:(x,z)=>nearPt(x,z,PSU_POS.x,PSU_POS.z,3.5)?{x:PSU_POS.x,z:PSU_POS.z,key:"u",msg:t("ok_snapPsu")}:null},
   board:{obj:()=>boardRoot,step:Math.PI,hover:L.y+21,snap:(x,z)=>nearPt(x,z,L.x,L.z,3.5)?{x:L.x,z:L.z,key:"b",msg:t("ok_snapBoard")}:null},
   wifi:{obj:()=>wifiG,step:Math.PI,hover:WIFI_HOVER,snap:(x,z)=>{ for(const s of WIFI_SLOTS) if(Math.abs(x-WIFI_X-1)<4&&Math.abs(z-(L.z+s.z))<.8) return {x:WIFI_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapWifi",{s:s.name})}; return null; }},
   gpu:{obj:()=>gpuG,step:Math.PI,hover:GPU_HOVER,snap:(x,z)=>{ for(const s of GPU_SLOTS) if(Math.abs(x-GPU_X-5)<7&&Math.abs(z-(L.z+s.z))<1.3) return {x:GPU_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapGpu",{s:s.name})}; return null; }},
@@ -102,9 +103,11 @@ const HELD={
 };
 function spawn(type,obj,from,to,rot,after){
   if(S.fromTable) from=obj.parent.worldToLocal(S.fromTable.clone());   // taken from the parts table: fly in from there
-  obj.visible=true; obj.position.copy(from); S.rot[type]=rot; const r1=rot*HELD[type].step; obj.rotation.y=r1+1.4;
+  obj.visible=true; obj.position.copy(from); S.rot[type]=rot; const r1=rot*HELD[type].step, ax=HELD[type].axis||"y";
+  if(ax!=="y"){ obj.rotation.set(0,0,0); obj.rotation[ax]=r1; }                 // turned about another axis: the swing in is a plain spin to 0
+  const y1=ax==="y"?r1:0; obj.rotation.y=y1+1.4;
   S.busy=true; S.snap=null; startClock();
-  tween(900,k=>{ obj.position.lerpVectors(from,to,k); obj.rotation.y=r1+1.4*(1-k); },()=>{ S.busy=false; S.held=type; if(after) after(); updateTools(); updateTray(); },easeOut);
+  tween(900,k=>{ obj.position.lerpVectors(from,to,k); obj.rotation.y=y1+1.4*(1-k); },()=>{ S.busy=false; S.held=type; if(after) after(); updateTools(); updateTray(); },easeOut);
   updateTray();
 }
 function gate(need){

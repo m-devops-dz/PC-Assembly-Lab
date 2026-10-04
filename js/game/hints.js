@@ -16,7 +16,7 @@ const hintRing=hintSprite2((g,W)=>{ g.beginPath(); g.arc(W/2,W/2,W*.4,0,7); g.li
 
 S.hintsLeft=5;
 let hintUntil=0, hintStep=-1, coachOff=false, coachKey="", glowEls=[];
-const HINT_PERIOD={cpu:4,cooler:4,psu:4,sata:4,ram:2,m2:2,board:2,gpu:2,wifi:2};
+const HINT_PERIOD={cpu:4,cooler:4,psu:2,sata:4,ram:2,m2:2,board:2,gpu:2,wifi:2};
 const wpos=(o,dy=0)=>o.getWorldPosition(V3(0,0,0)).add(V3(0,dy,0));
 // which way to turn (rotate(1) is the left button): r turns away from correct
 function turnFix(r,period){ const m=mod(r,period); if(!m) return null;
@@ -84,11 +84,11 @@ function demoHeld(done){
     S.busy=true; tween(800,go,()=>setTimeout(()=>tween(700,k=>go(1-k),()=>{ go(0); S.busy=false; done(); }),900)); return; }
   const o=type==="cable"?S.cable.plug:HELD[type].obj(), tg=heldTarget(type); if(!tg) return done();
   const p0=o.position.clone(), w=o.getWorldPosition(V3(0,0,0)), p1=o.parent.worldToLocal(V3(tg.x,w.y,tg.z)); p1.y=p0.y;
-  const y0=o.rotation.y; let y1=y0;
+  const ax=type!=="cable"&&HELD[type].axis||"y", y0=o.rotation[ax]; let y1=y0;
   if(type==="cable") y1=S.cable.tgts.find(x=>x.ok).rot;
   else if(HINT_PERIOD[type]){ const P=HINT_PERIOD[type], r=S.rot[type], m=mod(r,P); y1=(m===0?r:m<=P/2?r-m:r+P-m)*HELD[type].step; }
   const fl=type==="cpu"?cpuFlip:type==="battery"?batFlip:null, n=type==="cpu"?S.flips:S.batFlip, z0=fl?fl.rotation.z:0, z1=fl&&n%2?(n+1)*Math.PI:z0;
-  const go=k=>{ o.position.lerpVectors(p0,p1,k); if(z1!==z0) o.position.y+=Math.sin(k*Math.PI)*1.2; o.rotation.y=y0+(y1-y0)*k; if(fl) fl.rotation.z=z0+(z1-z0)*k; if(type==="cable") drawCable(S.cable); };
+  const go=k=>{ o.position.lerpVectors(p0,p1,k); if(z1!==z0) o.position.y+=Math.sin(k*Math.PI)*1.2; o.rotation[ax]=y0+(y1-y0)*k; if(fl) fl.rotation.z=z0+(z1-z0)*k; if(type==="cable") drawCable(S.cable); };
   S.busy=true; tween(1100,go,()=>setTimeout(()=>tween(900,k=>go(1-k),()=>{ go(0); S.busy=false; done(); }),900));
 }
 function useHint(){
@@ -137,6 +137,7 @@ function updateHints(now){
   let pos=TS.on?tsArrow():IN.on?inArrow():PI.on?piArrowPos():info&&info.pos;
   if(BUILD_MODE&&!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.clips&&!S.busy) pos=clipPos();                                   // and the small memory clips
+  if(BUILD_MODE&&!pos&&S.step===ST.psu&&now<(S.psuHoleAt||0)) pos=V3(CX0-.3,7.9-3.4,L.z+18.2+3.6);       // PSU upside down: the offset rear-wall hole has no screw hole across from it                                   // and the small memory clips
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
   if(!pos&&S.glow&&gpuCableNag(now)){ CONN.gpu8.a.outer.updateMatrixWorld(true); pos=wpos(CONN.gpu8.a.outer); }
   hintArrow.visible=hintRing.visible=!!pos;

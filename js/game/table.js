@@ -5,7 +5,7 @@
    S.fromTable), otherwise it drops back down and the take function's message says why.
    While a step needs a part and the parts bar is off (Settings), the camera glides over to the table.
    A copy disappears once its part is used, or its step is past (skipped steps, troubleshooting). */
-VIEWS.table={pos:[39.5,46,37],tgt:[39.5,0,-4.5],phoneZoom:1.5};   // phones: 1.5 × 1.5, the mat is wide and the view is narrow
+VIEWS.table={pos:[48,52,42],tgt:[48,0,-3],phoneZoom:1.5};   // wide enough for the PSU's cables on the right (psu-info.js)   // phones: 1.5 × 1.5, the mat is wide and the view is narrow
 const TABLE_ITEMS=[
   // id (S.used key), name key, take, last step it's needed in, spot on the mat (x,z), pose turns [[axis,angle],...]
   {id:"cpu",name:"p_cpu",take:()=>takeCPU(),until:"takeCpu",src:()=>cpuYaw,at:[21,10]},
@@ -75,6 +75,7 @@ let tablePop=null, tableHover=null;
 function clickTablePart(id){
   const it=tableItem(id); if(!it||tablePop||!tableShown(it)) return;
   if(S.busy){ return; } if(S.held){ toast(t("e_oneAtATime")); return; }
+  if(it.id==="psu"&&!S.psuSeen&&BUILD_MODE){ startClock(); S.fromTable=it.pivot.getWorldPosition(V3(0,0,0)); it.take(); S.fromTable=null; return; }   // its cables are attached: no pop and spin, straight to the cables view
   startClock(); tablePop=it; const p=it.pivot, y0=it.rest.y, lift=3+Math.max(it.size.x,it.size.z)*.35;
   burstRing.position.set(it.rest.x,DESK.y+.05,it.rest.z); const R=Math.max(it.size.x,it.size.z)*.6+1;
   tween(700,k=>{ burstRing.scale.setScalar(R*(1+1.6*k)); burstRing.material.opacity=1-k; },null,easeOut);
@@ -94,7 +95,7 @@ function updateTable(now){
   const need=tableNeed(), pulse=.5+.5*Math.sin(now/300);
   tableRing.visible=!!need&&S.glow&&!S.held&&tablePop!==need;
   if(tableRing.visible){ const r=Math.max(need.size.x,need.size.z)*.62+.8; tableRing.position.set(need.rest.x,DESK.y+.06,need.rest.z); tableRing.scale.setScalar(r*(1+.08*pulse)); tableRing.material.opacity=.45+.5*pulse; }
-  TABLE_ITEMS.forEach(it=>{ if(tablePop!==it) it.pivot.position.y=it.rest.y+(it===need&&S.glow&&!S.held?.35+.35*Math.sin(now/260):0); });
+  TABLE_ITEMS.forEach(it=>{ if(tablePop!==it) it.pivot.position.y=it.rest.y+(it===need&&S.glow&&!S.held&&it.id!=="psu"?.35+.35*Math.sin(now/260):0); });
   // name tag: over the part that's popping up, or the one under the pointer
   const tg=tablePop||(tableHover&&tableShown(tableHover)?tableHover:null);
   tableTag.visible=!!tg;

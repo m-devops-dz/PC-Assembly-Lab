@@ -39,16 +39,18 @@ function dmDlg(){ const d=DM.dlg, c=dmPart("c");
       <label for="dmMb">${t("dm_amount")}</label><input id="dmMb" inputmode="numeric" value="${d.mb}">
       <span>${t("dm_after")}</span><b id="dmAfter">${Math.max(0,Math.floor(c.gb*1024-(+d.mb||0)))}</b></div>
       <p class="ws-small">${t("dm_shrinkHelp")}</p>`,btn("shrinkGo","dm_shrinkBtn",1)+btn("cancel","ws_cancel"));
+  // which label to type, under the field (a toast would be hidden behind this screen); red after a wrong try
+  const hint=`<p class="dm-hint${d.err?" err":""}">${d.err||t("dm_labelHint",{l:t("dm_labelSug")})}</p>`;
   if(d.kind==="new"){
     const pages={1:`<p>${t("dm_wz1")}</p><div class="dm-form"><span>${t("dm_maxMb")}</span><b>${Math.floor(dmFree()*1024)}</b><label for="dmMb">${t("dm_sizeMb")}</label><input id="dmMb" inputmode="numeric" value="${d.mb}"></div>`,
       2:`<p>${t("dm_wz2")}</p><div class="dm-form"><label for="dmLetter">${t("dm_letter")}</label><select id="dmLetter">${["D","E","F","G"].map(l=>`<option${d.letter===l?" selected":""}>${l}</option>`).join("")}</select></div>`,
       3:`<p>${t("dm_wz3")}</p><div class="dm-form"><label for="dmFs">${t("dm_fs")}</label><select id="dmFs">${["NTFS","exFAT"].map(f=>`<option${d.fs===f?" selected":""}>${f}</option>`).join("")}</select>
         <span>${t("dm_alloc")}</span><b>${t("dm_default")}</b>
-        <label for="dmLabel">${t("dm_label")}</label><input id="dmLabel" value="${d.label.replace(/"/g,"&quot;")}" maxlength="32"></div>
+        <label for="dmLabel">${t("dm_label")}</label><input id="dmLabel" value="${d.label.replace(/"/g,"&quot;")}" maxlength="32"></div>${hint}
         <label class="ws-chk"><input type="checkbox" checked disabled> ${t("dm_quick")}</label>`};
     return wrap(t("dm_wzT")+` · ${d.page}/3`,pages[d.page],(d.page>1?btn("back","wb_back"):"")+(d.page<3?btn("next","ws_next",1):btn("finish","dm_finish",1))+btn("cancel","ws_cancel")); }
   if(d.kind==="format") return wrap(t("dm_fmtT",{v:dmName(dmPart("d"))}),`<div class="dm-form"><label for="dmLabel">${t("dm_label")}</label><input id="dmLabel" value="${d.label.replace(/"/g,"&quot;")}" maxlength="32">
-      <label for="dmFs">${t("dm_fs")}</label><select id="dmFs">${["NTFS","exFAT"].map(f=>`<option${d.fs===f?" selected":""}>${f}</option>`).join("")}</select></div>`,btn("fmtGo","ok",1)+btn("cancel","ws_cancel"));
+      <label for="dmFs">${t("dm_fs")}</label><select id="dmFs">${["NTFS","exFAT"].map(f=>`<option${d.fs===f?" selected":""}>${f}</option>`).join("")}</select></div>${hint}`,btn("fmtGo","ok",1)+btn("cancel","ws_cancel"));
   if(d.kind==="fmtWarn") return wrap("⚠ "+t("dm_fmtT",{v:dmName(dmPart("d"))}),`<p>${t("dm_fmtWarn")}</p>`,btn("fmtOk","ok",1)+btn("cancel","ws_cancel"));
   if(d.kind==="del") return wrap("⚠ "+t("dm_delT"),`<p>${t("dm_delWarn")}</p>`,btn("delOk","tl_yes",1)+btn("cancel","tl_no"));
   return "";
@@ -80,8 +82,8 @@ function dmAct(a,v){
 }
 // the files partition: NTFS (an internal drive) and the label from the lesson
 function dmLabelOk(d){
-  if(d.fs!=="NTFS"){ toast(t("dm_fsHint"),"err"); return false; }
-  if(!DM_LABELS.includes(d.label.trim().toLowerCase())){ toast(t("dm_labelHint",{l:t("dm_labelSug")}),"err"); return false; }
+  d.err=d.fs!=="NTFS"?t("dm_fsHint"):!DM_LABELS.includes(d.label.trim().toLowerCase())?t("dm_labelHint",{l:t("dm_labelSug")}):"";
+  if(d.err){ renderScreen(); return false; }
   return true; }
 function dmCreate(d){
   const gb=Math.min(dmFree(),(parseFloat(d.mb)||0)/1024);

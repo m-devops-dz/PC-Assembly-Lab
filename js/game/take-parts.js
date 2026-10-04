@@ -38,7 +38,8 @@ function takeM2(){
 }
 function takePSU(){ if(S.used.psu){ toast(t("e_taken")); return; } if(PI.on||!gate(ST.psu)||!quizOk("psu",takePSU)) return;
   if(BUILD_MODE&&!S.psuSeen){ openPsuInspect(); return; }                  // first click: look at its cables first (psu-info.js)
-  S.used.psu=true; spawn("psu",psuG,V3(-10,40,-10),V3(-6,PSU_HOVER,L.z+10),1+Math.floor(Math.random()*3)); }
+  S.used.psu=true;                                                         // straight over its bay, back to the rear wall but upside down: only the flip is left
+  spawn("psu",psuG,V3(-10,40,-10),V3(PSU_POS.x,PSU_HOVER,PSU_POS.z),1,()=>{ S.snap=HELD.psu.snap(PSU_POS.x,PSU_POS.z); }); }
 function takeGPU(){ if(S.used.gpu){ toast(t("e_taken")); return; } if(!gate(ST.gpu)||!quizOk("gpu",takeGPU)) return; S.used.gpu=true; spawn("gpu",gpuG,V3(-4,30,-14),V3(-2,GPU_HOVER,L.z+6),1); }
 function takeAntennas(){ if(S.used.antennas){ toast(t("e_taken")); return; } if(!gate(ST.antennas)) return; S.used.antennas=true; updateTray(); fitAntennas(); }
 function takeWifi(){ if(S.used.wifi){ toast(t("e_taken")); return; } if(!gate(ST.wifi)||!quizOk("wifi",takeWifi)) return; S.used.wifi=true; spawn("wifi",wifiG,V3(-4,30,-14),V3(-3,WIFI_HOVER,L.z+10),1); }

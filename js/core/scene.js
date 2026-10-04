@@ -20,7 +20,7 @@ const VIEWS={ cpu:{pos:[-0.6,25,6.2],tgt:[-2.5,0.6,-5]}, ram:{pos:[6.8,31,-3.8],
   fan:{pos:[9,13,1],tgt:[0,1,-8.5]},
   m2:{pos:[3,15,19],tgt:[-1,.5,5.5]}, m2Screw:{pos:[-2.6,7.5,12.5],tgt:[-5.4,.4,6.6]},   // close on the M.2 screw
   m2Table:{pos:[7,38,14],tgt:[7,0,-1]},                                // the M.2 socket and the screw lying on the parts mat
-  psu:{pos:[-54,56,-1],tgt:[4,3,-37]}, "case":{pos:[-35,58.2,-47.4],tgt:[0,0,-25]}, caseClose:{pos:[-35,58.2,-47.4],tgt:[2,4,-47]},
+  psu:{pos:[-93.9,31.2,-29.2],tgt:[4.9,16.2,-32.2]}, "case":{pos:[-35,58.2,-47.4],tgt:[0,0,-25]}, caseClose:{pos:[-35,58.2,-47.4],tgt:[2,4,-47]},
   gpu:{pos:[-4.8,55,-32.2],tgt:[-5.1,6.4,-46.3]}, sata:{pos:[36,28,-16],tgt:[18,2,-40]}, sataTop:{pos:[22.5,34,-34.4],tgt:[22.5,.75,-35]},
   sataPorts:{pos:[5,15,-29],tgt:[21,3,-35]},                          // SSD in hand: from the motherboard's side, so its SATA ports face the camera once it's turned right
   all:{pos:[96,46,-24],tgt:[22,10,-70]},

@@ -87,7 +87,16 @@ const psuHoleMat=new T.MeshStandardMaterial({color:0x9aa0a8,metalness:.6,roughne
 const holeDark=new T.MeshBasicMaterial({color:0x050506});
 PSU_HOLES.forEach(([dy,dz])=>{ const y=7.9+dy, z=L.z+18.2+dz;
   const ring=mesh(new T.RingGeometry(.24,.42,24),psuHoleMat,[CX0+.82,y,z],caseG,{cast:false}); ring.rotation.y=Math.PI/2;
-  const d=mesh(new T.CircleGeometry(.24,20),holeDark,[CX0+.815,y,z],caseG,{cast:false}); d.rotation.y=Math.PI/2; });
+  const d=mesh(new T.CircleGeometry(.24,20),holeDark,[CX0+.815,y,z],caseG,{cast:false}); d.rotation.y=Math.PI/2;
+  // the same holes seen from outside, where the PSU step's camera is (they glow with the PSU's own holes)
+  const ro=mesh(new T.RingGeometry(.24,.42,24),psuHoleMat,[CX0-.015,y,z],caseG,{cast:false}); ro.rotation.y=-Math.PI/2;
+  const dO=mesh(new T.CircleGeometry(.24,20),holeDark,[CX0-.01,y,z],caseG,{cast:false}); dO.rotation.y=-Math.PI/2; });
+/* PSU intake vent in the case's bottom wall (+z, the case lies on its side), in front of the PSU's fan: a grid of holes
+   on both faces of the wall. The PSU goes in with its fan toward it. */
+const ventTex=canvasTex(256,256,(g,W)=>{ g.fillStyle="#e9ecef"; g.fillRect(0,0,W,W); g.fillStyle="#1a1c1f";
+  for(let y=10;y<W;y+=18) for(let x=(y/18%2)*9+10;x<W;x+=18){ if(Math.hypot(x-W/2,y-W/2)<W*.47){ g.beginPath(); g.arc(x,y,6,0,7); g.fill(); } } });
+const ventMat=new T.MeshStandardMaterial({map:ventTex,metalness:.12,roughness:.5});
+[[CZ1-.81,Math.PI],[CZ1+.01,0]].forEach(([z,ry])=>{ const v=mesh(new T.PlaneGeometry(12,12),ventMat,[-8.8,7.9,z],caseG,{cast:false}); v.rotation.y=ry; });
 const psuScrews=PSU_HOLES.map(([dy,dz])=>{ const g=new T.Group(); g.position.set(CX0-1.4,7.9+dy,L.z+18.2+dz); g.visible=false; caseG.add(g);
   const a=new T.Group(); a.position.x=.1; a.rotation.z=Math.PI/2; g.add(a);   // #6-32 Phillips pan head: head outside (−x), thread into the PSU
   panScrew(a,.36,.14,.15,.85); return g; });

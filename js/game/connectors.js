@@ -6,7 +6,7 @@ function clickConn(id){
   if(!job||job.c.id!==id||S.held){ toast(t("e_notNow")); return; }
   if(job.choose&&!job.port){ S.connPick=job.choose; toast(t(job.choose==="usb"?"pick_usb":"pick_hdmi")); return; }   // next: click a port
   if(job.pick&&!S.connPort){ S.connPick="sata"; toast(t(job.c.id==="power"?"pick_sataPower":job.pick==="mb"?"pick_sataMb":"pick_sataSsd")); return; }
-  const w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), P=job.plug;
+  const w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), P=job.plug; P.loose=false;   // picked up: its wires take the direct way
   const p0=P.outer.position.clone(), q0=P.outer.quaternion.clone(), r0=P.inner.rotation.x;
   S.roll=1+Math.floor(Math.random()*3); S.job=job; S.busy=true;
   const side=V3(0,0,1).applyQuaternion(w.q), hold=holdFor(job), end=hold?hold.pos:pre, qEnd=hold?hold.q:w.q;

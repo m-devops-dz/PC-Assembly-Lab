@@ -54,4 +54,4 @@ function setPsuSwitch(on,dur,done){ const z=on?PSU_SW_ON:-PSU_SW_ON; if(!on) psu
   const end=()=>{ if(on) psuSwitchLit(true); if(done) done(); };
   if(!dur){ psuRocker.rotation.z=z; end(); return; } animTo(psuRocker.rotation,"z",z,dur,end); }
 psuSwitchLit(true);
-const PSU_HOVER=24;
+const PSU_HOVER=30;                                                        // above its bay, high enough that flipping it over clears the case walls (20.3 high)

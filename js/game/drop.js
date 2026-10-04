@@ -38,7 +38,7 @@ function drop(){
         tween(700,k=>{ m2G.rotation.z=A*(1-k); },()=>{ S.busy=false; toast(t("ok_m2"),"ok"); setStep(ST.m2Screw); },easeOut); }); });
   } else if(type==="psu"){
     if(!sn){ toast(t("e_psuAbove"),"err"); return; }
-    if(mod(S.rot.psu,4)!==0) return wrong("e_psuTurn",psuG,PSU_HOVER,17);
+    if(mod(S.rot.psu,2)!==0){ S.psuHoleAt=performance.now()+7000; return wrong("e_psuTurn",psuG,PSU_HOVER,PSU_HOVER-5); }   // the arrow shows a rear-wall hole left without a match (hints.js)
     seat(psuG,PSU_POS.y,1200,()=>{ S.busy=true;
       psuScrews.forEach((g,i)=>setTimeout(()=>{ g.visible=true; const x0=CX0-2.4;
         tween(500,k=>{ g.position.x=x0+(CX0-.1-x0)*k; g.rotation.x=k*Math.PI*6; }); },i*250));
@@ -77,4 +77,6 @@ function drop(){
 function wrong2(msg,obj,hover,low){ mistake(); toast(msg,"err"); refuse(obj,hover,low); }
 function finish(){ S.end=performance.now(); renderSteps(); document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes}); setTimeout(()=>document.getElementById("done").classList.add("show"),1800); }
 function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,fsAsked:S.fsAsked,mode:appMode,tsDone:TS.done,tsNext:TS.next,inSc:typeof IN!=="undefined"?IN.sc:saved.inSc,inDone:typeof IN!=="undefined"?IN.done:saved.inDone})); }catch(e){} }
-function resetAll(){ persist(); location.reload(); }
+// Start over: a clean page for the next student. Only the language, the current mode and the Settings choices stay;
+// all progress goes (solved troubleshooting cases, finished install challenges, the current challenge, the one-time prompts).
+function resetAll(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,mode:appMode})); }catch(e){} location.reload(); }
