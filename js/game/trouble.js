@@ -152,6 +152,9 @@ function tsToCheck(){ if(TS.phase==="power") TS.phase="check"; focus("tsFront",1
 function tsInspect(id){
   if(S.busy||TS.phase!=="check") return;
   TS.cur=id; const c=TS_CHECKS[id], p=c.at(); focusPoint(p.clone().add(c.off),p,900); renderTS();
+  // phones / full screen: show the view (and its floating card) instead of the list the check was picked from
+  if(document.body.classList.contains("fs-open")) showFsPanel(false);
+  else if(matchMedia("(max-width: 860px)").matches) document.querySelector(".work").scrollTo({top:0,behavior:"smooth"});
 }
 function tsVerdict(bad){
   const id=TS.cur; if(!id) return;
@@ -183,7 +186,7 @@ function tsArrow(){
 function renderTS(){
   const el=document.getElementById("tsPanel"); if(!TS.on){ el.hidden=true; return; } el.hidden=false;
   const sym=TS.sym?`<div class="ts-sym"><b>${t("ts_"+TS.sym)}</b><p>${t("ts_"+TS.sym+"d")}</p></div>`:"";
-  let h=`<p class="module-title">${t("ts_title")}</p>`;
+  let h=`<p class="module-title">${t("ts_title")}</p>`, insp="";
   const num=TS.n===null?"":`<p class="ts-case">${t("ts_case",{n:TS.n+1})}</p>`;
   if(TS.phase==="pick"){
     h+=`<p>${t("ts_intro")}</p><p class="ts-muted">${t("ts_progress",{d:TS.done.length,n:TS_CASES.length})}</p><ol class="ts-pick">`
@@ -202,12 +205,16 @@ function renderTS(){
     if(TS.phase!=="power"){
       h+=`<ol class="ts-list">`+TS.list.map(k=>{ const s=TS.seen[k]||""; return `<li><button data-chk="${k}" class="${s}${TS.cur===k?" cur":""}"${TS.phase==="check"?"":" disabled"}><i></i>${t("ts_c_"+k)}</button></li>`; }).join("")+`</ol>`;
       if(TS.cur&&TS.phase==="check"){ const c=TS_CHECKS[TS.cur];
-        h+=`<div class="ts-inspect"><b>${t("ts_c_"+TS.cur)}</b><p>${t("ts_l_"+TS.cur)}</p>${c.reading?`<p class="ts-read">${c.reading()}</p>`:""}
-          <div class="ts-row"><button class="chip-btn" data-v="ok">${t("ts_ok")}</button><button class="chip-btn ts-bad" data-v="bad">${t("ts_bad")}</button></div></div>`; }
+        insp=`<div class="ts-inspect"><b>${t("ts_c_"+TS.cur)}</b><p>${t("ts_l_"+TS.cur)}</p>${c.reading?`<p class="ts-read">${c.reading()}</p>`:""}
+          <div class="ts-row"><button class="chip-btn" data-v="ok">${t("ts_ok")}</button><button class="chip-btn ts-bad" data-v="bad">${t("ts_bad")}</button></div></div>`;
+        h+=insp; }
     }
     h+=`<button class="chip-btn ts-back" data-act="list">${t("ts_list")}</button>`;
   }
   document.getElementById("fsStep").textContent=TS.phase==="pick"?t("ts_title"):TS.phase==="solved"?t("ts_solved"):t({power:"ts_pressPower",check:"ts_pickCheck",fix:"ts_fixIt",retry:"ts_retry"}[TS.phase]);
+  // phones and full screen: the sidebar is below the view or closed, so the same card also floats over the 3D view
+  const fl=document.getElementById("tsFloat"); fl.innerHTML=insp; fl.hidden=!insp;
+  fl.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>tsVerdict(b.dataset.v==="bad"));
   el.innerHTML=h; el.parentElement.scrollTop=0;                          // the panel is at the top of the sidebar
   el.querySelectorAll("[data-case]").forEach(b=>b.onclick=()=>tsPick(b.dataset.case==="random"?"random":+b.dataset.case));
   el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>tsGo(+b.dataset.go));

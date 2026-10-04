@@ -119,7 +119,7 @@ function applyLang(){
   document.getElementById("brightLbl").textContent=t("bright");
   renderModeMenu(); if(typeof TS!=="undefined") renderTS(); if(typeof IN!=="undefined"){ renderIN(); renderScreen(); } if(typeof renderQuiz!=="undefined") renderQuiz();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderPsuInfo(); if(typeof renderVerAsk==="function") renderVerAsk(); renderHintBtn(); renderFsBtn();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderPsuInfo(); if(typeof renderVerAsk==="function") renderVerAsk(); renderHintBtn(); renderFsBtn(); renderSheetBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 /* mode menu (header): build, troubleshooting, Windows install. Every mode starts from a fresh page load. */
@@ -128,7 +128,9 @@ function renderModeMenu(){ modeBtn.innerHTML=`<span>${t("mode_"+appMode)}</span>
   modePop.querySelectorAll("[data-mode]").forEach(b=>{ b.textContent=t("mode_"+b.dataset.mode); b.setAttribute("aria-current",b.dataset.mode===appMode); }); }
 function openModeMenu(open){ modePop.hidden=!open; modeBtn.setAttribute("aria-expanded",open); }
 modeBtn.onclick=e=>{ e.stopPropagation(); openModeMenu(modePop.hidden); };
-modePop.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{ openModeMenu(false); if(b.dataset.mode===appMode) return; appMode=b.dataset.mode; persist(); location.reload(); });
+modePop.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{ openModeMenu(false); if(b.dataset.mode===appMode) return; appMode=b.dataset.mode; persist();
+  try{ sessionStorage.setItem("pclabList","1"); }catch(e){}                // phones open the new mode on its list (sheetOnStart)
+  location.reload(); });
 document.addEventListener("click",e=>{ if(!modePop.hidden&&!modePop.contains(e.target)) openModeMenu(false); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!modePop.hidden){ openModeMenu(false); modeBtn.focus(); } });
 document.getElementById("langBtn").onclick=()=>{ lang=lang==="en"?"ar":"en"; persist(); applyLang(); };
@@ -164,6 +166,19 @@ panelBtn.onclick=e=>{ e.stopPropagation(); showFsPanel(!document.body.classList.
 window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&isFs()&&!document.fullscreenElement) setFs(false); });
 // a tap on the 3D view closes the sidebar overlay
 vp.addEventListener("pointerdown",e=>{ if(document.body.classList.contains("fs-open")&&e.target===renderer.domElement) showFsPanel(false); });
+/* phones: the sidebar is below the 3D view, and few people find it by scrolling. A handle on its top edge peeks out under
+   the view ("Steps and tasks ▲"); once the sidebar is up it stays pinned at the top and takes you back to the view. */
+const sheetBtn=document.getElementById("sheetBtn"), workEl=document.querySelector(".work"), asideEl=document.querySelector("aside");
+const sheetUp=()=>asideEl.getBoundingClientRect().top<=workEl.getBoundingClientRect().top+40;
+function renderSheetBtn(){ const up=sheetUp(); sheetBtn.classList.toggle("up",up); sheetBtn.querySelector("span").textContent=t(up?"sh_close":"sh_open"); sheetBtn.setAttribute("aria-expanded",up); }
+function sheetShow(el){ el=el||asideEl;                                  // scroll the sidebar (or a part of it) up under the pinned handle
+  const top=workEl.scrollTop+el.getBoundingClientRect().top-workEl.getBoundingClientRect().top-(el===asideEl?0:sheetBtn.offsetHeight+8);
+  workEl.scrollTo({top,behavior:"smooth"}); }
+sheetBtn.onclick=()=>sheetUp()?workEl.scrollTo({top:0,behavior:"smooth"}):sheetShow();
+workEl.addEventListener("scroll",renderSheetBtn,{passive:true});
+// after a mode switch, phones start on that mode's list (challenges, cases, steps) instead of the 3D view
+function sheetOnStart(){ let f=null; try{ f=sessionStorage.getItem("pclabList"); sessionStorage.removeItem("pclabList"); }catch(e){}
+  if(f&&window.innerWidth<=860&&!isFs()) setTimeout(()=>sheetShow(IN.on?document.querySelector("#inPanel .in-ch"):TS.on?document.getElementById("tsPanel"):null),400); }
 document.getElementById("againBtn").onclick=()=>{ document.getElementById("done").classList.remove("show"); };
 document.getElementById("viewBtn").onclick=()=>focus(IN.on?"inDesk":viewFor(S.step),700);
 document.getElementById("topBtn").onclick=()=>topView();

@@ -286,6 +286,13 @@ details.specs summary{ cursor:pointer; font-weight:600; }
 .ts-read{ font-family:var(--display); font-weight:700; font-size:17px; }
 .ts-row{ display:flex; gap:8px; flex-wrap:wrap; }
 .ts-row .ts-bad{ border-color:var(--err); color:var(--err); }
+/* the check's card over the 3D view: only on phones and in full screen, where the sidebar is out of sight */
+.ts-float{ display:none; position:absolute; bottom:10px; inset-inline:10px; z-index:3; max-width:420px; margin-inline:auto; box-shadow:0 10px 30px rgba(0,0,0,.4); border-radius:8px; }
+.ts-float .ts-inspect{ background:var(--panel); color:var(--ink); }
+.ts-float .ts-inspect p{ margin:0; }
+.ts-float .ts-row button{ flex:1; padding:8px 12px; font-weight:600; }
+body.fs .ts-float:not([hidden]){ display:block; }
+@media (max-width: 860px){ .ts-float:not([hidden]){ display:block; } .ts-float .ts-inspect{ font-size:14px; gap:6px; } }
 .ts-win{ display:grid; gap:8px; padding:12px 14px; border-inline-start:4px solid var(--ok); background:color-mix(in srgb, var(--ok) 10%, var(--panel)); border-radius:0 8px 8px 0; }
 .ts-win > b{ font-family:var(--display); font-size:19px; color:var(--ok); }
 .ts-win .primary{ justify-self:start; }
@@ -327,12 +334,15 @@ body.fs.fs-open aside{ display:flex; }
 .set-pop .bright select{ font:inherit; color:var(--ink); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:2px 4px; }
 /* phones: the 3D view takes almost the whole screen (the sidebar is below it); compact header, buttons and toasts */
 @media (max-width: 860px){
-  header{ padding:6px 10px; gap:8px; }
-  .brand svg{ width:24px; height:24px; } .brand h1{ font-size:16px; }
-  .head-actions{ gap:5px; } .head-actions .chip-btn{ padding:4px 9px; font-size:13px; }
+  /* no logo: the whole row is for the buttons, so the last one (Start over) doesn't wrap to a second row */
+  header{ position:relative; padding:6px 10px; gap:8px; }
+  .brand{ display:none; }
+  .head-actions{ gap:4px; } .head-actions .chip-btn{ padding:4px 8px; font-size:13px; }
   #offlineBtn{ display:none; }
   #setBtn span{ display:none; }
-  .brand div{ display:none; }
+  /* the ⚙ and mode menus drop down across the full width under the header (anchored to the button they ran off the screen) */
+  header .settings{ position:static; }
+  header .set-pop{ top:calc(100% + 4px); inset-inline:10px; min-width:0; max-height:calc(100svh - 80px); overflow:auto; }
   /* a flex column (the grid row collapsed to 0 on phones and the sidebar drew over the view): 3D view first, sidebar below it */
   .work{ display:flex; flex-direction:column; overflow:auto; }
   .stage, .no-tray .stage{ order:-1; flex:none; height:calc(100vh - 100px); height:calc(100svh - 100px); grid-template-rows:1fr auto; }
@@ -348,6 +358,18 @@ body.fs.fs-open aside{ display:flex; }
   body.fs .view-btns{ top:10px; }                  /* phones: the buttons are a column on the right, beside the bar */
   .hint-btn{ padding:6px 11px; }
 }
+/* phones: the sidebar's handle (ui.js, sheetBtn): peeks out under the 3D view, pinned at the top while the sidebar is up */
+.sheet-btn{ display:none; }
+@media (max-width: 860px){
+  body:not(.fs) .sheet-btn{ display:flex; position:sticky; top:0; z-index:5; flex:none; align-items:center; justify-content:center; gap:8px; margin:-18px -18px 0; padding:14px 16px 10px; border:0; border-bottom:1px solid var(--line); border-radius:16px 16px 0 0; background:var(--panel); color:var(--ink); font-weight:700; font-size:15px; cursor:pointer; box-shadow:0 -6px 16px rgba(0,0,0,.25); }
+  .sheet-btn i{ position:absolute; top:5px; left:50%; width:40px; height:4px; margin-left:-20px; border-radius:2px; background:var(--muted); opacity:.6; }
+  .sheet-btn svg{ width:20px; height:20px; color:var(--gold); transition:transform .2s; animation:sheetNudge 1.6s ease-in-out infinite; }
+  .sheet-btn.up svg{ transform:rotate(180deg); animation:none; }
+  .sheet-btn.up{ box-shadow:0 6px 16px rgba(0,0,0,.25); border-radius:0; }
+  aside{ border-top:0; }
+}
+@keyframes sheetNudge{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-4px); } }
+@media (prefers-reduced-motion: reduce){ .sheet-btn svg{ animation:none; } }
 @media (max-width: 860px) and (orientation: landscape){
   .stage, .no-tray .stage{ height:calc(100vh - 50px); height:calc(100svh - 50px); }
 }

@@ -196,7 +196,8 @@ const screenMat=new T.MeshStandardMaterial({map:screenOff,roughness:.3,metalness
   mesh(box(2,33,56),periBlack,[.4,26,0],monG);                                                          // bezel
   const s=mesh(new T.PlaneGeometry(53,30),screenMat,[1.42,26,0],monG,{cast:false}); s.rotation.y=Math.PI/2; s.userData={part:"monitor"};   // install mode: click to look at it
   monG.traverse(o=>{ o.castShadow=false; }); })();   // its shadow falls past the edge of the sun's shadow area and showed as a cut-off dark rectangle on the desk
-function showScreen(tex,glow=.9){ screenMat.map=tex; screenMat.emissiveMap=tex; screenMat.emissiveIntensity=glow; screenMat.needsUpdate=true; }
+// n counts the changes: screen.js's snapshot only lands if nothing changed the picture meanwhile
+function showScreen(tex,glow=.9){ showScreen.n=(showScreen.n||0)+1; screenMat.map=tex; screenMat.emissiveMap=tex; screenMat.emissiveIntensity=glow; screenMat.needsUpdate=true; }
 // monitor centre and a camera spot square in front of it (a little above, inside the orbit controls' lowest angle)
 function screenView(){ monG.updateMatrixWorld(true); const c=monG.localToWorld(V3(1.42,26,0)), n=monG.localToWorld(V3(2.42,26,0)).sub(c);
   return {pos:c.clone().addScaledVector(n,60).add(V3(0,12,0)),tgt:c}; }

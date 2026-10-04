@@ -85,6 +85,6 @@ function frame(now){
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);
 }
-applyLang(); setStep(0); if(TS.on) tsStart(); if(IN.on) inStart();
+applyLang(); setStep(0); if(TS.on) tsStart(); if(IN.on) inStart(); sheetOnStart();
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(drawThumbs);
 requestAnimationFrame(frame);
