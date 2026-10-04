@@ -56,6 +56,9 @@ aside{ border-inline-end:1px solid var(--line); background:var(--panel); overflo
 .steps li.done::before{ content:"✓"; background:var(--ok); border-color:var(--ok); color:#fff; }
 .steps li.done:not(:last-child)::after{ background:var(--ok); }
 .steps li.current::before{ background:var(--gold); border-color:var(--gold); color:var(--gold-ink); }
+.steps li.skipped::before{ content:"»"; border-style:dashed; color:var(--muted); background:transparent; }
+.steps li.skipped span{ color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line); }
+.steps li.jump{ cursor:pointer; } .steps li.jump:hover span{ color:var(--ink); text-decoration:underline; }
 .steps li span{ padding-top:3px; font-weight:500; }
 .steps li.todo span{ color:var(--muted); }
 .steps li.current span{ font-weight:700; }

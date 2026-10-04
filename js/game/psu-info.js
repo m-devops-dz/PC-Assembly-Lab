@@ -28,8 +28,9 @@ function piSvg(r){
     +`<g class="pi-bolt">${PI_BOLT}</g>${r.part}</svg>`; }
 
 /* 3D: the real Mini-Fit / SATA plug models (connector-cables.js) at 1.3×, lying on the desk in a column beside the PSU's
-   cable face (+x on the table), pin faces turned out toward the camera. A plain wire runs from the PSU's face to each
-   plug's back. `half` is the piece that comes off (4+4, 6+2) and `gap` how far it slides. */
+   cable face (+x on the table), pin faces turned out toward the camera. Wires are drawn like the build's PSU cables
+   (drawBundle): one per pin, gathered into a bundle at the PSU, so the loose half of a 4+4 / 6+2 plug takes its own
+   wires with it when it comes off. The SATA power plug has one round cable. `half` is the piece that comes off, `gap` how far. */
 const PI_SCALE=1.3, PI_YAW=-.5, PI_FACE=V3(Math.cos(PI_YAW),0,-Math.sin(PI_YAW));   // pin faces: out to the right and toward the camera
 // camera: the PSU, its wires and plugs, nudged away from the card (it sits at the inline end: left in Arabic, right in English)
 function piCam(){ const x=isPhone()?64:lang==="ar"?62.5:69, tgt=V3(x,.5,-6); return {pos:tgt.clone().add(V3(0,33,30)),tgt}; }
@@ -38,7 +39,7 @@ const piRed=new T.MeshStandardMaterial({color:0xa80c12,emissive:0xff0a00,emissiv
 const piWireMat=new T.MeshStandardMaterial({color:0x18191c,roughness:.6});
 function piSet(id){
   const g=new T.Group(); g.visible=false; g.rotation.y=PI_YAW; g.scale.setScalar(PI_SCALE); scene.add(g);
-  const add=(p,z)=>{ p.outer.visible=true; p.outer.position.set(0,0,z); g.add(p.outer); return p.outer; };
+  const plugs=[], add=(p,z)=>{ p.outer.visible=true; p.outer.position.set(0,0,z); g.add(p.outer); plugs.push(p); return p.outer; };
   const pw=n=>n*MF_P+.16;                                                     // Mini-Fit body width for n columns
   let half=null, gap=0;
   if(id==="sata") add(makePlug(1.9,0x141518,0xdddddd,"pi"),0);
@@ -52,7 +53,7 @@ function piSet(id){
   const bb=new T.Box3(), b=new T.Box3(); g.updateMatrixWorld(true);
   meshes.forEach(m=>{ if(!m.geometry.boundingBox) m.geometry.computeBoundingBox(); bb.union(b.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)); });
   return {id,k,g,half,half0:half?half.position.z:0,gap,meshes,y:DESK.y+.02-bb.min.y,w:bb.max.z-bb.min.z+(half?gap*PI_SCALE:0),
-    back:id==="sata"?-1.05:-1.3,home:V3(0,0,0),curve:null,wire:null};
+    back:id==="sata"?-1.05:-1.3,plugs,home:V3(0,0,0),curve:null,wires:[],E:null};
 }
 PI.sets=PI_LIST.map(r=>piSet(r.id));
 // the PSU's spot on the mat (its table copy, table.js) and size; the cable face is its +x side
@@ -63,33 +64,45 @@ function piBuild(){ if(PI.built) return; PI.built=true;
   PI.sets.forEach((st,i)=>{
     st.home.set(face+7.5+i*.6,st.y,z+st.w/2); z+=st.w+gapZ;
     st.g.position.copy(st.home); st.g.updateMatrixWorld(true);
-    const B=st.g.localToWorld(V3(st.back,0,0)), E=V3(face,DESK.y+1.4+i*.5,p.z+(i-1.5)*2.2), R=.24;
-    const pts=[E,E.clone().add(V3(1.6,-.5,0)),V3((E.x+B.x)/2,R+.02,(E.z*.4+B.z*.6)),B.clone().addScaledVector(PI_FACE,-1.4).setY(Math.max(R+.02,B.y-.1)),B];
-    st.curve=new T.CatmullRomCurve3(pts); st.off=st.home.clone().sub(B);       // plug centre relative to the wire's end
-    st.wire=new T.Mesh(new T.TubeGeometry(st.curve,48,R,8),piWireMat); st.wire.castShadow=true; st.wire.visible=false;
-    st.wire.userData={part:"psuPlug",k:st.k,m0:piWireMat}; scene.add(st.wire); st.meshes.push(st.wire);
+    const B=st.g.localToWorld(V3(st.back,0,0)), E=V3(face,DESK.y+1.4+i*.5,p.z+(i-1.5)*2.2); st.E=E;
+    // the bundle's middle line: the plug slides out along it, the power beads run along it
+    st.curve=new T.CatmullRomCurve3([E,E.clone().add(V3(1.6,-.5,0)),V3((E.x+B.x)/2,.4,(E.z*.4+B.z*.6)),B.clone().addScaledVector(PI_FACE,-1.4).setY(Math.max(.4,B.y-.1)),B]);
+    st.off=st.home.clone().sub(B);                                               // plug centre relative to the wire's end
+    piDraw(st); st.wires.forEach(m=>{ m.userData.m0=piWireMat; st.meshes.push(m); });
+  });
+}
+// (re)draw a set's wires from the PSU face to its plug(s), wherever the plug is now
+function piDraw(st){
+  st.g.updateMatrixWorld(true); const E=st.E, da=V3(1,0,0), mid=st.curve.getPoint(.5); let n=0;
+  const wire=(pts,r)=>{ const geo=cableGeo(pts,r*PI_SCALE,30,5); let m=st.wires[n++];
+    if(!m){ m=new T.Mesh(geo,piWireMat); m.castShadow=true; m.userData={part:"psuPlug",k:st.k,m0:piWireMat}; scene.add(m); st.wires.push(m); }
+    else { m.geometry.dispose(); m.geometry=geo; } };
+  st.plugs.forEach(P=>{ const db=plugBackDir(P);
+    if(!P.pins){ const b=plugBack(P); wire([E,E.clone().addScaledVector(da,1.6),mid,b.clone().addScaledVector(db,1.4),b],.16); return; }
+    P.pins.forEach(pin=>{ const tip=P.inner.localToWorld(pin.clone()), oP=V3(0,pin.y*.45,pin.z*.45).multiplyScalar(PI_SCALE);
+      const oMid=oP.clone().lerp(tip.clone().sub(P.inner.localToWorld(V3(pin.x,0,0))),.4);
+      wire([E.clone().add(oP),E.clone().addScaledVector(da,1.6).add(oP),mid.clone().add(oMid),tip.clone().addScaledVector(db,1.8),tip],.085); });
   });
 }
 const piSetOf=k=>PI.sets.find(s=>s.k===mod(k,PI_LIST.length));
 function piSelect(k){ if(!PI.on) return; PI.sel=mod(k,PI_LIST.length); PI.seen.add(PI.sel);
-  PI.sets.forEach(st=>{ const on=st.k===PI.sel; st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half) st.half.position.z=st.half0; });
+  PI.sets.forEach(st=>{ const on=st.k===PI.sel; st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half){ st.half.position.z=st.half0; piDraw(st); } });
   renderPsuInfo(); }
 // power running down the red wire: three bright beads from the PSU to the plug
 const piBeads=[0,1,2].map(()=>{ const m=new T.Mesh(new T.SphereGeometry(.34,12,10),new T.MeshBasicMaterial({color:0xffd21f,toneMapped:false})); m.visible=false; m.raycast=()=>{}; scene.add(m); return m; });
 function openPsuInspect(){
   if(PI.on) return; PI.on=true; PI.from=S.fromTable?S.fromTable.clone():null; PI.seen=new Set();
   const cam=piCam(); focusPoint(cam.pos,cam.tgt,1100); view="psuCables"; piBuild();
-  // each plug comes out of the PSU along its wire, and the wire grows behind it
-  PI.sets.forEach((st,i)=>{ const n=st.wire.geometry.index.count; st.g.visible=st.wire.visible=true; st.wire.geometry.setDrawRange(0,0);
-    st.g.position.copy(st.curve.getPoint(0)).add(st.off);
-    setTimeout(()=>tween(800,k=>{ st.g.position.copy(st.curve.getPoint(k)).add(st.off); st.wire.geometry.setDrawRange(0,Math.floor(n*k/6)*6); },
-      ()=>{ st.g.position.copy(st.home); st.wire.geometry.setDrawRange(0,Infinity); },easeOut),150+i*160); });
+  // each plug comes out of the PSU along its bundle's line, its wires following it
+  const at=(st,k)=>{ st.g.position.copy(st.curve.getPoint(k)).add(st.off); piDraw(st); };
+  PI.sets.forEach((st,i)=>{ st.g.visible=true; st.wires.forEach(m=>m.visible=true); at(st,.02);
+    setTimeout(()=>tween(800,k=>at(st,.02+.98*k),()=>{ st.g.position.copy(st.home); piDraw(st); },easeOut),150+i*160); });
   psuInfo.hidden=false; piSelect(0);
 }
 function closePsuInspect(take){
   if(!PI.on){ psuInfo.hidden=true; psuInfo.innerHTML=""; return; }
   PI.on=false; psuInfo.hidden=true; psuInfo.innerHTML=""; piBeads.forEach(b=>b.visible=false);
-  PI.sets.forEach(st=>{ st.g.visible=st.wire.visible=false; st.meshes.forEach(m=>m.material=m.userData.m0); });
+  PI.sets.forEach(st=>{ st.g.visible=false; st.wires.forEach(m=>m.visible=false); st.meshes.forEach(m=>m.material=m.userData.m0); });
   if(take){ S.psuSeen=true; S.fromTable=PI.from; takePSU(); S.fromTable=null; focus(viewFor(S.step),1000); }
 }
 const hidePsuInfo=()=>closePsuInspect(false);
@@ -103,7 +116,7 @@ function psuInspectFrame(now){
   piBeads.forEach((b,i)=>{ b.visible=!!st.curve; if(st.curve) b.position.copy(st.curve.getPoint(((now/1500)+i/3)%1)); });
   if(!st.half) return;
   const k=(now%3200)/3200, out=k<.3?0:k<.45?(k-.3)/.15:k<.7?1:k<.85?1-(k-.7)/.15:0;
-  st.half.position.z=st.half0+st.gap*(out*out*(3-2*out));
+  const z=st.half0+st.gap*(out*out*(3-2*out)); if(z!==st.half.position.z){ st.half.position.z=z; piDraw(st); }   // its wires go with it
 }
 function renderPsuInfo(){ if(psuInfo.hidden||!PI.on) return;
   const r=PI_LIST[PI.sel], all=PI.seen.size===PI_LIST.length;

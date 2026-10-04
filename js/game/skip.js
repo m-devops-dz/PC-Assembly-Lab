@@ -57,5 +57,17 @@ function skipStep(){
   const id=STEP_IDS[S.step]; startClock();
   finishStep[id]();
   S.held=id==="takeCpu"?"cpu":null; S.snap=null; S.cable=null; S.job=null;   // skipping "take the CPU" leaves it in hand, ready to place
+  S.skipped[S.step]=true;                                                    // the sidebar shows it as skipped, not done
   updateTools(); toast(t("ok_skipped"),"ok"); setStep(S.step+1);
+}
+// build mode: clicking a later step in the sidebar skips every step up to it (after a confirm), one at a time,
+// waiting for each finisher's animation to end
+let skipTarget=-1;
+function skipTo(n){
+  if(!BUILD_MODE||n<=S.step||n>=STEPS||skipTarget>=0) return;
+  if(!confirm(t("skipToQ",{n:n-S.step,s:t("s_"+STEP_IDS[n])}))) return;
+  skipTarget=n;
+  (function go(){ if(S.step>=skipTarget||S.step>=STEPS){ skipTarget=-1; return; }
+    if(S.busy||dragging){ setTimeout(go,80); return; }
+    skipStep(); setTimeout(go,60); })();
 }

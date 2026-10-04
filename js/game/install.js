@@ -63,7 +63,7 @@ const IN_FINISH={
   oldOpenD:()=>{ OW.app=true; OW.loc="d"; OW.openedD=true; },
   oldRename:()=>{ IN.label=t("in_labelSug"); OW.renaming=false; },
   oldShutdown:()=>owShutdown(true),
-  stickPc:()=>{ stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); },
+  stickPc:()=>{ stickToPc(inPort("front1"),true); },
   powerF11:()=>{ gptStick(); STICK.iso=true; if(!S.powered) powerUp(); PC.boot++; PC.mode="menu"; PC.sel=0; PC.menuSeen=true; },
   bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.ventoySeen=true; if(IN.sc==="usb"){ PC.mode="ventoy"; return; } PC.mode="setup"; PC.setup=true; WS.page="lang"; },
   setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
@@ -314,7 +314,7 @@ function inStart(){
   showScreen(screenOff,0);
   const v=VIEWS.inDesk; camera.position.copy(viewPos(v.pos,v.tgt)); controls.target.set(...v.tgt); controls.update(); view="inDesk";
   if(c.start){                                                          // challenges that start inside Setup
-    stickToPc(IN_PORTS.find(p=>p.usb3&&portFree(p)),true); IN_FINISH.setupGo(); WS.sel=m2U();
+    stickToPc(inPort("front1"),true); IN_FINISH.setupGo(); WS.sel=m2U();   // in the case's front USB port, in plain view for "Take the stick out"
     if(c.start==="copy"){ IN_FINISH.diskNew(); IN_FINISH.diskInstall(); }
     setTimeout(()=>openScreen("pc"),700); }
   if(c.start==="desktop"){                                              // the new PC, already on its desktop
