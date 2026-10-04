@@ -51,7 +51,7 @@ Interactive 3D PC-building tutorial (MSI B450 Gaming Plus Max, Ryzen 5 5600G). P
   - `drop.js`: placement rules per part (`drop()`), `finish`, `persist`
   - `connectors.js`: the SATA / 24-pin / CPU-power plug steps. SATA and peripheral plugs: click the plug, then click the port (`SPORTS` in connector-cables.js for SATA, `RPORTS` in peripherals.js for the rear ports)
   - `key-view.js`: small window that shows how a held keyed part lines up (SATA plug vs port L, USB-A insert vs port tongue, HDMI / power-cord cut corners, RAM notch vs slot key), plus the 3D dotted RAM guides (`updateRamGuides`: slot key line and notch line, green when they meet)
-  - `psu-info.js`: PSU cables view, opened by the first click on the PSU (`takePSU` → `openPsuInspect`, `PI` state): its four plugs lie on the mat (SATA power, 24-pin, CPU 4+4, PCIe 6+2), one red at a time (`piSelect`, click a plug or Prev/Next), a card says where it goes; Done (after all four are seen, `S.psuSeen`) takes the PSU. Text `pi_*`
+  - `psu-info.js`: PSU cables view, opened by the first click on the PSU (`takePSU` → `openPsuInspect`, `PI` state): its four plugs (SATA power, 24-pin, CPU 4+4, PCIe 6+2) come out on plain wires (`piBuild`: tubes from the PSU's +x cable face) and lie beside it; one plug and wire red at a time with power beads running along it (`piSelect`, click a plug or Prev/Next), a card says where it goes; Done (after all four are seen, `S.psuSeen`) takes the PSU. Text `pi_*`
   - `paste.js`: thermal-paste animation
   - `power.js`: last step: power button, fans/keyboard lights on, monitor No signal → MSI logo → BIOS, then the spinning fans (`clickPowerBtn`, `powerOnNow`)
   - `skip.js`: hold Ctrl+H to skip a step (`finishStep`, `skipStep`)

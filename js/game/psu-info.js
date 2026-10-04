@@ -1,7 +1,7 @@
 /* ---------------- PSU cables: inspect mode ----------------
    The first click on the PSU (table or parts bar) opens this before the PSU is taken: the camera zooms to the PSU on the
-   parts mat and its four plugs lie in a row in front of it (no wires), in the order they get plugged in later:
-   SATA power, 24-pin, CPU 4+4, PCIe 6+2. One plug at a time is red (click a plug, or Prev / Next / arrow keys) and the
+   parts mat and its four plugs come out on wires and lie beside it, in the order they get plugged in later:
+   SATA power, 24-pin, CPU 4+4, PCIe 6+2. One plug and its wire at a time are red (click a plug, or Prev / Next / arrow keys) and the
    card says where it goes, with a small picture: plug, power running along a wire, the part it feeds. The 4+4 and 6+2
    plugs come apart and join again. Done unlocks once all four were seen; then the PSU is taken as usual. */
 const psuInfo=document.getElementById("psuInfo");
@@ -27,15 +27,17 @@ function piSvg(r){
   return `<svg viewBox="0 0 196 50" aria-hidden="true">${r.plug}<line class="pi-wire" x1="60" y1="26" x2="138" y2="26"/><line class="pi-flow" x1="60" y1="26" x2="138" y2="26"/>`
     +`<g class="pi-bolt">${PI_BOLT}</g>${r.part}</svg>`; }
 
-/* 3D plugs, real Mini-Fit / SATA models (connector-cables.js), 1.6× so they read from the camera. Each set lies on the mat
-   with its pin face turned to the camera; `half` is the piece that comes off (4+4, 6+2) and `gap` how far it slides. */
-const PI_SCALE=1.3, PI_Z=4.2, PI_Y=1;
-// camera: the PSU and the row, nudged away from the card (it sits at the inline end: left in Arabic, right in English)
-function piCam(){ const dx=isPhone()?0:lang==="ar"?-7:7, tgt=V3(54.5+dx,.5,0); return {pos:tgt.clone().add(V3(0,31,27)),tgt}; }
-const PI={on:false,sel:0,seen:new Set(),from:null,sets:[]};
+/* 3D: the real Mini-Fit / SATA plug models (connector-cables.js) at 1.3×, lying on the desk in a column beside the PSU's
+   cable face (+x on the table), pin faces turned out toward the camera. A plain wire runs from the PSU's face to each
+   plug's back. `half` is the piece that comes off (4+4, 6+2) and `gap` how far it slides. */
+const PI_SCALE=1.3, PI_YAW=-.5, PI_FACE=V3(Math.cos(PI_YAW),0,-Math.sin(PI_YAW));   // pin faces: out to the right and toward the camera
+// camera: the PSU, its wires and plugs, nudged away from the card (it sits at the inline end: left in Arabic, right in English)
+function piCam(){ const x=isPhone()?64:lang==="ar"?62.5:69, tgt=V3(x,.5,-6); return {pos:tgt.clone().add(V3(0,33,30)),tgt}; }
+const PI={on:false,sel:0,seen:new Set(),from:null,sets:[],built:false};
 const piRed=new T.MeshStandardMaterial({color:0xa80c12,emissive:0xff0a00,emissiveIntensity:.3,roughness:.5});
-function piSet(id,x){
-  const g=new T.Group(); g.visible=false; g.rotation.y=-Math.PI/2; g.scale.setScalar(PI_SCALE); g.position.set(x,PI_Y,PI_Z); scene.add(g);
+const piWireMat=new T.MeshStandardMaterial({color:0x18191c,roughness:.6});
+function piSet(id){
+  const g=new T.Group(); g.visible=false; g.rotation.y=PI_YAW; g.scale.setScalar(PI_SCALE); scene.add(g);
   const add=(p,z)=>{ p.outer.visible=true; p.outer.position.set(0,0,z); g.add(p.outer); return p.outer; };
   const pw=n=>n*MF_P+.16;                                                     // Mini-Fit body width for n columns
   let half=null, gap=0;
@@ -43,46 +45,63 @@ function piSet(id,x){
   if(id==="24") add(makePinPlug(2,12,"pi"),0);
   if(id==="cpu"){ add(makePinPlug(2,2,"pi"),-pw(2)/2); half=add(makePinPlug(2,2,"pi"),pw(2)/2); gap=.7; }
   if(id==="gpu"){ add(makePinPlug(2,3,"pi"),-pw(1)/2); half=add(makePinPlug(2,1,"pi"),pw(3)/2); gap=.6; }
-  const meshes=[]; g.traverse(o=>{ if(!o.isMesh) return; o.userData={part:"psuPlug",k:PI_LIST.findIndex(r=>r.id===id)}; if(o.material.opacity!==0) meshes.push(o); });
+  const k=PI_LIST.findIndex(r=>r.id===id), meshes=[];
+  g.traverse(o=>{ if(!o.isMesh) return; o.userData={part:"psuPlug",k}; if(o.material.opacity!==0) meshes.push(o); });
   meshes.forEach(m=>m.userData.m0=m.material);
-  // size from the plug meshes only (the invisible click boxes are bigger): lie flat on the mat, and how wide it is
+  // size from the plug meshes only (the invisible click boxes are bigger): how high it sits to lie on the desk, how much room it takes along z
   const bb=new T.Box3(), b=new T.Box3(); g.updateMatrixWorld(true);
   meshes.forEach(m=>{ if(!m.geometry.boundingBox) m.geometry.computeBoundingBox(); bb.union(b.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)); });
-  const y=DESK.y+.02+(g.position.y-bb.min.y), w=bb.max.x-bb.min.x+(half?gap*PI_SCALE:0);
-  return {id,g,half,half0:half?half.position.z:0,gap,meshes,y,w,home:V3(0,y,PI_Z)};
+  return {id,k,g,half,half0:half?half.position.z:0,gap,meshes,y:DESK.y+.02-bb.min.y,w:bb.max.z-bb.min.z+(half?gap*PI_SCALE:0),
+    back:id==="sata"?-1.05:-1.3,home:V3(0,0,0),curve:null,wire:null};
 }
-PI.sets=PI_LIST.map(r=>piSet(r.id,0));
-// a row centred in front of the PSU, in reading order: left to right in English, right to left in Arabic
-function piLayout(){ const gapX=1.4, tot=PI.sets.reduce((a,st)=>a+st.w,0)+gapX*(PI.sets.length-1); let x=54.5-tot/2;
-  const order=lang==="ar"?[...PI.sets].reverse():PI.sets;
-  order.forEach(st=>{ st.home.set(x+st.w/2,st.y,PI_Z); x+=st.w+gapX; }); }
-const piSetOf=k=>PI.sets.find(s=>s.id===PI_LIST[k].id);
+PI.sets=PI_LIST.map(r=>piSet(r.id));
+// the PSU's spot on the mat (its table copy, table.js) and size; the cable face is its +x side
+const piPsu=()=>{ const it=tableItem("psu"); return it?{p:it.rest.clone(),s:it.size.clone()}:{p:V3(54.5,4.3,-7),s:V3(14,8.6,15)}; };
+// first open: plugs in a column beside the PSU (first one farthest back, so the list reads top to bottom), and a wire to each
+function piBuild(){ if(PI.built) return; PI.built=true;
+  const {p,s}=piPsu(), face=p.x+s.x/2, gapZ=1.6, tot=PI.sets.reduce((a,st)=>a+st.w,0)+gapZ*(PI.sets.length-1); let z=p.z-tot/2;
+  PI.sets.forEach((st,i)=>{
+    st.home.set(face+7.5+i*.6,st.y,z+st.w/2); z+=st.w+gapZ;
+    st.g.position.copy(st.home); st.g.updateMatrixWorld(true);
+    const B=st.g.localToWorld(V3(st.back,0,0)), E=V3(face,DESK.y+1.4+i*.5,p.z+(i-1.5)*2.2), R=.24;
+    const pts=[E,E.clone().add(V3(1.6,-.5,0)),V3((E.x+B.x)/2,R+.02,(E.z*.4+B.z*.6)),B.clone().addScaledVector(PI_FACE,-1.4).setY(Math.max(R+.02,B.y-.1)),B];
+    st.curve=new T.CatmullRomCurve3(pts); st.off=st.home.clone().sub(B);       // plug centre relative to the wire's end
+    st.wire=new T.Mesh(new T.TubeGeometry(st.curve,48,R,8),piWireMat); st.wire.castShadow=true; st.wire.visible=false;
+    st.wire.userData={part:"psuPlug",k:st.k,m0:piWireMat}; scene.add(st.wire); st.meshes.push(st.wire);
+  });
+}
+const piSetOf=k=>PI.sets.find(s=>s.k===mod(k,PI_LIST.length));
 function piSelect(k){ if(!PI.on) return; PI.sel=mod(k,PI_LIST.length); PI.seen.add(PI.sel);
-  PI.sets.forEach(st=>{ const on=st===piSetOf(PI.sel); st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half) st.half.position.z=st.half0; });
+  PI.sets.forEach(st=>{ const on=st.k===PI.sel; st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half) st.half.position.z=st.half0; });
   renderPsuInfo(); }
-// the PSU's spot on the mat: the plugs slide out from there
-const piPsuPos=()=>{ const it=tableItem("psu"); return it?it.pivot.getWorldPosition(V3(0,0,0)):V3(54.5,PI_Y,-7); };
+// power running down the red wire: three bright beads from the PSU to the plug
+const piBeads=[0,1,2].map(()=>{ const m=new T.Mesh(new T.SphereGeometry(.34,12,10),new T.MeshBasicMaterial({color:0xffd21f,toneMapped:false})); m.visible=false; m.raycast=()=>{}; scene.add(m); return m; });
 function openPsuInspect(){
   if(PI.on) return; PI.on=true; PI.from=S.fromTable?S.fromTable.clone():null; PI.seen=new Set();
-  const cam=piCam(); focusPoint(cam.pos,cam.tgt,1100); view="psuCables"; piLayout(); const src=piPsuPos();
-  PI.sets.forEach((st,i)=>{ st.g.visible=true; st.g.position.copy(src); const to=st.home;
-    setTimeout(()=>tween(650,k=>{ st.g.position.lerpVectors(src,to,k); st.g.position.y+=Math.sin(k*Math.PI)*2; },null,easeOut),150+i*140); });
+  const cam=piCam(); focusPoint(cam.pos,cam.tgt,1100); view="psuCables"; piBuild();
+  // each plug comes out of the PSU along its wire, and the wire grows behind it
+  PI.sets.forEach((st,i)=>{ const n=st.wire.geometry.index.count; st.g.visible=st.wire.visible=true; st.wire.geometry.setDrawRange(0,0);
+    st.g.position.copy(st.curve.getPoint(0)).add(st.off);
+    setTimeout(()=>tween(800,k=>{ st.g.position.copy(st.curve.getPoint(k)).add(st.off); st.wire.geometry.setDrawRange(0,Math.floor(n*k/6)*6); },
+      ()=>{ st.g.position.copy(st.home); st.wire.geometry.setDrawRange(0,Infinity); },easeOut),150+i*160); });
   psuInfo.hidden=false; piSelect(0);
 }
 function closePsuInspect(take){
   if(!PI.on){ psuInfo.hidden=true; psuInfo.innerHTML=""; return; }
-  PI.on=false; psuInfo.hidden=true; psuInfo.innerHTML="";
-  PI.sets.forEach(st=>{ st.g.visible=false; st.meshes.forEach(m=>m.material=m.userData.m0); });
+  PI.on=false; psuInfo.hidden=true; psuInfo.innerHTML=""; piBeads.forEach(b=>b.visible=false);
+  PI.sets.forEach(st=>{ st.g.visible=st.wire.visible=false; st.meshes.forEach(m=>m.material=m.userData.m0); });
   if(take){ S.psuSeen=true; S.fromTable=PI.from; takePSU(); S.fromTable=null; focus(viewFor(S.step),1000); }
 }
 const hidePsuInfo=()=>closePsuInspect(false);
 // the yellow arrow (hints.js) stands over the red plug
-function piArrowPos(){ const st=piSetOf(PI.sel); return st.g.position.clone().add(V3(0,1.1*PI_SCALE,0)); }
-// called every frame from the render loop: the red plug glows, a split plug's loose half slides off and back
+function piArrowPos(){ return piSetOf(PI.sel).g.position.clone().add(V3(0,1.1*PI_SCALE,0)); }
+// called every frame from the render loop: the red plug glows, beads run down its wire, a split plug's loose half slides off and back
 function psuInspectFrame(now){
   if(!PI.on) return;
   piRed.emissiveIntensity=.15+.3*Math.abs(Math.sin(now/380));
-  const st=piSetOf(PI.sel); if(!st.half) return;
+  const st=piSetOf(PI.sel);
+  piBeads.forEach((b,i)=>{ b.visible=!!st.curve; if(st.curve) b.position.copy(st.curve.getPoint(((now/1500)+i/3)%1)); });
+  if(!st.half) return;
   const k=(now%3200)/3200, out=k<.3?0:k<.45?(k-.3)/.15:k<.7?1:k<.85?1-(k-.7)/.15:0;
   st.half.position.z=st.half0+st.gap*(out*out*(3-2*out));
 }
