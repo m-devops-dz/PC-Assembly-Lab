@@ -54,7 +54,7 @@ window.addEventListener("pointerup",e=>{
       if(d.part==="lever") clickLever(); else if(d.part==="slot") clickSlot(d.slot); else if(d.part==="bracket") clickBracket();
       else if(d.part==="screw") clickScrew(d.screw); else if(d.part==="m2screw") clickM2Screw(); else if(d.part==="conn") clickConn(d.conn);
       else if(d.part==="mbscrew") clickBoardScrew(d.screw); else if(d.part==="pcieLatch") clickPcieLatch(); else if(d.part==="sidePanel") clickSidePanel();
-      else if(d.part==="rport") clickRearPort(d.port); else if(d.part==="sport") clickSataPort(d.port); else if(d.part==="powerBtn") clickPowerBtn(); else if(d.part==="table") clickTablePart(d.id); }
+      else if(d.part==="rport") clickRearPort(d.port); else if(d.part==="sport") clickSataPort(d.port); else if(d.part==="powerBtn") clickPowerBtn(); else if(d.part==="table") clickTablePart(d.id); else if(d.part==="psuPlug") piSelect(d.k); }
   }
   downXY=null;
 });

@@ -103,7 +103,7 @@ function updateTable(now){
   // camera: glide over to the table when the step needs a part (once per step and part, a moment after the step starts)
   const key=need&&!S.held?S.step+need.id:"";
   if(key!==tableKey){ tableKey=key; tableAt=now; tableWent=false; }
-  if(key&&!tableWent&&!S.tray&&!S.busy&&!dragging&&now-tableAt>1600){ tableWent=true; focus("table",1300); }
+  if(key&&!tableWent&&!S.tray&&!S.busy&&!dragging&&!PI.on&&now-tableAt>1600){ tableWent=true; focus("table",1300); }
 }
 vp.addEventListener("pointermove",e=>{ if(e.target!==renderer.domElement||dragging) return; const p=pick(e); tableHover=p&&p.d.part==="table"?tableItem(p.d.id):null; });
 document.getElementById("tableBtn").onclick=()=>focus("table",900);

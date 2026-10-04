@@ -64,7 +64,7 @@ function setStep(n){
     if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
   if(n===ST.fanCable) spawnCable(CABLES.fan);
   if(n===ST.psu) showCase();
-  if(n!==ST.psu&&!psuInfo.hidden) hidePsuInfo();                       // PSU cables card: only while the PSU goes in
+  if(n!==ST.psu&&PI.on) hidePsuInfo();                                  // PSU cables view: closed when the step is skipped
   if(n===ST.clips&&BUILD_MODE) toast(t("ok_redSlots"));
   if(n===ST.boardScrews) mbScrewHints.visible=true;
   if(n===ST.dataSsd) showConnCables();

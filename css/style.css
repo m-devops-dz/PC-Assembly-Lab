@@ -125,16 +125,24 @@ details.photos p.theme-name:empty{ display:none; }
 .kv-usbshell{ fill:#b9bec5; } .kv-hdmishell{ fill:#9ea4ab; } .kv-iecbody{ fill:#2a2c30; stroke:#6b7478; stroke-width:1; } .kv-pin{ fill:#c9ccd1; } .kv-usbhole{ fill:#050506; } .kv-usbins{ fill:#1d4fd8; }
 .kv-msg{ margin:0; font-size:13px; font-weight:500; color:var(--err); }
 .keyview.ok .kv-msg{ color:var(--ok); }
-/* PSU cables card (psu-info.js): plug → wire with power running along it → the part it feeds */
-.psu-info{ position:absolute; bottom:14px; inset-inline-end:14px; width:min(390px, calc(100% - 28px)); max-height:calc(100% - 90px); overflow:auto; padding:10px 12px; border-radius:10px; background:var(--panel); color:var(--ink); box-shadow:0 8px 28px rgba(0,0,0,.3); border-inline-start:5px solid var(--gold); }
+/* PSU cables view (psu-info.js): the red plug's card. Picture: plug → wire with power running along it → the part it feeds */
+.psu-info{ position:absolute; bottom:14px; inset-inline-end:14px; width:min(340px, calc(100% - 28px)); max-height:calc(100% - 90px); overflow:auto; padding:10px 12px; border-radius:10px; background:var(--panel); color:var(--ink); box-shadow:0 8px 28px rgba(0,0,0,.3); border-inline-start:5px solid var(--gold); }
 .psu-info[hidden]{ display:none; }
-.pi-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--display); font-size:16px; }
-.pi-x{ border:0; background:none; font-size:22px; line-height:1; cursor:pointer; padding:0 4px; color:var(--muted); }
-.psu-info ol{ list-style:none; margin:6px 0 0; padding:0; display:grid; gap:6px; }
-.pi-row{ display:grid; grid-template-columns:150px 1fr; gap:8px; align-items:center; }
-.pi-row svg{ width:150px; height:auto; background:var(--paper); border-radius:6px; direction:ltr; }
-.pi-row p{ margin:0; font-size:13px; line-height:1.35; }
+.pi-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-family:var(--display); font-size:16px; }
+.pi-count{ font-size:13px; color:var(--muted); white-space:nowrap; direction:ltr; }
+.pi-one{ margin-top:8px; }
+.pi-one svg{ display:block; width:100%; height:auto; background:var(--paper); border-radius:6px; direction:ltr; }
+.pi-desc{ margin:8px 0 0; font-size:14px; line-height:1.4; }
 .pi-note{ margin:6px 0 0; font-size:12.5px; color:var(--muted); }
+.pi-dots{ display:flex; justify-content:center; gap:8px; margin-top:10px; }
+.pi-dot{ width:14px; height:14px; padding:0; border-radius:50%; border:2px solid var(--muted); background:transparent; cursor:pointer; }
+.pi-dot.seen{ background:var(--ok); border-color:var(--ok); }
+.pi-dot.cur{ border-color:#d8141c; box-shadow:0 0 0 3px rgba(216,20,28,.25); }
+.pi-nav{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.pi-nav #piDone{ flex-basis:100%; }
+.pi-nav button{ flex:1; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--btn); color:var(--btn-ink); cursor:pointer; font-weight:600; }
+.pi-nav button.primary{ background:var(--gold); color:var(--gold-ink); border-color:var(--gold); }
+.pi-nav button:disabled{ opacity:.45; cursor:not-allowed; }
 .pi-plug rect:first-child, .pi-plug path:first-child{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; }
 .pi-plug > rect:nth-child(2){ fill:#1b1c1f; }
 .pi-pins rect{ fill:#d9b55b; }
@@ -154,7 +162,7 @@ details.photos p.theme-name:empty{ display:none; }
 @keyframes piSplit{ 0%,30%{ transform:translateX(0); } 45%,70%{ transform:translateX(9px); } 85%,100%{ transform:translateX(0); } }
 @keyframes piSpin{ to{ transform:rotate(360deg); } }
 @keyframes piGlow{ 0%,80%{ filter:none; } 92%{ filter:drop-shadow(0 0 4px #ffc400) brightness(1.25); } 100%{ filter:none; } }
-@media (max-width:860px){ .pi-row{ grid-template-columns:110px 1fr; } .pi-row svg{ width:110px; } .pi-row p{ font-size:12px; } .psu-info{ bottom:10px; inset-inline-end:10px; } }
+@media (max-width:860px){ .psu-info{ bottom:10px; inset-inline-end:10px; inset-inline-start:10px; width:auto; padding:8px 10px; } .pi-one svg{ max-height:64px; } .pi-desc{ font-size:13px; } }
 @media (prefers-reduced-motion: reduce){ .pi-flow,.pi-bolt,.pi-half,.pi-fan,.pi-cpu,.pi-mb,.pi-ssd,.pi-gpu{ animation:none; } .pi-bolt{ transform:translate(100px,26px); } }
 .viewport > .done{ position:absolute; inset:0; display:none; place-items:center; background:rgba(10,20,22,.45); }
 .viewport > .done.show{ display:grid; }

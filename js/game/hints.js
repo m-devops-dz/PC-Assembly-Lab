@@ -134,7 +134,7 @@ const gpuCableNag=now=>S.step===ST.gpuPower&&!S.held&&!S.busy&&now-S.stepAt>2000
 function updateHints(now){
   if(hintUntil&&(now>hintUntil||S.step!==hintStep)) hintUntil=0;
   const info=hintUntil&&BUILD_MODE?hintInfo():null, lines=BUILD_MODE?coachLines():null;
-  let pos=TS.on?tsArrow():IN.on?inArrow():info&&info.pos;
+  let pos=TS.on?tsArrow():IN.on?inArrow():PI.on?piArrowPos():info&&info.pos;
   if(BUILD_MODE&&!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.clips&&!S.busy) pos=clipPos();                                   // and the small memory clips
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
