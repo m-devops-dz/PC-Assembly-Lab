@@ -11,7 +11,7 @@ const STEPS=STEP_IDS.length;
 const STEP_GROUPS=[[ST.leverUp,"g_desk"],[ST.psu,"g_case"],[ST.dataSsd,"g_power"],[ST.frontPanel,"g_finish"]];
 const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr",ST.dataSsd,ST.frontPanel],["m_cab",ST.frontPanel,STEPS]];
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
-if(saved.lang==="ar") lang="ar";
+if(saved.lang!=="en") lang="ar";                                     // Arabic is the default; English only when chosen
 let appMode=["trouble","install"].includes(saved.mode)?saved.mode:"build";   // "trouble": troubleshooting mode (trouble.js), "install": Windows install (install.js)
 const BUILD_MODE=appMode==="build";                                   // the other modes start fully built and skip the build-only helpers
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
@@ -27,7 +27,7 @@ function viewFor(n){
   if(n>=STEPS) return "all";
   if(n===ST.board&&S.held==="board") return "caseClose";
   if(n<=ST.leverDown) return "cpu";
-  if(n<=ST.ram2) return "ram";
+  if(n<=ST.ram2) return n>=ST.ram1&&S.ram>=0?"ramSide":"ram";
   if(n===ST.bracket) return "bracket";
   if(n===ST.paste) return "paste";
   if(n===ST.fanCable) return "fan";
@@ -43,7 +43,7 @@ function viewFor(n){
   if(n===ST.pcieLatch) return "pcie";
   if(n===ST.gpu) return "gpu";
   if(n===ST.wifi) return "wifi";
-  if(n===ST.sata) return "sataTop";
+  if(n===ST.sata) return S.used.sata?"sataPorts":"sataTop";
   if(n<=ST.sataPower) return "sata";
   if(n===ST.atx24) return "atx24";
   if(n===ST.cpu8) return "cpuPwr";
@@ -64,6 +64,8 @@ function setStep(n){
     if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
   if(n===ST.fanCable) spawnCable(CABLES.fan);
   if(n===ST.psu) showCase();
+  if(n!==ST.psu&&!psuInfo.hidden) hidePsuInfo();                       // PSU cables card: only while the PSU goes in
+  if(n===ST.clips&&BUILD_MODE) toast(t("ok_redSlots"));
   if(n===ST.boardScrews) mbScrewHints.visible=true;
   if(n===ST.dataSsd) showConnCables();
   if(n===ST.frontPanel) spawnCable(CABLES.fp);

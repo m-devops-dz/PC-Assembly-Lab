@@ -12,8 +12,10 @@ function takeRAM(i){
   if(S.used["ram"+i]){ toast(t("e_taken")); return; }
   if(S.step===ST.clips&&!S.busy&&!S.held){ toast(t("e_clipsFirst")); return; }
   if(!gate(ST.ram1)||!quizOk("ram",()=>takeRAM(i))) return;
-  S.used["ram"+i]=true; S.ram=i; const r=rams[i];
-  spawn("ram",r.yaw,V3(13,9,6),V3(10.2,RAM_HOVER,-4.3),1);
+  S.used["ram"+i]=true; S.ram=i; const r=rams[i], g=GOOD.find(g=>!slots[g].used);
+  // straight over the first free red slot, low, seen from the side: only the notch is left to line up
+  focus("ramSide",1000);
+  spawn("ram",r.yaw,V3(13,9,6),V3(SLOT_X[g],RAM_HOVER,SLOT_Z),1,()=>{ S.snap=HELD.ram.snap(SLOT_X[g],SLOT_Z); });
 }
 function takePaste(){
   if(S.used.paste){ toast(t("e_taken")); return; }
@@ -34,11 +36,13 @@ function takeM2(){
   if(!gate(ST.m2In)||!quizOk("m2",takeM2)) return;
   S.used.m2=true; m2G.rotation.set(0,0,0); spawn("m2",m2G,V3(-6,8,12),V3(-1,M2_HOVER,10),1);
 }
-function takePSU(){ if(S.used.psu){ toast(t("e_taken")); return; } if(!gate(ST.psu)||!quizOk("psu",takePSU)) return; S.used.psu=true; spawn("psu",psuG,V3(-10,40,-10),V3(-6,PSU_HOVER,L.z+10),1+Math.floor(Math.random()*3)); }
+function takePSU(){ if(S.used.psu){ toast(t("e_taken")); return; } if(!gate(ST.psu)||!quizOk("psu",takePSU)) return; S.used.psu=true; showPsuInfo(); spawn("psu",psuG,V3(-10,40,-10),V3(-6,PSU_HOVER,L.z+10),1+Math.floor(Math.random()*3)); }
 function takeGPU(){ if(S.used.gpu){ toast(t("e_taken")); return; } if(!gate(ST.gpu)||!quizOk("gpu",takeGPU)) return; S.used.gpu=true; spawn("gpu",gpuG,V3(-4,30,-14),V3(-2,GPU_HOVER,L.z+6),1); }
 function takeAntennas(){ if(S.used.antennas){ toast(t("e_taken")); return; } if(!gate(ST.antennas)) return; S.used.antennas=true; updateTray(); fitAntennas(); }
 function takeWifi(){ if(S.used.wifi){ toast(t("e_taken")); return; } if(!gate(ST.wifi)||!quizOk("wifi",takeWifi)) return; S.used.wifi=true; spawn("wifi",wifiG,V3(-4,30,-14),V3(-3,WIFI_HOVER,L.z+10),1); }
-function takeSata(){ if(S.used.sata){ toast(t("e_taken")); return; } if(!gate(ST.sata)||!quizOk("sata",takeSata)) return; S.used.sata=true; spawn("sata",sataG,V3(30,30,-14),V3(22,SATA_HOVER,L.z+14),1+Math.floor(Math.random()*3)); }
+function takeSata(){ if(S.used.sata){ toast(t("e_taken")); return; } if(!gate(ST.sata)||!quizOk("sata",takeSata)) return; S.used.sata=true;
+  focus("sataPorts",1000);                                                    // straight over its mount, turned at random: only the turn is left to do
+  spawn("sata",sataG,V3(30,30,-14),V3(SATA_POS.x,SATA_HOVER,SATA_POS.z),1+Math.floor(Math.random()*3),()=>{ S.snap=HELD.sata.snap(SATA_POS.x,SATA_POS.z); }); }
 function takeBattery(){ if(S.used.battery){ toast(t("e_taken")); return; } if(!gate(ST.battery)||!quizOk("battery",takeBattery)) return; S.used.battery=true;
   S.batFlip=Math.random()<.5?1:0; batFlip.rotation.z=S.batFlip*Math.PI; spawn("battery",batG,V3(-6,8,14),V3(-4,BAT_HOVER,12.5),0); }
 function takeScrews(){ if(S.used.screws){ toast(t("e_taken")); return; } if(!gate(ST.boardScrews)) return; S.used.screws=true; toast(t("ok_takeScrews"),"ok"); updateTray(); screwAllBoard(); }

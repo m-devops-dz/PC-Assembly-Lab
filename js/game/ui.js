@@ -117,7 +117,7 @@ function applyLang(){
   document.getElementById("brightLbl").textContent=t("bright");
   renderModeMenu(); if(typeof TS!=="undefined") renderTS(); if(typeof IN!=="undefined"){ renderIN(); renderScreen(); } if(typeof renderQuiz!=="undefined") renderQuiz();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
-  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderHintBtn(); renderFsBtn();
+  renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderPsuInfo(); renderHintBtn(); renderFsBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
 }
 /* mode menu (header): build, troubleshooting, Windows install. Every mode starts from a fresh page load. */

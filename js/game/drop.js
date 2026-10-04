@@ -12,9 +12,9 @@ function drop(){
     const r=rams[S.ram];
     if(!sn){ toast(t("e_ramAbove"),"err"); return; }
     const i=sn.key, name=SLOT_NAMES[i];
-    if(!GOOD.includes(i)) return wrong2(t("e_wrongSlot",{s:name}),r.yaw,RAM_HOVER,1.2);
-    if(slots[i].used){ toast(t("e_used",{s:name}),"err"); refuse(r.yaw,RAM_HOVER,1.2); return; }
-    if(mod(S.rot.ram,2)) return wrong("e_notch",r.yaw,RAM_HOVER,1.0);
+    if(!GOOD.includes(i)) return wrong2(t("e_wrongSlot",{s:name}),r.yaw,RAM_HOVER,RAM_HOVER-.6);
+    if(slots[i].used){ toast(t("e_used",{s:name}),"err"); refuse(r.yaw,RAM_HOVER,RAM_HOVER-.6); return; }
+    if(mod(S.rot.ram,2)) return wrong("e_notch",r.yaw,RAM_HOVER,RAM_HOVER-.7);
     seat(r.yaw,RAM_SEAT,900,()=>{ setLatches(i,false,220); slots[i].used=true; toast(t("ok_ram",{s:name}),"ok"); S.ram=-1; setStep(S.step+1); });
   } else if(type==="paste"){
     if(!sn){ toast(t("e_pasteAbove"),"err"); return; }

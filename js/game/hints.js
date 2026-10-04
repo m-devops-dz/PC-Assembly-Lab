@@ -41,6 +41,9 @@ function snapOk(type){ const sn=S.snap; if(!sn) return false;
   if(type==="gpu"||type==="wifi") return sn.slot.ok;
   if(type==="cable") return sn.tg.ok;
   return true; }
+// the next red slot's clip (latch) nearer the camera, not the slot's middle
+function clipPos(){ const i=GOOD.find(i=>!slots[i].open); if(i==null) return null;
+  const [a,b]=slots[i].latches.map(p=>wpos(p,1.2)); return a.distanceTo(camera.position)<b.distanceTo(camera.position)?a:b; }
 const trayBtn=id=>document.querySelector(`#tray [data-id="${id}"]`);
 // what to do next: {pos} a world point for the arrow, {el} a button to light up, msg the i18n key to show
 function hintInfo(){
@@ -57,8 +60,7 @@ function hintInfo(){
     [ST.battery]:"battery",[ST.psu]:"psu",[ST.boardScrews]:"screws",[ST.gpu]:"gpu",[ST.sata]:"sata",[ST.wifi]:"wifi",[ST.antennas]:"antennas"}[st];
   if(tray) return S.tray?{el:trayBtn(tray),msg:"h_tray"}:{pos:tablePos(tray),msg:"h_table"};
   if(st===ST.leverUp||st===ST.leverDown) return {pos:wpos(grip),msg:"h_click"};
-  if(st===ST.clips){ const i=GOOD.find(i=>!slots[i].open); if(i==null) return null;   // point at the clip (latch) nearer the camera, not the slot's middle
-    const [a,b]=slots[i].latches.map(p=>wpos(p,1.1)); return {pos:a.distanceTo(camera.position)<b.distanceTo(camera.position)?a:b,msg:"h_click"}; }
+  if(st===ST.clips){ const pos=clipPos(); return pos&&{pos,msg:"h_click"}; }
   if(st===ST.bracket) return {pos:wpos(bracketScrews[0],.3),msg:"h_click"};
   if(st===ST.coolerScrews){ const o=S.tightOrder, i=o.length%2?(o[o.length-1]+2)%4:coolerScrews.findIndex(s=>!s.tight); return {pos:wpos(coolerScrews[i].g,.3),msg:"h_click"}; }
   if(st===ST.m2Out||st===ST.m2Screw) return {pos:wpos(m2Screw,.1),msg:"h_click"};
@@ -134,6 +136,7 @@ function updateHints(now){
   const info=hintUntil&&BUILD_MODE?hintInfo():null, lines=BUILD_MODE?coachLines():null;
   let pos=TS.on?tsArrow():IN.on?inArrow():info&&info.pos;
   if(BUILD_MODE&&!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
+  if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.clips&&!S.busy) pos=clipPos();                                   // and the small memory clips
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
   if(!pos&&S.glow&&gpuCableNag(now)){ CONN.gpu8.a.outer.updateMatrixWorld(true); pos=wpos(CONN.gpu8.a.outer); }
   hintArrow.visible=hintRing.visible=!!pos;

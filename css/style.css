@@ -122,9 +122,40 @@ details.photos p.theme-name:empty{ display:none; }
 .kv-body.data{ fill:#c0212c; } .kv-body.power{ fill:#141518; stroke:#6b7478; stroke-width:1; }
 .kv-slot.data{ fill:#111; } .kv-slot.power{ fill:#ddd; }
 .kv-housing{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; } .kv-tongue{ fill:#9aa0a8; }
-.kv-usbshell{ fill:#b9bec5; } .kv-usbhole{ fill:#050506; } .kv-usbins{ fill:#1d4fd8; }
+.kv-usbshell{ fill:#b9bec5; } .kv-hdmishell{ fill:#9ea4ab; } .kv-iecbody{ fill:#2a2c30; stroke:#6b7478; stroke-width:1; } .kv-pin{ fill:#c9ccd1; } .kv-usbhole{ fill:#050506; } .kv-usbins{ fill:#1d4fd8; }
 .kv-msg{ margin:0; font-size:13px; font-weight:500; color:var(--err); }
 .keyview.ok .kv-msg{ color:var(--ok); }
+/* PSU cables card (psu-info.js): plug → wire with power running along it → the part it feeds */
+.psu-info{ position:absolute; bottom:14px; inset-inline-end:14px; width:min(390px, calc(100% - 28px)); max-height:calc(100% - 90px); overflow:auto; padding:10px 12px; border-radius:10px; background:var(--panel); color:var(--ink); box-shadow:0 8px 28px rgba(0,0,0,.3); border-inline-start:5px solid var(--gold); }
+.psu-info[hidden]{ display:none; }
+.pi-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--display); font-size:16px; }
+.pi-x{ border:0; background:none; font-size:22px; line-height:1; cursor:pointer; padding:0 4px; color:var(--muted); }
+.psu-info ol{ list-style:none; margin:6px 0 0; padding:0; display:grid; gap:6px; }
+.pi-row{ display:grid; grid-template-columns:150px 1fr; gap:8px; align-items:center; }
+.pi-row svg{ width:150px; height:auto; background:var(--paper); border-radius:6px; direction:ltr; }
+.pi-row p{ margin:0; font-size:13px; line-height:1.35; }
+.pi-note{ margin:6px 0 0; font-size:12.5px; color:var(--muted); }
+.pi-plug rect:first-child, .pi-plug path:first-child{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; }
+.pi-plug > rect:nth-child(2){ fill:#1b1c1f; }
+.pi-pins rect{ fill:#d9b55b; }
+.pi-tag{ font:700 9px var(--display); fill:var(--ink); }
+.pi-wire{ stroke:#2a2c30; stroke-width:5; stroke-linecap:round; }
+.pi-flow{ stroke:#ffc400; stroke-width:2; stroke-dasharray:4 9; animation:piFlow .6s linear infinite; }
+.pi-bolt{ fill:#ffd21f; stroke:#7a5200; stroke-width:1; animation:piBolt 1.6s ease-in infinite; }
+.pi-half{ animation:piSplit 3.2s ease-in-out infinite; }
+.pi-cpu > rect:first-child{ fill:#9aa3ab; stroke:#5d656c; } .pi-cpu rect{ fill:#c9a24a; } .pi-cpu text{ font:700 10px var(--display); fill:#1b1c1f; }
+.pi-mb > rect:first-child{ fill:#2b3a33; stroke:#17563a; } .pi-mbsock{ fill:#c9ccd1; } .pi-mbslot{ fill:#8f141c; } .pi-mb24{ fill:#111; }
+.pi-ssd > rect:first-child{ fill:#2e3136; } .pi-ssdlbl{ fill:#e9eaec; } .pi-ssd text{ font:700 10px var(--display); fill:#1b1d22; }
+.pi-gpu > rect:first-child{ fill:#24272b; stroke:#5d656c; } .pi-fan circle{ fill:#111; } .pi-fan path{ fill:#7a8086; } .pi-gpuout{ fill:#9aa0a8; } .pi-gpugold{ fill:#c9a24a; }
+.pi-fan{ transform-box:fill-box; transform-origin:center; animation:piSpin 1.1s linear infinite; }
+.pi-cpu, .pi-mb, .pi-ssd, .pi-gpu{ animation:piGlow 1.6s ease-in infinite; }
+@keyframes piFlow{ to{ stroke-dashoffset:-13; } }
+@keyframes piBolt{ 0%{ transform:translate(62px,26px) scale(.8); opacity:0; } 12%{ opacity:1; } 85%{ opacity:1; } 100%{ transform:translate(136px,26px) scale(1.15); opacity:0; } }
+@keyframes piSplit{ 0%,30%{ transform:translateX(0); } 45%,70%{ transform:translateX(9px); } 85%,100%{ transform:translateX(0); } }
+@keyframes piSpin{ to{ transform:rotate(360deg); } }
+@keyframes piGlow{ 0%,80%{ filter:none; } 92%{ filter:drop-shadow(0 0 4px #ffc400) brightness(1.25); } 100%{ filter:none; } }
+@media (max-width:860px){ .pi-row{ grid-template-columns:110px 1fr; } .pi-row svg{ width:110px; } .pi-row p{ font-size:12px; } .psu-info{ bottom:10px; inset-inline-end:10px; } }
+@media (prefers-reduced-motion: reduce){ .pi-flow,.pi-bolt,.pi-half,.pi-fan,.pi-cpu,.pi-mb,.pi-ssd,.pi-gpu{ animation:none; } .pi-bolt{ transform:translate(100px,26px); } }
 .viewport > .done{ position:absolute; inset:0; display:none; place-items:center; background:rgba(10,20,22,.45); }
 .viewport > .done.show{ display:grid; }
 .done-card{ background:var(--panel); color:var(--ink); border-radius:14px; padding:26px 28px; width:min(380px, 90%); text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.4); }

@@ -7,7 +7,7 @@ const sataParts=[mesh(box(10,.7,7),[sataSide,sataSide,sataTop,sataSide,sataSide,
 sataParts.forEach(m=>m.userData.part="sata");
 const ssdData=makePort(sataG,V3(-5.35,0,-1.7),0,.95,[.5,1.25]);
 const ssdPower=makePort(sataG,V3(-5.35,0,.55),0,1.9,[.5,2.2]);
-const SATA_HOVER=8;
+const SATA_HOVER=4.5;
 
 // vertical Mini-Fit headers: the plug comes straight down from above. The frame's +x points down into the header,
 // `latch` is where the plug's clip (its local +y) must end up: the side with the header's latch tab.
