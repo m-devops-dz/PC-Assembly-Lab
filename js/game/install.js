@@ -22,7 +22,7 @@ const IN_SCENARIOS={
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
   car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
-  bios:{steps:["stickPc","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
+  bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
   bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
   wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
@@ -32,7 +32,10 @@ const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearc
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
   diskClean:"disk",diskPlan:"disk",diskNew:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end",
   dmOpen:"dm",dmShrink:"dm",dmNew:"dm",dmCheck:"dm",carCopy:"car",carFormat:"car",carBack:"car"};
-const inGroup=id=>IN.sc==="car"?"car":IN_GROUP_OF[id];
+const inGroup=id=>IN.sc==="car"?"car":IN.sc==="bios"&&IN_BIOS_FIRST.includes(id)?"biosFirst":IN_GROUP_OF[id];
+// the BIOS challenge starts with the stick in and the PC started untouched (no keys): it ignores the stick and starts
+// its own Windows. Then it's shut down. oldBoot / oldShutdown have their own text there (in_s_<id>B)
+const IN_BIOS_FIRST=["stickPc","oldBoot","oldShutdown"], IN_BIOS_TEXT=["oldBoot","oldShutdown"];
 const IN_SC_ID=IN_SCENARIOS[saved.inSc]?saved.inSc:"main";
 const IN={on:appMode==="install", sc:IN_SC_ID, cfg:IN_SCENARIOS[IN_SC_ID], step:0, gen:0,   // gen: goes up when the stick must be remade (STICK.gen must match)
   done:Array.isArray(saved.inDone)?saved.inDone:[],                 // scenarios finished this session
@@ -95,9 +98,11 @@ const inCur=()=>IN_STEPS[IN.step];
 // text that can name the customer's drive ({l}: what the student called it)
 const inT=(k,v)=>t(k,{l:IN.label||t("in_labelSug"),...v});
 // a step's title and explanation: some depend on the scenario (and partitioning on the plan)
-const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":id==="stickLaptop"&&IN.sc==="car"?"in_s_stickLaptopC":"in_s_"+id;
+const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":IN.sc==="bios"&&IN_BIOS_TEXT.includes(id)?"in_s_"+id+"B":id==="stickLaptop"&&IN.sc==="car"?"in_s_stickLaptopC":"in_s_"+id;
 const inStepT=id=>t(inStepK(id));
-const inStepD=id=>inT(id==="stickPc"&&IN.sc==="used"?"in_s_stickPcdU":id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
+// the customer's PC and the BIOS challenge: the stick goes straight into the case's front USB port (no port to pick)
+const IN_FRONT_USB=["used","bios"];
+const inStepD=id=>inT(id==="stickPc"&&IN_FRONT_USB.includes(IN.sc)?"in_s_stickPcdU":id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
 // actions that belong to a later step wait for it; steps this scenario doesn't have are always open
 function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
 function inCheck(){
@@ -277,7 +282,7 @@ function inClick(d){
       if(IN.step<IS.eject){ toast(t("in_stickBusy")); return; }
       if(!LAP.ejected){ inMistake("in_m_pull"); return; }
       stickOut(false); return; }
-    if(IN.stick==="table"&&id==="stickPc"&&IN.sc==="used"){ focus("powerBtn",1000); stickToPc(inPort("front1"),false); return; }   // the customer's PC: straight into the front USB port
+    if(IN.stick==="table"&&id==="stickPc"&&IN_FRONT_USB.includes(IN.sc)){ focus("powerBtn",1000); stickToPc(inPort("front1"),false); return; }   // straight into the front USB port
     if(IN.stick==="table"&&id==="stickPc"){ if(IN.picking) toast(t("in_pickPort")); else inStartPick(); return; }
     if(IN.stick==="pc"&&id==="removeStick"){ inQuiz(); return; }
     if(IN.stick==="pc"&&id==="instCopy"){ inMistake("in_m_pullEarly"); return; }
@@ -360,6 +365,7 @@ function renderIN(){
   el.innerHTML=h;
   el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>inGo(b.dataset.sc));
   el.querySelectorAll("[data-plan]").forEach(b=>b.onclick=inPlanCard);
+  clLock(el);                                                            // classroom: the teacher picked the challenge
   const cur=el.querySelector("li.current"); if(cur&&window.innerWidth>860&&!isFs()) cur.scrollIntoView({block:"center"});
   document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+inStepT(inCur());
 }

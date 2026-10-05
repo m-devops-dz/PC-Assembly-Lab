@@ -50,7 +50,9 @@ const finishStep={
   usbKeyboard:seatConnNow, usbMouse:seatConnNow, hdmi:seatConnNow, powerCord:seatConnNow,
   powerOn:powerOnNow
 };
-function skipStep(){
+// auto: skipTo's own skips (no toast each, and the classroom's limits are already checked)
+function skipStep(auto){
+  if(CL.on&&!auto&&!(CL.st.skip&&S.step<CL_MAX&&!CL.waiting)) return;   // classroom: only when the teacher allows it
   if(IN.on){ inSkip(); return; }
   if(S.step>=STEPS||TS.on) return;
   if(S.busy||dragging){ toast(t("e_skipBusy")); return; }
@@ -58,16 +60,17 @@ function skipStep(){
   finishStep[id]();
   S.held=id==="takeCpu"?"cpu":null; S.snap=null; S.cable=null; S.job=null;   // skipping "take the CPU" leaves it in hand, ready to place
   S.skipped[S.step]=true;                                                    // the sidebar shows it as skipped, not done
-  updateTools(); toast(t("ok_skipped"),"ok"); setStep(S.step+1);
+  updateTools(); if(!auto) toast(t("ok_skipped"),"ok"); setStep(S.step+1);
 }
 // build mode: clicking a later step in the sidebar skips every step up to it (after a confirm), one at a time,
-// waiting for each finisher's animation to end
+// waiting for each finisher's animation to end. auto: the classroom (classroom.js) moving the build, with no confirm,
+// up to the end if need be; done runs once it's there
 let skipTarget=-1;
-function skipTo(n){
-  if(!BUILD_MODE||n<=S.step||n>=STEPS||skipTarget>=0) return;
-  if(!confirm(t("skipToQ",{n:n-S.step,s:t("s_"+STEP_IDS[n])}))) return;
+function skipTo(n,auto,done){
+  if(!BUILD_MODE||n<=S.step||n>(auto?STEPS:STEPS-1)||skipTarget>=0) return;
+  if(!auto&&(!clMaySkip(n)||!confirm(t("skipToQ",{n:n-S.step,s:t("s_"+STEP_IDS[n])})))) return;
   skipTarget=n;
-  (function go(){ if(S.step>=skipTarget||S.step>=STEPS){ skipTarget=-1; return; }
+  (function go(){ if(S.step>=skipTarget||S.step>=STEPS){ skipTarget=-1; if(done) done(); return; }
     if(S.busy||dragging){ setTimeout(go,80); return; }
-    skipStep(); setTimeout(go,60); })();
+    skipStep(true); if(!auto) toast(t("ok_skipped"),"ok"); setTimeout(go,60); })();
 }

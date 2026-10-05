@@ -221,4 +221,5 @@ function renderTS(){
   el.querySelectorAll("[data-chk]").forEach(b=>b.onclick=()=>tsInspect(b.dataset.chk));
   el.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>tsVerdict(b.dataset.v==="bad"));
   el.querySelectorAll("[data-act=list]").forEach(b=>b.onclick=()=>tsGo(null));
+  clLock(el);                                                            // classroom: the teacher picked the case
 }

@@ -1,7 +1,8 @@
 /* ---------------- download for offline use ----------------
    Packs the running app into one .zip: this page, every local <script> and stylesheet it loads (the libraries
    and fonts are in vendor/, so nothing needs the internet), the fonts named in vendor/fonts/fonts.css, and the
-   built-in photo themes with their .zip.js copies (a page opened from a file can't fetch() the .zip).
+   built-in photo themes with their .zip.js copies (a page opened from a file can't fetch() the .zip), and the
+   classroom server (classroom/).
    The list comes from the page itself, so new files are picked up without editing this. Needs http(s): a page
    opened from a file is already the offline copy. */
 async function offlineFiles(){
@@ -12,6 +13,7 @@ async function offlineFiles(){
   try{ const css=await (await fetch("vendor/fonts/fonts.css")).text();                  // font files, relative to the stylesheet
     for(const m of css.matchAll(/url\(([^)]+)\)/g)) files.push("vendor/fonts/"+m[1].replace(/['"]/g,"")); }catch(e){}
   Object.values(BUILTIN_THEMES).forEach(f=>files.push("themes/"+f,"themes/"+f+".js"));
+  files.push("classroom/server.py","classroom/start-class.bat","classroom/teacher.html","classroom/README.txt");   // the classroom server (teacher's PC)
   return [...new Set(files)];
 }
 async function downloadOffline(){

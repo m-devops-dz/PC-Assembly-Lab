@@ -79,4 +79,4 @@ function finish(){ S.end=performance.now(); renderSteps(); document.getElementBy
 function persist(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,fsAsked:S.fsAsked,mode:appMode,tsDone:TS.done,tsNext:TS.next,inSc:typeof IN!=="undefined"?IN.sc:saved.inSc,inDone:typeof IN!=="undefined"?IN.done:saved.inDone})); }catch(e){} }
 // Start over: a clean page for the next student. Only the language, the current mode and the Settings choices stay;
 // all progress goes (solved troubleshooting cases, finished install challenges, the current challenge, the one-time prompts).
-function resetAll(){ try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,mode:appMode})); }catch(e){} location.reload(); }
+function resetAll(){ clForget(); try{ sessionStorage.setItem("pclab",JSON.stringify({lang,hints:S.hints,glow:S.glow,bright:S.bright,tray:S.tray,rgb:S.rgb,quiz:S.quiz,card:S.card,mode:appMode})); }catch(e){} location.reload(); }

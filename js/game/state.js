@@ -75,6 +75,7 @@ function setStep(n){
   if(n===ST.usbKeyboard) showPeripherals();
   renderSteps(); renderModules(); updateTools(); updateTray();
   if(n===STEPS) finish();
+  clStep();                                                              // classroom: keep and report the step
 }
 function mistake(){ S.mistakes++; S.stepMis[S.step]=(S.stepMis[S.step]||0)+1; document.getElementById("mistakes").textContent=S.mistakes; updateStepMark(); }
 // time on a step: the current one counts from when it started (or the clock started), finished ones are stored

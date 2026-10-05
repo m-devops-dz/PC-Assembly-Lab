@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة الأستاذ</title>
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<style>
+:root{ --paper:#eef1f0; --panel:#fff; --ink:#1b2226; --muted:#5a676d; --line:#d3dbdb; --btn:#f4f6f6;
+  --gold:#e8b33a; --gold-ink:#2a1f00; --ok:#2f8f5b; --err:#c9423a; --warn:#e07b12; }
+@media (prefers-color-scheme: dark){ :root{ --paper:#111618; --panel:#182023; --ink:#e4ebec; --muted:#93a3a8; --line:#2a3639; --btn:#212b2f; } }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans Arabic","Noto Kufi Arabic",system-ui,sans-serif; font-size:15px; }
+header{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); }
+h1{ font-size:20px; margin:0; } h2{ font-size:15px; margin:0 0 10px; color:var(--muted); }
+.urls{ color:var(--muted); } .urls b{ color:var(--ink); direction:ltr; unicode-bidi:embed; user-select:all; }
+main{ display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:16px; padding:16px 20px; align-items:start; }
+@media (max-width:900px){ main{ grid-template-columns:1fr; } }
+section{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+.row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; }
+button,select,input{ font:inherit; color:inherit; }
+button{ border:1px solid var(--line); background:var(--btn); border-radius:999px; padding:7px 14px; cursor:pointer; }
+button:hover{ border-color:var(--gold); }
+button.on,button.primary{ background:var(--gold); border-color:var(--gold); color:var(--gold-ink); font-weight:700; }
+button.danger.on{ background:var(--err); border-color:var(--err); color:#fff; }
+select,input[type=text]{ border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:7px 10px; min-width:0; flex:1; }
+label.chk{ display:flex; gap:8px; align-items:center; }
+.hint{ color:var(--muted); font-size:13px; margin:4px 0 0; }
+[hidden]{ display:none !important; }
+table{ width:100%; border-collapse:collapse; }
+th,td{ text-align:start; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
+th{ font-size:13px; color:var(--muted); font-weight:600; }
+td.num{ font-variant-numeric:tabular-nums; }
+td.ip{ direction:ltr; text-align:end; color:var(--muted); font-size:13px; }
+.dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--err); margin-inline-end:6px; }
+.dot.on{ background:var(--ok); }
+.bar{ width:120px; height:8px; background:var(--line); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; margin-inline-end:6px; }
+.bar i{ display:block; height:100%; background:var(--ok); }
+.tag{ font-size:12px; padding:2px 8px; border-radius:999px; background:var(--gold); color:var(--gold-ink); margin-inline-start:6px; white-space:nowrap; }
+.tag.warn{ background:var(--warn); color:#fff; }
+tr.off td{ opacity:.5; }
+.summary{ display:flex; gap:16px; flex-wrap:wrap; color:var(--muted); margin-bottom:8px; }
+.summary b{ color:var(--ink); font-size:18px; }
+.empty{ color:var(--muted); padding:20px 0; text-align:center; }
+.small{ font-size:13px; padding:4px 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>لوحة الأستاذ</h1>
+  <p class="urls" id="urls"></p>
+</header>
+<main>
+  <div>
+    <section>
+      <h2>الوضع (لكل الطلاب)</h2>
+      <div class="row" id="modes"></div>
+      <p class="hint">تغيير الوضع يعيد تحميل صفحات الطلاب. تقدّمهم في التجميع يُسترجع تلقائيا.</p>
+    </section>
+    <section id="buildBox">
+      <h2>تجميع الحاسوب</h2>
+      <div class="row"><span>المراحل المفتوحة حتى</span><select id="to"></select></div>
+      <div class="row"><button id="toMore">+10 مراحل</button><button id="toAll">افتح الكل</button></div>
+      <div class="row"><span>انقل الجميع إلى</span><select id="goto"></select><button class="primary" id="gotoBtn">انقل</button></div>
+      <p class="hint">النقل يتخطى المراحل إلى الأمام فقط، ومن تجاوزها لا يرجع.</p>
+      <label class="chk"><input type="checkbox" id="skip"> السماح للطلاب بالتخطي (Ctrl+H والنقر على المراحل)</label>
+    </section>
+    <section id="installBox">
+      <h2>تثبيت ويندوز: التحدي</h2>
+      <div class="row"><select id="challenge"></select></div>
+    </section>
+    <section id="troubleBox">
+      <h2>استكشاف الأعطال: الحالة</h2>
+      <div class="row"><select id="tsCase"></select></div>
+    </section>
+    <section>
+      <h2>القسم</h2>
+      <div class="row"><button class="danger" id="pause">إيقاف مؤقت: انتبهوا</button></div>
+      <div class="row"><button id="newSession">حصة جديدة</button></div>
+      <p class="hint">حصة جديدة: كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1، وتُمحى القائمة.</p>
+      <div class="row"><input type="text" id="msg" maxlength="300" placeholder="رسالة تظهر لكل الطلاب"><button id="msgBtn">أرسل</button></div>
+    </section>
+  </div>
+  <section>
+    <h2>الطلاب</h2>
+    <div class="summary" id="summary"></div>
+    <table><thead><tr><th>الطالب</th><th>الحاسوب (IP)</th><th>الوضع</th><th>التقدم</th><th>المرحلة الحالية</th><th>أخطاء</th><th>الوقت</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="empty" id="empty">لا أحد بعد. يفتح الطلاب العنوان المكتوب في الأعلى ويكتبون أسماءهم.</p>
+  </section>
+</main>
+<script src="/js/core/i18n.js"></script>
+<script src="/js/core/i18n-install.js"></script>
+<script>
+lang="ar";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+let ST={}, STEP_IDS=[], IN_ORDER=[], TS_CASES=[];
+
+// the lists come straight from the app's own files, so a new step or challenge shows up here by itself
+async function grab(file,re){ const m=(await (await fetch(file,{cache:"no-store"})).text()).match(re); return m?JSON.parse(m[1]):[]; }
+async function catalog(){
+  [STEP_IDS,IN_ORDER,TS_CASES]=await Promise.all([grab("/js/game/state.js",/const STEP_IDS=(\[[\s\S]*?\]);/),
+    grab("/js/game/install.js",/const IN_ORDER=(\[[\s\S]*?\]);/),grab("/js/game/trouble.js",/const TS_CASES=(\[[\s\S]*?\]\]);/)]);
+  const stepOpt=(i,id)=>`<option value="${i+1}">${i+1}. ${esc(t("s_"+id))}</option>`;
+  $("to").innerHTML=`<option value="0">كل المراحل</option>`+STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
+  $("goto").innerHTML=STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
+  $("challenge").innerHTML=`<option value="">حر: الطالب يختار</option>`+IN_ORDER.map(k=>`<option value="${k}">${esc(t("in_sc_"+k))}</option>`).join("");
+  $("tsCase").innerHTML=`<option value="-1">حر: الطالب يختار</option>`+TS_CASES.map(([s],i)=>`<option value="${i}">${esc(t("ts_case",{n:i+1}))} · ${esc(t("ts_"+s))}</option>`).join("");
+  $("modes").innerHTML=["build","trouble","install"].map(m=>`<button data-mode="${m}">${esc(t("mode_"+m))}</button>`).join("");
+  $("modes").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(b.dataset.mode===ST.mode) return;
+    if(confirm("ستُعاد صفحات كل الطلاب إلى وضع «"+b.textContent+"». متابعة؟")) send({mode:b.dataset.mode}); });
+}
+async function send(change){
+  const r=await fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(change)});
+  if(r.ok){ ST=await r.json(); renderState(); } }
+
+function renderState(){
+  $("modes").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.mode===ST.mode));
+  $("buildBox").hidden=ST.mode!=="build"; $("installBox").hidden=ST.mode!=="install"; $("troubleBox").hidden=ST.mode!=="trouble";
+  if(document.activeElement!==$("to")) $("to").value=ST.to||0;
+  $("skip").checked=!!ST.skip; $("challenge").value=ST.challenge||""; $("tsCase").value=ST.tsCase??-1;
+  $("pause").classList.toggle("on",!!ST.pause); $("pause").textContent=ST.pause?"استئناف الحصة":"إيقاف مؤقت: انتبهوا";
+}
+$("to").onchange=()=>send({to:+$("to").value});
+$("toMore").onclick=()=>{ const n=(ST.to||0)+10; send({to:n>=STEP_IDS.length?0:n}); };
+$("toAll").onclick=()=>send({to:0});
+$("gotoBtn").onclick=()=>{ const n=+$("goto").value; if(confirm("نقل كل الطلاب إلى المرحلة "+n+"؟ من لم يصلها ستُتخطّى مراحله.")) send({goto:n}); };
+$("skip").onchange=()=>send({skip:$("skip").checked});
+$("challenge").onchange=()=>send({challenge:$("challenge").value});
+$("tsCase").onchange=()=>send({tsCase:+$("tsCase").value});
+$("pause").onclick=()=>send({pause:!ST.pause});
+// one listener for the table (its rows are redrawn): Reset = the student starts over with a new name
+$("rows").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; b.disabled=true;
+  if(b.dataset.reset) send({resetStudent:b.dataset.reset}).then(poll);
+  else if(b.dataset.forget) send({forget:b.dataset.forget}).then(poll); });
+$("newSession").onclick=()=>{ if(confirm("بدء حصة جديدة؟ كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1.")) send({newSession:true}).then(poll); };
+$("msgBtn").onclick=()=>{ const m=$("msg").value.trim(); if(!m) return; send({msg:m}); $("msg").value=""; };
+$("msg").onkeydown=e=>{ if(e.key==="Enter") $("msgBtn").click(); };
+
+function stepName(s){
+  if(s.mode==="build") return s.stepId==="done"?"انتهى ✓":t("s_"+s.stepId);
+  if(s.mode==="install") return t("in_sc_"+s.sc)+" · "+(s.stepId==="done"?"انتهى ✓":t("in_s_"+s.stepId));
+  if(s.mode==="trouble") return s.tsCase==null?"يختار حالة":t("ts_case",{n:s.tsCase+1})+" · "+({power:"تشغيل",check:"فحص",fix:"إصلاح",retry:"إعادة التشغيل",solved:"حُلّت ✓"}[s.phase]||"");
+  return "";
+}
+async function poll(){
+  try{
+    const d=await (await fetch("/api/students",{cache:"no-store"})).json();
+    if(JSON.stringify(d.state)!==JSON.stringify(ST)){ ST=d.state; renderState(); }
+    $("urls").innerHTML=d.urls&&d.urls.length?"يفتح الطلاب: "+d.urls.map(u=>`<b>${esc(u)}</b>`).join(" أو "):"";
+    const list=d.students.sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+    $("empty").hidden=list.length>0;
+    const on=list.filter(s=>s.online), wait=on.filter(s=>s.wait).length;
+    $("summary").innerHTML=`<span><b>${on.length}</b> متصل</span>`+(ST.mode==="build"&&ST.to?`<span><b>${wait}</b> من ${on.length} أنهوا المراحل المفتوحة</span>`:"");
+    const html=list.map(s=>{ const p=s.steps?Math.round(100*Math.min(s.step,s.steps)/s.steps):0;
+      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}${s.wait?`<span class="tag">ينتظر</span>`:""}</td>
+        <td class="num ip">${esc(s.ip)}</td><td>${esc(t("mode_"+s.mode))}</td>
+        <td class="num">${s.steps?`<span class="bar"><i style="width:${p}%"></i></span>${Math.min(s.step,s.steps)}/${s.steps}`:s.done?s.done.length+" ✓":""}</td>
+        <td>${esc(stepName(s))}</td><td class="num">${s.mistakes>2?`<span class="tag warn">${s.mistakes}</span>`:s.mistakes||0}</td><td class="num">${fmt(s.time||0)}</td>
+        <td>${s.online?`<button class="small" data-reset="${esc(s.id)}" data-name="${esc(s.name)} (${esc(s.ip)})">إعادة</button>`:`<button class="small" data-forget="${esc(s.id)}">احذف</button>`}</td></tr>`; }).join("");
+    if(html!==poll.last){ poll.last=html; $("rows").innerHTML=html; }   // only when something changed: a redraw under the pointer loses the click
+
+  }catch(e){ $("summary").textContent="الخادم لا يجيب. هل نافذة الخادم مفتوحة؟"; }
+}
+catalog().then(()=>{ poll(); setInterval(poll,2000); });
+</script>
+</body>
+</html>

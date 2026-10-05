@@ -10,7 +10,7 @@ const verParts=v=>String(v).split(".").map(n=>parseInt(n,10)||0);
 function verNewer(a,b){ const x=verParts(a), y=verParts(b); for(let i=0;i<Math.max(x.length,y.length);i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; }
 let verLatest=null;
 async function checkVersion(){
-  if(location.href.startsWith(LIVE_URL)||!window.APP_VERSION) return;
+  if(location.href.startsWith(LIVE_URL)||!window.APP_VERSION||CL.on) return;   // classroom: the teacher updates the copy
   try{
     const r=await fetch(LIVE_URL+"version.js?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return;
     const m=(await r.text()).match(/APP_VERSION\s*=\s*["']([\d.]+)["']/); if(!m||!verNewer(m[1],APP_VERSION)) return;

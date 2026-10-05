@@ -3,8 +3,8 @@
          first in the boot order (Advanced F7 › Settings › Boot), F10 save and exit: the PC then starts from the stick
          by itself. The BIOS is a clickable page here (BX); the other scenarios keep the BIOS picture.
    bsod  a blue screen (MEMORY_MANAGEMENT) during Setup's copy: why (RAM), power off, open the case, take one RAM stick
-         out, try again. The faulty stick (IN.badRam) is random: if it's the one left in, the blue screen comes back
-         and the student swaps the two sticks.
+         out, try again. Only the front stick (nearest the camera, IN.frontRam) comes out, and the one left in is the
+         faulty one (IN.badRam): the blue screen comes back, and the student swaps the two sticks.
    wifi  the new Windows has no driver for the Wi-Fi card, and getting one needs the internet: share the phone's
          internet over its USB cable (USB tethering), let Windows Update fetch the drivers, then join the Wi-Fi. */
 Object.assign(IN_GROUP_OF,{biosEnter:"bios",biosMode:"bios",biosOrder:"bios",biosSave:"bios",biosBoot:"bios",
@@ -27,7 +27,7 @@ Object.assign(IN_FINISH,{
   bsodWhy:()=>{ IN.bsodWhy=true; inCardEl.hidden=true; },
   bsodOff:()=>{ pcOff(); closeScreen(); },
   bsodOpen:()=>{ sideG.visible=false; panelScrews.forEach(g=>g.visible=false); IN.panelOff=true; },
-  bsodRam:()=>ramMove(IN.badRam,null,true),
+  bsodRam:()=>ramMove(IN.frontRam,null,true),
   bsodRetry:()=>{ if(ramIn(IN.badRam)) ramSwap(IN.badRam,true); if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; WS.page="installing"; WS.copyN=(WS.copyN||0)+1; WS.prog=1; wsCopied(); },
   wifiSee:()=>{ OW.netSeen=true; },
   phoneCable:()=>phonePlug(true),
@@ -40,7 +40,8 @@ Object.assign(IN_FINISH,{
 const IN_STEP_HOOK={ bsodWhy:()=>setTimeout(bsodAsk,2500) };
 function inChStart(){
   const c=IN.cfg; phoneG.visible=!!c.wifi;
-  if(c.bsod){ IN.badRam=Math.random()<.5?0:1;
+  if(c.bsod){ IN.frontRam=ramFront(); IN.badRam=1-IN.frontRam;
+    rams.forEach(r=>{ r.glow=[]; r.parts.slice(1,3).forEach(m=>{ m.material=m.material.map(x=>x===ramLabelMat||x===ramPlainMat?(r.glow.push(x.clone()),r.glow[r.glow.length-1]):x); }); });   // own copies: only the stick to click glows
     WS.copyN=(WS.copyN||0)+1; WS.prog=0;                                // the copy waits for the intro card, so the crash is seen
     const go=()=>{ if(!inCardEl.hidden||!stepCard.hidden||!SCR.dev){ setTimeout(go,500); return; } wsCopy(); };
     setTimeout(go,2200); }
@@ -116,6 +117,9 @@ const bsodTex=canvasTex(1024,576,(g,W,H)=>{ g.fillStyle="#0a5fb4"; g.fillRect(0,
   g.font="400 30px Barlow, Arial"; g.fillText("Your PC ran into a problem and needs to restart.",110,310); g.font="400 22px Barlow, Arial"; g.fillText("Stop code: MEMORY_MANAGEMENT",250,440);
   g.fillStyle="#fff"; g.fillRect(110,390,110,110); g.fillStyle="#0a5fb4"; g.fillRect(126,406,30,30); g.fillRect(174,406,30,30); g.fillRect(126,454,30,30); });
 const bsodRamOk=()=>!ramIn(IN.badRam);
+// the stick nearer the camera when it looks into the open case (ramLook)
+function ramFront(){ const cam=ramAt().add(V3(14,24,10)); return wpos(rams[0].yaw).distanceTo(cam)<=wpos(rams[1].yaw).distanceTo(cam)?0:1; }
+const ramPos=i=>wpos(rams[i].yaw).add(boardRoot.localToWorld(V3(0,2,0)).sub(boardRoot.localToWorld(V3(0,0,0))));   // on the stick's side, below its top edge
 // called by Setup's copy on every frame (win-setup.js): about a third of the way, a PC with the faulty stick in crashes
 function bsodNow(k){ if(!IN.cfg.bsod||k<.35||bsodRamOk()) return false; bsodCrash(); return true; }
 function bsodCrash(){
@@ -171,7 +175,10 @@ function ramSwap(i,now){ const inB=ramIn(i)?i:1-i, out=1-inB;
 function ramClick(i){
   if(S.powered){ inMistake("in_m_ramOn"); return; }
   if(!inGate("bsodRam")) return;
-  if(ramIn(0)&&ramIn(1)){ ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); }); return; }
+  // one out: back to the desk, where the power button is next (a second click on the board would swap them by accident)
+  if(ramIn(0)&&ramIn(1)){ if(i!==IN.frontRam){ toast(t("in_bs_front")); return; }
+    ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); focus("inDesk",1000); }); return; }
+  if(IN.bsodN<2||WS.copied){ toast(t("in_bs_tryFirst")); return; }      // a swap only once the blue screen came back with one stick
   ramSwap(i,false);
 }
 
@@ -272,7 +279,8 @@ function owChAct(a){
 /* ---- the 3D side: clicks, the pointer arrow, what glows ---- */
 function inChClick(d,id){
   const c=IN.cfg;
-  if(d.part==="powerBtn"&&S.powered&&c.bsod&&PC.mode==="bsod"){ startClock(); pressPower(()=>{ pcOff(); closeScreen(); inCheck(); }); return true; }   // hold it in: off
+  if(d.part==="powerBtn"&&S.powered&&c.bsod&&PC.mode==="bsod"){ startClock(); pressPower(()=>{ pcOff(); closeScreen(); inCheck();   // hold it in: off
+    if(IN.bsodN>1&&IN.panelOff) setTimeout(ramLook,950); }); return true; }                        // the second crash: next is the swap
   if(d.part==="sidePanel"&&c.bsod){ startClock();
     if(S.powered){ inMistake("in_m_openOn"); return true; }
     if(inGate("bsodOpen")&&!IN.panelOff) panelOpen(); return true; }
@@ -286,9 +294,9 @@ function inChArrow(id){
   switch(id){
     case "bsodOff": return S.powered?wpos(powerBtn):null;
     case "bsodOpen": return sideG.visible?wpos(sideG,.3):null;
-    case "bsodRam": return ramAt();
+    case "bsodRam": return ramPos(IN.frontRam);
     case "bsodRetry": if(S.powered&&PC.mode==="bsod") return wpos(powerBtn);
-      if(!S.powered&&IN.bsodN>1&&ramIn(IN.badRam)) return ramAt(); return undefined;
+      if(!S.powered&&IN.bsodN>1&&ramIn(IN.badRam)) return ramPos(IN.badRam); return undefined;
     case "phoneCable": case "phoneTether": return wpos(phoneG,.5);
   }
   return undefined;
@@ -296,6 +304,7 @@ function inChArrow(id){
 const inChPowerGlow=id=>(id==="bsodOff"||id==="bsodRetry")&&S.powered&&PC.mode==="bsod";
 function inChFrame(id,idle,pulse){
   if(IN.cfg.bsod){ setGlow(panelFrameMat,idle&&id==="bsodOpen"&&sideG.visible,pulse);
-    setGlow(ramLabelMat,idle&&!S.powered&&(id==="bsodRam"||id==="bsodRetry"&&IN.bsodN>1&&ramIn(IN.badRam)),pulse); }
+    const want=id==="bsodRam"?IN.frontRam:id==="bsodRetry"&&IN.bsodN>1&&ramIn(IN.badRam)?IN.badRam:-1;
+    rams.forEach((r,i)=>(r.glow||[]).forEach(m=>setGlow(m,idle&&!S.powered&&i===want,pulse))); }
   if(IN.cfg.wifi) setGlow(phoneMat,idle&&(id==="phoneCable"||id==="phoneTether"),pulse);
 }

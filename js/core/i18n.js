@@ -442,5 +442,22 @@ const I18N = {
     ok_photo:"تم تطبيق الصورة.", ok_photoClear:"تمت العودة إلى الأسطح المولّدة.", ok_theme:"تم تطبيق السمة \"{n}\": {c} صور.", e_photo:"تعذر فتح هذه الصورة.", e_theme:"هذا الملف ليس سمة .zip قابلة للقراءة.", e_themeEmpty:"لا توجد صور في الملف المضغوط. سمّها board و cpuTop و ram و m2 و sata و gpu و psu (.jpg/.png/.webp) أو اذكرها في theme.json.", e_themeLib:"لم تُحمَّل مكتبة الضغط (لا يوجد إنترنت؟). السمات تحتاجها، أما الصور المفردة فتعمل.", p_cpu:"المعالج CPU", p_ram:"الذاكرة الحية RAM", p_paste:"المعجون الحراري", p_cooler:"المشتت الحراري", p_m2:"قرص M.2", p_psu:"وحدة التغذية بالكهرباء", p_gpu:"بطاقة الرسوميات", p_sata:"قرص SATA"
   }
 };
+// classroom mode (js/game/classroom.js: the page served by the teacher's PC)
+Object.assign(I18N.en,{
+  cl_hiTitle:"Your name", cl_hiText:"This class runs from the teacher's computer. Type your name so the teacher can follow your work.",
+  cl_full:"First and last name", cl_go:"Start",
+  cl_waitTitle:"Well done! Wait for the teacher", cl_waitText:"You finished the steps open for now ({n} of {m}). The teacher will open the next ones.",
+  cl_pauseTitle:"Eyes on the teacher", cl_pauseText:"The teacher paused the class for a moment.",
+  cl_msg:"Teacher: {m}", cl_on:"Connected to the teacher's computer", cl_off:"Lost the teacher's computer. Trying again…",
+  cl_restore:"Putting your build back…", cl_goto:"The teacher moved the class to step {n}", cl_locked:"Opens when the teacher allows it"
+});
+Object.assign(I18N.ar,{
+  cl_hiTitle:"اسمك", cl_hiText:"هذه الحصة يديرها حاسوب الأستاذ. اكتب اسمك ولقبك ليتابع الأستاذ عملك.",
+  cl_full:"الاسم واللقب", cl_go:"ابدأ",
+  cl_waitTitle:"أحسنت! انتظر الأستاذ", cl_waitText:"أنهيت المراحل المفتوحة الآن ({n} من {m}). سيفتح الأستاذ المراحل التالية.",
+  cl_pauseTitle:"انتبه إلى الأستاذ", cl_pauseText:"أوقف الأستاذ الحصة قليلا.",
+  cl_msg:"الأستاذ: {m}", cl_on:"متصل بحاسوب الأستاذ", cl_off:"انقطع الاتصال بحاسوب الأستاذ. إعادة المحاولة…",
+  cl_restore:"جارٍ استرجاع تركيبك…", cl_goto:"نقل الأستاذ القسم إلى المرحلة {n}", cl_locked:"تُفتح عندما يسمح الأستاذ"
+});
 let lang="en";
 const t=(k,v)=>{ let s=I18N[lang][k]??I18N.en[k]??k; if(v) for(const n in v) s=s.replace("{"+n+"}",v[n]); return s; };

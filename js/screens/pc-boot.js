@@ -16,6 +16,8 @@ const PWR_SVG=`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" strok
 const PC_KEY_MODES=["post","wait","menu","bios","ventoy"];   // the key row shows only before Windows; after it, the mouse does the work
 const PC_KEYS=[["Escape","Esc"],["Delete","Del"],["F7","F7"],["F10","F10"],["F11","F11"],["ArrowUp","↑"],["ArrowDown","↓"],["Enter","Enter ↵"]];
 // the keys this PC has: F7 (BIOS advanced mode) only with the clickable BIOS, no F11 on the PC without a boot menu key
+// the BIOS challenge's first start: the student only watches what the PC starts by itself, so no keys (inCur: install.js)
+const pcKeysOff=()=>IN.sc==="bios"&&inCur()==="oldBoot";
 const pcKeyList=()=>PC_KEYS.filter(([k])=>k==="F7"?IN.cfg.bios:k==="F11"?!IN.cfg.noF11:true);
 const stickUefi=()=>IN.stick==="pc"&&STICK.boot==="GPT";
 function pcEntries(){ return [...(WS.disks==="used"?[{id:"win",l:"Windows Boot Manager (Samsung SSD 980 PRO 1TB)"}]:[]),
@@ -28,7 +30,7 @@ function pcPowerOn(){
 // main path: the logo stays up until F11 (an arrow points at it); elsewhere the few seconds run out
 const pcWaitF11=()=>IN.sc==="main"&&!PC.setup&&["powerF11","bootPick"].includes(inCur());
 function pcPost(delay=0){
-  const id=++PC.boot, dur=IN.stick==="pc"?POST_MS:3500;
+  const id=++PC.boot, dur=IN.stick==="pc"&&!pcKeysOff()?POST_MS:3500;   // the logo stays longer only when there are keys to press
   if(pcWaitF11()){ PC.mode="post"; PC.k=0; OW.view="lock"; showScreen(screenOn); renderScreen(); return; } PC.mode="post"; PC.k=0; OW.view="lock"; OW.app=OW.start=OW.renaming=false; showScreen(screenOn); renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return;
     tween(dur,k=>{ if(PC.boot===id&&PC.mode==="post"){ PC.k=k; pcBar(); } },()=>{ if(PC.boot===id&&PC.mode==="post") pcPostEnd(); }); },delay);
@@ -54,6 +56,7 @@ function pcOff(){ PC.boot++; PC.mode="off"; S.powered=false; powerLedMat.color.s
 function pcWait(next){ const id=PC.boot; PC.mode="wait"; renderScreen(); setTimeout(()=>{ if(PC.boot===id) next(); },800); }
 function pcKey(k){
   startClock();
+  if(pcKeysOff()){ toast(t("in_bx_watch")); return; }
   if(PC.mode==="post"){
     if(k==="F11"){ if(IN.cfg.noF11){ toast(t("in_noF11")); return; }   // this PC has no boot menu key: nothing happens
       pcWait(()=>{ PC.mode="menu"; PC.sel=0; PC.menuSeen=true; renderScreen(); inCheck(); }); }
@@ -104,7 +107,7 @@ function pcRender(){
   else if(m==="nodisk") s=`<div class="pc nodisk"><p>Reboot and Select proper Boot device<br>or Insert Boot Media in selected Boot device and press a key_</p><button class="pc-power" data-k="restart">↻ ${t("pc_restart")}</button></div>`;
   else if(m==="setup") s=wsRender();
   else s=`<div class="pc"></div>`;
-  const keys=PC_KEY_MODES.includes(m)?`<div class="pc-keys"><span>${t("pc_kb")}</span>${pcKeyList().map(([k,l])=>`<button data-k="${k}"${k==="F11"?` class="fk${m==="post"&&pcWaitF11()?" point":""}"`:""}>${l}</button>`).join("")}</div>`:"";
+  const keys=PC_KEY_MODES.includes(m)&&!pcKeysOff()?`<div class="pc-keys"><span>${t("pc_kb")}</span>${pcKeyList().map(([k,l])=>`<button data-k="${k}"${k==="F11"?` class="fk${m==="post"&&pcWaitF11()?" point":""}"`:""}>${l}</button>`).join("")}</div>`:"";
   scrBody.innerHTML=`<div class="pcs">${s}${keys}</div>`;
   pcBar(); const ren=document.getElementById("owName"); if(ren){ ren.focus(); ren.select(); }
 }

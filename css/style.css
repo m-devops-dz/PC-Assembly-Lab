@@ -410,3 +410,18 @@ body.fs-open .fs-panel{ background:var(--err); color:#fff; box-shadow:0 0 0 3px 
 .fa-btns{ display:flex; gap:10px; flex-wrap:wrap; }
 .fa-btns .primary{ flex:1; font-size:16px; padding:12px 22px; }
 .fa-btns .chip-btn{ flex:none; padding:12px 18px; font-size:15px; }
+
+/* classroom (js/game/classroom.js): the page served by the teacher's PC */
+.cl-cover{ position:fixed; z-index:200; background:rgba(10,20,22,.72); }
+.cl-form{ display:grid; gap:12px; }
+.cl-form label{ display:grid; gap:4px; font-weight:600; }
+.cl-form input{ font:inherit; font-size:17px; padding:10px 12px; border:2px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); }
+.cl-form input:focus{ outline:none; border-color:var(--gold); }
+.cl-form .primary{ font-size:16px; padding:12px 22px; margin-top:4px; }
+.cl-chip{ display:inline-flex; align-items:center; gap:8px; cursor:default; max-width:220px; }
+.cl-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cl-chip i{ flex:none; width:9px; height:9px; border-radius:50%; background:var(--err); }
+.cl-chip.on i{ background:var(--ok); }
+body.classroom .mode-menu, body.classroom #offlineBtn{ display:none; }   /* the teacher picks the mode */
+.steps li.locked::before{ content:"🔒"; font-size:12px; opacity:.6; }
+.steps li.locked span{ opacity:.55; }

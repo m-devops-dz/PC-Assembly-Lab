@@ -54,7 +54,8 @@ function renderSteps(){
     const li=document.createElement("li"); li.className=i<S.step?(S.skipped[i]?"skipped":"done"):i===S.step?"current":"todo"; li.innerHTML=`<span>${t("s_"+STEP_IDS[i])}</span>`; ol.appendChild(li);
     if(i<S.step&&!S.skipped[i]){ const m=stepMark(i); if(m) li.classList.add(m); li.title=t("stepStat",{t:fmtTime(stepTime(i)),m:S.stepMis[i]||0}); }
     if(i<S.step&&S.skipped[i]) li.title=t("stepSkipped");
-    if(i>S.step&&BUILD_MODE){ li.classList.add("jump"); li.title=t("stepJump"); li.onclick=()=>skipTo(i); }   // build mode: click to skip ahead to it
+    if(i>S.step&&BUILD_MODE&&clMaySkip(i)){ li.classList.add("jump"); li.title=t("stepJump"); li.onclick=()=>skipTo(i); }   // build mode: click to skip ahead to it
+    if(i>=CL_MAX&&i>S.step){ li.classList.add("locked"); li.title=t("cl_locked"); }   // classroom: not open yet
     if(i===S.step){ renderSteps.cur=li; ol.appendChild(box); } }
   if(S.step>=STEPS) renderSteps.cur=null; updateStepMark();
   const fin=S.step>=STEPS; if(fin) ol.appendChild(box);
