@@ -58,7 +58,7 @@ def app_version():
 
 
 class Server(ThreadingHTTPServer):
-    request_queue_size = 128                                   # 15 PCs loading ~70 files at once; the default 5 drops some
+    request_queue_size = 1024                                  # a whole class reloading at once (New session); the default 5 refuses some
     daemon_threads = True
     allow_reuse_address = False                                # on Windows that would let two servers share a port
 
@@ -86,6 +86,10 @@ class Handler(SimpleHTTPRequestHandler):
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript", ".css": "text/css",
                       ".html": "text/html", ".json": "application/json", ".svg": "image/svg+xml", ".woff2": "font/woff2",
                       ".zip": "application/zip", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}
+
+    # keep-alive: a page is ~85 files, so a PC reuses a few connections instead of opening one per file
+    protocol_version = "HTTP/1.1"
+    timeout = 30                                               # an idle kept-alive connection closes after 30 s
 
     def __init__(self, *a, **kw): super().__init__(*a, directory=ROOT, **kw)
 
@@ -174,7 +178,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def events(self):
         self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream"); self.send_header("Connection", "keep-alive")
+        self.send_header("Content-Type", "text/event-stream")
+        self.close_connection = True                           # the stream has no length: it ends when the connection does
         self.end_headers()
         seen = -1
         try:
