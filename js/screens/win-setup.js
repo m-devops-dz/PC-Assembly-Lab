@@ -179,14 +179,16 @@ function wsNext(){
 }
 /* phase 6: Setup copies from the stick (slower when it was kept in a USB 2.0 port), then counts down to a restart.
    Pulling the stick out before the copy ends is a mistake (install.js); leaving it in at the restart starts Setup again. */
+// WS.copyN: a blue screen (in-challenges.js) stops this copy; a new one starts after the restart
 function wsCopy(){
-  const dur=IN.slow?30000:14000; let last=0;
-  tween(dur,k=>{ WS.prog=k; const n=performance.now(); if(n-last>200){ last=n; if(WS.page==="installing") renderScreen(); } },()=>{ WS.prog=1; wsCopied(); });
+  const dur=IN.slow?30000:14000, n0=WS.copyN=(WS.copyN||0)+1; let last=0;
+  tween(dur,k=>{ if(WS.copyN!==n0) return; WS.prog=k; if(bsodNow(k)) return;
+    const n=performance.now(); if(n-last>200){ last=n; if(WS.page==="installing") renderScreen(); } },()=>{ if(WS.copyN!==n0) return; WS.prog=1; wsCopied(); });
 }
 function wsCopied(){ WS.copied=true; WS.page="restart"; WS.left=restartS(); renderScreen(); inCheck();
   clearInterval(wsCopied.timer);
   wsCopied.timer=setInterval(()=>{ if(WS.page!=="restart"||PC.mode!=="setup") return;
-    if(!inCardEl.hidden) return;                                          // the countdown waits while a card is up
+    if(!inCardEl.hidden||!stepCard.hidden||IN.asking||S.busy) return;    // the countdown waits while a card is up, a question is asked or the stick is moving
     WS.left--; renderScreen(); if(WS.left<=0) wsRestart(); },1000); }
 function wsRestart(){
   clearInterval(wsCopied.timer); if(WS.page!=="restart") return; WS.page="rebooting";

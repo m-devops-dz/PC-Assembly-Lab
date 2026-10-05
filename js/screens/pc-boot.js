@@ -14,7 +14,9 @@ const PC={mode:"off", k:0, boot:0, sel:0, menuSeen:false, ventoySeen:false, setu
 // power symbol (the bundled fonts don't have ⏻)
 const PWR_SVG=`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>`;
 const PC_KEY_MODES=["post","wait","menu","bios","ventoy"];   // the key row shows only before Windows; after it, the mouse does the work
-const PC_KEYS=[["Escape","Esc"],["Delete","Del"],["F10","F10"],["F11","F11"],["ArrowUp","↑"],["ArrowDown","↓"],["Enter","Enter ↵"]];
+const PC_KEYS=[["Escape","Esc"],["Delete","Del"],["F7","F7"],["F10","F10"],["F11","F11"],["ArrowUp","↑"],["ArrowDown","↓"],["Enter","Enter ↵"]];
+// the keys this PC has: F7 (BIOS advanced mode) only with the clickable BIOS, no F11 on the PC without a boot menu key
+const pcKeyList=()=>PC_KEYS.filter(([k])=>k==="F7"?IN.cfg.bios:k==="F11"?!IN.cfg.noF11:true);
 const stickUefi=()=>IN.stick==="pc"&&STICK.boot==="GPT";
 function pcEntries(){ return [...(WS.disks==="used"?[{id:"win",l:"Windows Boot Manager (Samsung SSD 980 PRO 1TB)"}]:[]),
   ...(stickUefi()?[{id:"usb",l:"UEFI: SanDisk Ultra 32GB 1.00, Partition 1"}]:[]), {id:"setup",l:"Enter Setup"}]; }
@@ -29,7 +31,13 @@ function pcPost(delay=0){
   const id=++PC.boot, dur=IN.stick==="pc"?POST_MS:3500;
   if(pcWaitF11()){ PC.mode="post"; PC.k=0; OW.view="lock"; showScreen(screenOn); renderScreen(); return; } PC.mode="post"; PC.k=0; OW.view="lock"; OW.app=OW.start=OW.renaming=false; showScreen(screenOn); renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return;
-    tween(dur,k=>{ if(PC.boot===id&&PC.mode==="post"){ PC.k=k; pcBar(); } },()=>{ if(PC.boot===id&&PC.mode==="post") pcBootDisk(true); }); },delay);
+    tween(dur,k=>{ if(PC.boot===id&&PC.mode==="post"){ PC.k=k; pcBar(); } },()=>{ if(PC.boot===id&&PC.mode==="post") pcPostEnd(); }); },delay);
+}
+// nobody pressed a key: the PC starts from the first device in its boot order (the stick, once the BIOS put it first)
+function pcPostEnd(){
+  if(IN.cfg.bsod){ bsodResume(); return; }                              // the blue-screen challenge: back into Setup's copy
+  if(PC.usbFirst&&stickUefi()&&STICK.iso){ pcVentoy(); return; }
+  pcBootDisk(true);
 }
 // the PC starts from the M.2: on purpose in phase 2 (no stick in), or because nobody pressed F11 / Windows Boot Manager was picked (mistakes).
 // A new PC has nothing on its drives: it falls through to the stick by itself (a note, not a mistake), or has nothing to start.
@@ -38,17 +46,20 @@ function pcBootDisk(missed){
     if(stickUefi()&&STICK.iso){ toast(t("in_autoUsb")); pcVentoy(); }
     else { PC.mode="nodisk"; renderScreen(); }
     return; }
-  const id=PC.boot, wrong=IN.stick==="pc"&&IN.step>=IS.powerF11; PC.mode="load"; PC.loadMsg=""; showScreen(screenOff,.9); renderScreen();
-  setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="oldwin"; OW.view="lock"; renderScreen(); if(wrong) inMistake(missed?"in_m_noF11":"in_m_oldWin"); },2400);
+  const gate=IN.cfg.noF11?IS.biosEnter:IS.powerF11, wrong=IN.stick==="pc"&&IN.step>=gate;
+  const id=PC.boot; PC.mode="load"; PC.loadMsg=""; showScreen(screenOff,.9); renderScreen();
+  setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="oldwin"; OW.view="lock"; renderScreen(); if(wrong) inMistake(IN.cfg.noF11?"in_m_noDel":missed?"in_m_noF11":"in_m_oldWin"); },2400);
 }
 function pcOff(){ PC.boot++; PC.mode="off"; S.powered=false; powerLedMat.color.setHex(0x1a2330); keyboardLights(false); showScreen(screenOff,0); }
 function pcWait(next){ const id=PC.boot; PC.mode="wait"; renderScreen(); setTimeout(()=>{ if(PC.boot===id) next(); },800); }
 function pcKey(k){
   startClock();
   if(PC.mode==="post"){
-    if(k==="F11") pcWait(()=>{ PC.mode="menu"; PC.sel=0; PC.menuSeen=true; renderScreen(); inCheck(); });
+    if(k==="F11"){ if(IN.cfg.noF11){ toast(t("in_noF11")); return; }   // this PC has no boot menu key: nothing happens
+      pcWait(()=>{ PC.mode="menu"; PC.sel=0; PC.menuSeen=true; renderScreen(); inCheck(); }); }
     else if(k==="Delete") pcWait(pcBios);
     return; }
+  if(PC.mode==="bios"&&IN.cfg.bios){ bxKey(k); return; }                // the clickable BIOS (in-challenges.js)
   if(PC.mode==="menu"){ const n=pcEntries().length;
     if(k==="ArrowUp") PC.sel=(PC.sel+n-1)%n; else if(k==="ArrowDown") PC.sel=(PC.sel+1)%n;
     else if(k==="Enter"){ pcChoose(PC.sel); return; } else if(k==="Escape"){ pcChoose(0); return; }   // Esc: boot using defaults
@@ -56,7 +67,7 @@ function pcKey(k){
   if(PC.mode==="bios"){ if(k==="Escape"||k==="F10") pcPost(); return; }
   if(PC.mode==="ventoy"&&k==="Enter") pcIso();
 }
-function pcBios(){ PC.mode="bios"; const tex=pcBiosTex(); showScreen(tex); renderScreen(); }
+function pcBios(){ PC.mode="bios"; PC.biosSeen=true; const tex=pcBiosTex(); showScreen(tex); renderScreen(); inCheck(); }
 const pcBiosCache={};
 function pcBiosTex(){ const k=stickUefi()?"usb":"none"; return pcBiosCache[k]||(pcBiosCache[k]=biosTex(stickUefi()?{usb:"ok"}:{})); }
 function pcChoose(i){
@@ -72,6 +83,7 @@ function pcChoose(i){
 function pcVentoy(){ PC.mode="ventoy"; PC.ventoySeen=true; renderScreen(); inCheck(); }
 function pcIso(){
   if(IN.sc==="usb"){ toast(t("in_usbDone"),"ok"); return; }            // the challenge was the stick: it boots, that's the end
+  if(IN.cfg.bsod&&!WS.copied){ bsodResume(); return; }                  // the blue-screen challenge: the copy never finished, Setup picks it up again
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; PC.setup=true; WS.page="lang"; renderScreen(); inCheck(); },2600); }
@@ -80,9 +92,11 @@ function pcRender(){
   if(SCR.dev!=="pc") return;
   const m=PC.mode; let s="";
   if(m==="post"||m==="wait") s=`<div class="pc post"><b class="pc-msi">MSI</b><small>B450 GAMING PLUS MAX</small>
-      ${m==="wait"?`<p class="pc-hint on">Entering…</p>`:`${pcWaitF11()?`<p class="pc-f11">${t("pc_f11Now")}</p>`:`<div class="pc-post-bar" title="${t("pc_window")}"><i id="pcBar"></i></div>`}<p class="pc-hint">Press DEL key to enter SETUP, F11 to enter Boot Menu</p>`}</div>`;
+      ${m==="wait"?`<p class="pc-hint on">Entering…</p>`:`${pcWaitF11()?`<p class="pc-f11">${t("pc_f11Now")}</p>`:`<div class="pc-post-bar" title="${t("pc_window")}"><i id="pcBar"></i></div>`}<p class="pc-hint">${IN.cfg.noF11?"Press DEL key to enter SETUP":"Press DEL key to enter SETUP, F11 to enter Boot Menu"}</p>`}</div>`;
   else if(m==="menu") s=`<div class="pc menu"><div class="pc-menu"><p>Please select boot device:</p><ul>${pcEntries().map((e,i)=>`<li><button data-k="pick" data-v="${i}" class="${i===PC.sel?"on":""}${e.id==="usb"&&IN.sc==="main"&&S.glow?" point":""}">${e.l}</button></li>`).join("")}</ul>
       <p class="pc-foot">↑ and ↓ to move selection<br>ENTER to select boot device<br>ESC to boot using defaults</p></div></div>`;
+  else if(m==="bios"&&IN.cfg.bios) s=bxRender();
+  else if(m==="bsod") s=bsodRender();
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
   else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&IN.sc!=="usb"?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
@@ -90,7 +104,7 @@ function pcRender(){
   else if(m==="nodisk") s=`<div class="pc nodisk"><p>Reboot and Select proper Boot device<br>or Insert Boot Media in selected Boot device and press a key_</p><button class="pc-power" data-k="restart">↻ ${t("pc_restart")}</button></div>`;
   else if(m==="setup") s=wsRender();
   else s=`<div class="pc"></div>`;
-  const keys=PC_KEY_MODES.includes(m)?`<div class="pc-keys"><span>${t("pc_kb")}</span>${PC_KEYS.map(([k,l])=>`<button data-k="${k}"${k==="F11"?` class="fk${m==="post"&&pcWaitF11()?" point":""}"`:""}>${l}</button>`).join("")}</div>`:"";
+  const keys=PC_KEY_MODES.includes(m)?`<div class="pc-keys"><span>${t("pc_kb")}</span>${pcKeyList().map(([k,l])=>`<button data-k="${k}"${k==="F11"?` class="fk${m==="post"&&pcWaitF11()?" point":""}"`:""}>${l}</button>`).join("")}</div>`:"";
   scrBody.innerHTML=`<div class="pcs">${s}${keys}</div>`;
   pcBar(); const ren=document.getElementById("owName"); if(ren){ ren.focus(); ren.select(); }
 }
@@ -103,7 +117,7 @@ scrBody.addEventListener("click",e=>{
 });
 // the real keyboard (capture, so Esc doesn't also leave full screen and F11 doesn't reach the browser where it can be stopped)
 window.addEventListener("keydown",e=>{
-  if(SCR.dev!=="pc"||!PC_KEY_MODES.includes(PC.mode)||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)||!PC_KEYS.some(([k])=>k===e.key)) return;
+  if(SCR.dev!=="pc"||!PC_KEY_MODES.includes(PC.mode)||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)||!PC_KEYS.some(([k])=>k===e.key)) return;   // F11 too where it does nothing: kept from the browser
   e.preventDefault(); e.stopImmediatePropagation(); if(!e.repeat) pcKey(e.key);
 },true);
 SCREENS.pc={view:()=>screenView(), render:pcRender, back:()=>focus("inDesk",900)};

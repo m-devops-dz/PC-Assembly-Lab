@@ -20,9 +20,13 @@ const IN_SCENARIOS={
   plan:{steps:["diskPlan","diskNew","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
   finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true},
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
-  car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true}
+  car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
+  // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
+  bios:{steps:["stickPc","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
+  bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
+  wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
-const IN_ORDER=["main","usb","used","plan","finish","split","car"];
+const IN_ORDER=["main","bios","usb","used","plan","finish","bsod","split","wifi","car"];
 // the sidebar group a step belongs to
 const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
@@ -106,10 +110,17 @@ function inCheck(){
 function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen(); const id=inCur();
   if((id==="powerF11"||id==="oldBoot")&&!S.powered) setTimeout(()=>{ if(!S.busy&&!SCR.dev) focus("powerBtn",1000); },900);   // plugged in: over to the power button
   if(id==="diskPlan"&&!IN.plan) setTimeout(inPlanCard,700);
-  if(id==="removeStick"&&IN.stick==="pc") setTimeout(()=>inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
-    onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}),1200);   // copied: the countdown waits for this card, then out to the stick
+  // copied: the countdown waits for this card, then out to the stick. The card says what the step card would, so no step card
+  // (two cards at once, and the countdown ran on while the second one was being read)
+  const note=id==="removeStick"&&IN.stick==="pc";
+  if(note) setTimeout(()=>inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
+    onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}),1200);
   if(IN.step>=IN_STEPS.length){ setTimeout(inScDone,1200); return; }
-  if(S.card&&(window.innerWidth<=860||isFs())) inStepCard(); }
+  if(IN_STEP_HOOK[id]) IN_STEP_HOOK[id]();                               // a challenge's own start for this step (in-challenges.js)
+  if(!note) inStepCardSoon(); }
+// phones / full screen: the step's card, once no other card is up (never two cards at once)
+function inStepCardSoon(){ if(!S.card||!(window.innerWidth<=860||isFs())) return; const at=IN.step;
+  const go=()=>{ if(IN.step!==at) return; if(!inCardEl.hidden){ setTimeout(go,400); return; } inStepCard(); }; setTimeout(go,60); }
 function inSkip(){
   if(IN.step>=IN_STEPS.length) return;
   if(S.busy||LAP.dlg&&LAP.dlg.kind!=="info"){ toast(t("e_skipBusy")); return; }
@@ -134,11 +145,12 @@ function inPlanCard(){ if(IN.plan||inCur()!=="diskPlan") return; if(!inCardEl.hi
   inCard(t("in_note"),t("in_plan_t"),inT("in_plan"),{cls:"info choice",buttons:[3,2,1].map(n=>({l:t("in_plan"+n),pri:true,
     fn:()=>{ IN.plan=n; toast(t("in_planOk"+n),"ok"); renderIN(); inCheck(); }}))}); }
 // why take the stick out? asked before it comes out (once); a wrong answer is a mistake and the question comes back
+// IN.asking: the restart countdown waits while it's open (also in the moment between a wrong answer and the question again)
 function inQuiz(){
   if(IN.quizDone){ stickPcOut(false); return; }
-  const ks=shuffle(["a","b","c"]);
+  IN.asking=true; const ks=shuffle(["a","b","c"]);
   inCard(t("in_q"),t("in_q_t"),t("in_q_p"),{cls:"info choice",buttons:ks.map(k=>({l:t("in_q_"+k),pri:true,fn:()=>{
-    if(k==="a"){ IN.quizDone=true; toast(t("in_q_ok"),"ok"); stickPcOut(false); }
+    if(k==="a"){ IN.quizDone=true; IN.asking=false; toast(t("in_q_ok"),"ok"); stickPcOut(false); }
     else { mistake(); shakeRed(); toast(t("in_q_no"),"err"); setTimeout(inQuiz,500); } }}))});
 }
 /* a card over the 3D view: mistakes, a choice (buttons: [{l,fn,pri}]) or the end of a scenario.
@@ -272,15 +284,20 @@ function inClick(d){
     toast(IN.stick==="pc"?t("in_stickBusy"):t("in_notYet",{s:t("in_s_"+id)})); return; }
   if((d.part==="rport"||d.part==="inPort")&&IN.stick==="pc"&&d.port===IN.port){ inClick({part:"inStick"}); return; }
   if(d.part==="rport"||d.part==="inPort"){ if(IN.picking) inPickPort(d.port); return; }
+  if(inChClick(d,id)) return;                                           // the RAM, the side panel, the phone, power off (in-challenges.js)
   if(d.part==="powerBtn"){
     if(S.powered&&WS.page==="again"){ if(IN.stick==="pc"){ toast(t("in_stickFirst2"),"err"); return; } startClock(); pcRestartNew(); return; }   // Setup started over: restart it
     if(S.powered){ openScreen("pc"); return; }
-    if(id!=="oldBoot"&&id!=="powerF11"&&!(IN.step>IS.powerF11)){ toast(t("in_notYet",{s:t("in_s_"+id)})); return; }
+    if(!inPowerOk(id)){ toast(t("in_notYet",{s:t("in_s_"+id)})); return; }
     startClock(); pcPowerOn(); return; }
   if(d.part==="monitor"){ if(S.powered) openScreen("pc"); else toast(t("in_pcOff")); return; }
   if(d.part==="laptop"&&IN.cfg.laptop){ if(IN.stick!=="laptop"&&id==="stickLaptop"){ toast(t("in_e_stickFirst")); return; } startClock(); openScreen("laptop"); return; }
 }
 const IN_LAPTOP_STEPS=["toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject"];
+// steps that start with the PC's power button; once past one, the button works for the rest of the scenario
+const IN_POWER_STEPS=["oldBoot","powerF11","biosEnter","bsodRetry"];
+const inPowerOk=id=>IN_POWER_STEPS.includes(id)||IN_POWER_STEPS.some(s=>s in IS&&IN.step>IS[s]);
+const inPowerNext=id=>IN_POWER_STEPS.includes(id)&&!S.powered;
 const inStickNext=()=>{ const id=inCur(); return id==="stickLaptop"&&IN.stick!=="laptop"||id==="eject"&&LAP.ejected||id==="stickPc"&&!IN.picking||id==="removeStick"&&IN.stick==="pc"; };
 // the pointer arrow: what to click next in the 3D view (nothing while a screen or a card is up)
 function inArrow(){
@@ -289,16 +306,18 @@ function inArrow(){
   if(inStickNext()) return wpos(inStick);
   if(WS.page==="again") return wpos(powerBtn);                       // the stick is out: restart the PC
   if(id==="stickPc") return null;                                     // the free ports glow instead
+  const ch=inChArrow(id); if(ch!==undefined) return ch;
   if(IN_LAPTOP_STEPS.includes(id)) return laptopView().tgt;
-  if(id==="oldBoot"||id==="powerF11") return S.powered?screenView().tgt:wpos(powerBtn);
+  if(IN_POWER_STEPS.includes(id)) return S.powered?screenView().tgt:wpos(powerBtn);
   return S.powered?screenView().tgt:null;                             // everything else happens on the monitor
 }
 function inFrame(now){
   if(!IN.on) return;
   const pulse=.5+.5*Math.sin(now/450), id=inCur(), idle=S.glow&&!S.busy&&!SCR.dev;
   setGlow(inStickMat,idle&&inStickNext(),pulse);
-  setGlow(powerBtnMat,idle&&((id==="powerF11"||id==="oldBoot")&&!S.powered||WS.page==="again"&&IN.stick!=="pc"),pulse);
+  setGlow(powerBtnMat,idle&&(inPowerNext(id)||inChPowerGlow(id)||WS.page==="again"&&IN.stick!=="pc"),pulse);
   if(IN.picking) IN_PORTS.forEach(p=>{ p.mat.opacity=S.glow&&portFree(p)?.25+.45*pulse:0; });
+  inChFrame(id,idle,pulse);
 }
 function inStart(){
   document.body.classList.add("in-mode");
@@ -319,10 +338,11 @@ function inStart(){
     setTimeout(()=>openScreen("pc"),700); }
   if(c.start==="desktop"){                                              // the new PC, already on its desktop
     powerUp(); PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk"}); WS.user=t("in_owner"); setTimeout(()=>openScreen("pc"),700); }
-  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc),{cls:"info"}),1400);
+  inChStart();
+  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc),{cls:"info",onOk:inStepCardSoon}),1400);   // the step card after it, not on top of it
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
-  else if(S.card&&(window.innerWidth<=860||isFs())) inStepCard();
+  else if(!c.intro) inStepCardSoon();
 }
 
 /* ---- sidebar: this scenario's steps, then the list of scenarios ---- */
