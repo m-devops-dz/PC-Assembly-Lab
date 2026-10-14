@@ -36,7 +36,7 @@ function piSvg(r){
 const PI_SCALE=1.3, PI_YAW=-.5, PI_FACE=V3(Math.cos(PI_YAW),0,-Math.sin(PI_YAW));   // pin faces: out to the right and toward the camera
 const PI_HOLE=V3(7.1,3,-2);                                                         // the cable hole on psuG's +x face (psu.js)
 // camera: the PSU, its wires and plugs, nudged away from the card (it sits at the inline end: left in Arabic, right in English)
-function piCam(){ return {pos:V3(89.6,34.2,19.1),tgt:V3(65,.5,-5)}; }
+function piCam(){ return {pos:V3(97.6,45,26.6),tgt:V3(65,.5,-5)}; }   // 1.3× farther than before: the plugs were cut off
 const PI={on:false,sel:0,seen:new Set(),sets:[],built:false,shown:false};
 const piRed=new T.MeshStandardMaterial({color:0xa80c12,emissive:0xff0a00,emissiveIntensity:.3,roughness:.5});
 const piWireMat=new T.MeshStandardMaterial({color:0x18191c,roughness:.6});
@@ -147,7 +147,7 @@ function closePsuInspect(take){
   if(!PI.on) return;
   PI.on=false; piBeads.forEach(b=>b.visible=false); piPaint();
   if(take){ S.psuSeen=true; const it=piItem(); S.fromTable=it&&it.home.visible?it.pivot.getWorldPosition(V3(0,0,0)):null;   // it flies in from the mat
-    takePSU(); S.fromTable=null; focus(viewFor(S.step),1000); }
+    takePSU(); S.fromTable=null; stepView(1000); }
 }
 const hidePsuInfo=()=>closePsuInspect(false);
 // the yellow arrow (hints.js) stands over the red plug

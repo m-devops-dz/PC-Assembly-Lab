@@ -81,7 +81,9 @@ function themeZip(file){
     const s=document.createElement("script"); s.src="themes/"+file+".js";
     s.onload=()=>have()?ok(have()):err(new Error("missing")); s.onerror=()=>err(new Error("missing")); document.head.appendChild(s); }));
 }
-async function pickTheme(id,quiet){
+// one at a time: the start-up pick and the classroom's (classroom.js) can overlap, and the last one asked must win
+function pickTheme(id,quiet){ return pickTheme.q=(pickTheme.q||Promise.resolve()).then(()=>pickThemeNow(id,quiet)); }
+async function pickThemeNow(id,quiet){
   themeSel.disabled=true;
   try{
     if(id==="none") clearPhotos();
@@ -93,7 +95,7 @@ async function pickTheme(id,quiet){
     drawThumbs(); renderPhotoUI();
     if(!quiet) toast(id==="none"?t("ok_photoClear"):t("ok_theme",{n:themeName||t("themeCustom"),c:Object.keys(photoBlobs).length}),"ok");
   }catch(e){ if(!quiet) toast(t(e.message==="nozip"?"e_themeLib":"e_themeMissing"),"err"); renderThemeSel(); }
-  themeSel.disabled=false;
+  themeSel.disabled=CL.on&&!!CL.st.theme;                                 // the teacher chose the theme for everyone
 }
 themeSel.onchange=()=>pickTheme(themeSel.value);
 photoDB("readonly",st=>st.get("theme")).then(rec=>{

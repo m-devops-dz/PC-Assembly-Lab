@@ -35,8 +35,11 @@ const rearBlades=new T.Group(); rearFan.add(rearBlades);
 mesh(new T.CylinderGeometry(1.8,1.8,2,24),new T.MeshStandardMaterial({color:0x1d1e22,roughness:.5}),[0,0,0],rearBlades).rotation.z=Math.PI/2;
 for(let i=0;i<7;i++){ const p=new T.Group(); p.rotation.x=i*Math.PI*2/7; rearBlades.add(p); const b=mesh(box(.06,3.4,1.9),new T.MeshStandardMaterial({color:0x222327,roughness:.5,side:T.DoubleSide}),[0,3.4,0],p); b.rotation.y=.5; }
 // rear fan lead → SYS_FAN1. Targets are WORLD space (the board is in the case at this step); CPU_FAN1 already has the cooler on it.
-makeCable("caseFan",{parent:scene,color:0x1a1a1d,radius:.06,plugColor:0x111214,plugSize:[1.05,.42,.36],maxLen:24,hoverY:L.y+2.6,floorY:L.y+.6,
-  anchor:()=>V3(CX0+2.4,7.8,L.z-3.2), outDir:()=>V3(.8,-1,0),
+makeCable("caseFan",{parent:scene,color:0x1a1a1d,radius:.032,wires:FAN3_WIRES,gap:.075,plugColor:0xe9e4d6,plugSize:[1.05,.42,.36],maxLen:24,hoverY:L.y+2.6,floorY:L.y+.6,
+  anchor:()=>V3(CX0+2.4,8.2,L.z-11.8), outDir:()=>V3(.8,-1,0),          // the fan frame's corner nearest the top wall
+  // around the board, not across it (it ran through the VRM heatsink and the cooler): down the rear wall, along the gap between
+  // the board's top edge and the case's top wall, then in over the edge, right of CPU_FAN1's plug and above the empty DIMM slot
+  route:()=>[V3(CX0+2.6,6,L.z-13.6),V3(CX0+4.5,L.y+.5,L.z-14.4),V3(L.x+1,L.y+.5,L.z-14.4),V3(L.x+3.05,L.y+1.6,L.z-12.6),V3(L.x+3.05,L.y+1.6,L.z-10)],
   spawnPos:()=>V3(L.x+1,L.y+2.6,L.z-12.8),
   targets:()=>HEADERS.map(h=>({name:h.name,x:L.x+h.x,z:L.z+h.z,seatY:L.y+.3,rot:h.rot,ok:!h.ok,err:"e_caseFanCpu"})),
   okMsg:"ok_caseFan"});

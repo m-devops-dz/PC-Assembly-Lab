@@ -10,7 +10,7 @@ function pick(e){ setNDC(e); const hits=ray.intersectObjects(scene.children,true
   // choosing a port: plugs already seated next to it (USB above the board's HDMI) must not swallow the click
   if(S.connPick){ const h=hits.find(h=>(h.object.userData.part==="rport"||h.object.userData.part==="sport"||h.object.userData.part==="inPort")&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }
   if(IN.on){ const h=hits.find(h=>h.object.userData.part==="inStick"&&visible(h.object)); if(h) return {d:h.object.userData,o:h.object}; }   // install mode: the stick wins over cables in front of it
-  for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(TS.on&&o.userData.part==="sidePanel") continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
+  for(const h of hits){ const o=h.object; if(o.isSprite||!visible(o)) continue; if(TS.on&&o.userData.part==="sidePanel") continue; if(o.userData.part==="fanHdr"&&!fanAsk) continue; if(o.userData&&o.userData.part) return {d:o.userData,o}; if(S.held==="board"&&isDesc(o,boardRoot)) return {d:{part:"board"},o}; }
   return null; }
 function grabbable(p){
   if(!p||!S.held||S.held==="conn") return false;
@@ -19,10 +19,12 @@ function grabbable(p){
   if(S.held==="ram") return p.d.part==="ram"&&p.d.ram===S.ram;
   return p.d.part===S.held;
 }
+function isFixedPart(p){ return !!S.held&&!!HELD[S.held]&&!!HELD[S.held].fixed&&grabbable(p); }
 vp.addEventListener("pointerdown",e=>{
   if(e.target!==renderer.domElement) return;
   downXY=[e.clientX,e.clientY]; moved=false;
   const p=pick(e); if(!canManipulate()||!grabbable(p)) return;
+  if(HELD[S.held].fixed){ if(S.fixedTip!==S.step){ S.fixedTip=S.step; toast(t("e_fixedPart")); } return; }   // over its place already: turn it, don't move it
   const o=HELD[S.held].obj(), w=o.getWorldPosition(V3(0,0,0));
   dragging=true; controls.enabled=false;
   plane.constant=-w.y; ray.ray.intersectPlane(plane,hitP); dragOff.set(w.x-hitP.x,0,w.z-hitP.z);
@@ -41,7 +43,7 @@ window.addEventListener("pointermove",e=>{
     const local=o.parent.worldToLocal(V3(x,0,z)); o.position.x=local.x; o.position.z=local.z;
     return;
   }
-  if(e.target===renderer.domElement&&!downXY){ const p=pick(e); renderer.domElement.style.cursor=grabbable(p)?"grab":p?"pointer":"default"; }
+  if(e.target===renderer.domElement&&!downXY){ const p=pick(e); renderer.domElement.style.cursor=grabbable(p)&&!isFixedPart(p)?"grab":p?"pointer":"default"; }
 });
 window.addEventListener("pointerup",e=>{
   if(dragging){ dragging=false; controls.enabled=true; renderer.domElement.style.cursor="grab"; downXY=null; return; }
@@ -54,7 +56,7 @@ window.addEventListener("pointerup",e=>{
       if(d.part==="lever") clickLever(); else if(d.part==="slot") clickSlot(d.slot); else if(d.part==="bracket") clickBracket();
       else if(d.part==="screw") clickScrew(d.screw); else if(d.part==="m2screw") clickM2Screw(); else if(d.part==="conn") clickConn(d.conn);
       else if(d.part==="mbscrew") clickBoardScrew(d.screw); else if(d.part==="pcieLatch") clickPcieLatch(); else if(d.part==="sidePanel") clickSidePanel();
-      else if(d.part==="rport") clickRearPort(d.port); else if(d.part==="sport") clickSataPort(d.port); else if(d.part==="powerBtn") clickPowerBtn(); else if(d.part==="table") clickTablePart(d.id); else if(d.part==="psuPlug") PI.on?piSelect(d.k):clickTablePart("psu"); }
+      else if(d.part==="rport") clickRearPort(d.port); else if(d.part==="sport") clickSataPort(d.port); else if(d.part==="powerBtn") clickPowerBtn(); else if(d.part==="table") clickTablePart(d.id); else if(d.part==="fanHdr") pickFanHeader(d.i); else if(d.part==="psuPlug") PI.on?piSelect(d.k):clickTablePart("psu"); }
   }
   downXY=null;
 });

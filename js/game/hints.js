@@ -13,6 +13,26 @@ const hintArrow=hintSprite2((g,W,H)=>{ g.lineJoin="round";
   g.beginPath(); g.moveTo(W*.37,H*.04); g.lineTo(W*.63,H*.04); g.lineTo(W*.63,H*.5); g.lineTo(W*.86,H*.5); g.lineTo(W*.5,H*.93); g.lineTo(W*.14,H*.5); g.lineTo(W*.37,H*.5); g.closePath();
   g.lineWidth=14; g.strokeStyle="#111"; g.stroke(); g.fillStyle="#ffc400"; g.fill(); },.5,.04);
 const hintRing=hintSprite2((g,W)=>{ g.beginPath(); g.arc(W/2,W/2,W*.4,0,7); g.lineWidth=22; g.strokeStyle="rgba(17,17,17,.6)"; g.stroke(); g.lineWidth=14; g.strokeStyle="#ffc400"; g.stroke(); },.5,.5);
+// numbered badge (a sprite texture): fan headers (fan-pick.js) and the cooler screws' X order
+const numBadgeCache={};
+function numBadgeTex(n,fill="#ffc400",ink="#111"){ const k=n+fill; return numBadgeCache[k]||(numBadgeCache[k]=canvasTex(256,256,(g,W)=>{ g.beginPath(); g.arc(W/2,W/2,W*.42,0,7);
+  g.fillStyle=fill; g.fill(); g.lineWidth=16; g.strokeStyle="#111"; g.stroke();
+  g.fillStyle=ink; g.textAlign="center"; g.textBaseline="middle"; g.font="800 150px 'Barlow Semi Condensed', Arial"; g.fillText(String(n),W/2,W*.53); })); }
+function numBadge(){ const sp=new T.Sprite(new T.SpriteMaterial({map:numBadgeTex(1),depthTest:false,depthWrite:false,transparent:true,toneMapped:false}));
+  sp.center.set(.5,0); sp.renderOrder=11; sp.visible=false; sp.raycast=()=>{}; scene.add(sp); return sp; }
+// X pattern: a number over each cooler screw, in the order still to go (1 and 2 red: a diagonal pair, 3 and 4 yellow: the other pair).
+// It follows the student: whatever screw went first, the next number is always the one opposite it
+const screwBadges=coolerScrews.map(()=>numBadge());
+function screwPlan(){ const o=S.tightOrder.slice(), opp=i=>(i+2)%4;
+  if(o.length%2) o.push(opp(o[o.length-1]));
+  const rest=[0,1,2,3].filter(i=>!o.includes(i));
+  if(rest.length===4) o.push(0,2,1,3); else if(rest.length===2) o.push(rest[0],opp(rest[0]));
+  return o; }
+function updateScrewBadges(){
+  const on=BUILD_MODE&&S.step===ST.coolerScrews, plan=on?screwPlan():[];
+  screwBadges.forEach((b,i)=>{ const n=plan.indexOf(i); b.visible=on&&!coolerScrews[i].tight; if(!b.visible) return;
+    const tex=numBadgeTex(n+1,n<2?"#e53935":"#ffc400",n<2?"#fff":"#111"); if(b.material.map!==tex){ b.material.map=tex; b.material.needsUpdate=true; }
+    const p=wpos(coolerScrews[i].head,.5), s=camera.position.distanceTo(p)*.04; b.position.copy(p); b.scale.set(s,s,1); }); }
 
 S.hintsLeft=5;
 let hintUntil=0, hintStep=-1, coachOff=false, coachKey="", glowEls=[];
@@ -56,6 +76,7 @@ function hintInfo(){
     if(!snapOk(h)) return {pos:heldTarget(h),msg:"h_drag",fix:true};
     return {el:el("dropBtn"),msg:"h_drop"};
   }
+  if(fanAsk){ const i=fanAsk.c.tgts.findIndex(x=>x.ok); return {pos:wpos(HEADERS[i].group,.6),el:fanAskEl.querySelectorAll(".quiz-choice")[i],msg:"fp_hint"}; }
   const tray={[ST.takeCpu]:"cpu",[ST.ram1]:"ram"+(S.used.ram0?1:0),[ST.ram2]:"ram"+(S.used.ram0?1:0),[ST.paste]:"paste",[ST.cooler]:"cooler",[ST.m2In]:"m2",
     [ST.battery]:"battery",[ST.psu]:"psu",[ST.boardScrews]:"screws",[ST.gpu]:"gpu",[ST.sata]:"sata",[ST.wifi]:"wifi",[ST.antennas]:"antennas"}[st];
   if(tray) return S.tray?{el:trayBtn(tray),msg:"h_tray"}:{pos:tablePos(tray),msg:"h_table"};
@@ -63,7 +84,7 @@ function hintInfo(){
   if(st===ST.clips){ const pos=clipPos(); return pos&&{pos,msg:"h_click"}; }
   if(st===ST.bracket) return {pos:wpos(bracketScrews[0],.3),msg:"h_click"};
   if(st===ST.coolerScrews){ const o=S.tightOrder, i=o.length%2?(o[o.length-1]+2)%4:coolerScrews.findIndex(s=>!s.tight); return {pos:wpos(coolerScrews[i].g,.3),msg:"h_click"}; }
-  if(st===ST.m2Out||st===ST.m2Screw) return {pos:wpos(m2Screw,.1),msg:"h_click"};
+  if(st===ST.m2Out) return {pos:wpos(m2Screw,.1),msg:"h_click"};
   if(st===ST.board) return {pos:wpos(boardRoot,1),msg:"h_click"};
   if(st===ST.pcieLatch) return {pos:wpos(pcieLatch,.3),msg:"h_click"};
   if(st===ST.closeCase) return {pos:wpos(sideG,.3),msg:"h_click"};
@@ -137,9 +158,11 @@ function updateHints(now){
   let pos=TS.on?tsArrow():IN.on?inArrow():PI.on?piArrowPos():info&&info.pos;
   if(BUILD_MODE&&!pos&&S.glow&&(S.step===ST.leverUp||S.step===ST.leverDown)&&!S.busy) pos=wpos(grip);   // the lever is easy to miss: always point at it
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.clips&&!S.busy) pos=clipPos();                                   // and the small memory clips
+  if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.bracket&&!S.busy) pos=wpos(bracketScrews[0],.3);                 // and the retention bracket around the socket
   if(BUILD_MODE&&!pos&&S.step===ST.psu&&now<(S.psuHoleAt||0)) pos=V3(CX0-.3,7.9-3.4,L.z+18.2+3.6);       // PSU upside down: the offset rear-wall hole has no screw hole across from it                                   // and the small memory clips
   if(BUILD_MODE&&!pos&&S.glow&&S.step===ST.powerOn&&!S.busy) pos=wpos(powerBtn);                          // so is the power button, on the far side of the case
   if(!pos&&S.glow&&gpuCableNag(now)){ CONN.gpu8.a.outer.updateMatrixWorld(true); pos=wpos(CONN.gpu8.a.outer); }
+  updateScrewBadges();
   hintArrow.visible=hintRing.visible=!!pos;
   if(pos){ const s=camera.position.distanceTo(pos)*.07, k=(now%1100)/1100;
     hintArrow.scale.set(s*.6,s,1); hintArrow.position.copy(pos); hintArrow.position.y+=s*(.25+.2*Math.abs(Math.sin(now/260)));

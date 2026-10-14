@@ -30,7 +30,7 @@ label.chk{ display:flex; gap:8px; align-items:center; }
 table{ width:100%; border-collapse:collapse; }
 th,td{ text-align:start; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
 th{ font-size:13px; color:var(--muted); font-weight:600; }
-td.num{ font-variant-numeric:tabular-nums; }
+td.num{ font-variant-numeric:tabular-nums; white-space:nowrap; }
 td.ip{ direction:ltr; text-align:end; color:var(--muted); font-size:13px; }
 .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--err); margin-inline-end:6px; }
 .dot.on{ background:var(--ok); }
@@ -43,6 +43,14 @@ tr.off td{ opacity:.5; }
 .summary b{ color:var(--ink); font-size:18px; }
 .empty{ color:var(--muted); padding:20px 0; text-align:center; }
 .small{ font-size:13px; padding:4px 10px; }
+.set{ display:grid; grid-template-columns:auto 1fr; gap:8px 10px; align-items:center; }
+.tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
+.tools select{ flex:0 1 auto; }
+#heads th[data-sort]{ cursor:pointer; user-select:none; white-space:nowrap; }
+#heads th[data-sort]:hover, #heads th.sorted{ color:var(--ink); }
+#heads th[data-sort]::after{ content:attr(data-arrow); margin-inline-start:4px; font-size:11px; }
+.ren{ border:0; background:none; padding:2px 6px; color:var(--muted); cursor:pointer; }
+.ren:hover{ color:var(--ink); }
 </style>
 </head>
 <body>
@@ -74,6 +82,15 @@ tr.off td{ opacity:.5; }
       <div class="row"><select id="tsCase"></select></div>
     </section>
     <section>
+      <h2>إعدادات العرض (لكل الطلاب)</h2>
+      <div class="set">
+        <span>شريط القطع</span><select id="setTray"><option value="">الطالب يختار</option><option value="1">إظهار</option><option value="0">إخفاء</option></select>
+        <span>التوضيحات</span><select id="setGlow"><option value="">الطالب يختار</option><option value="1">تشغيل</option><option value="0">إيقاف</option></select>
+        <span>السمة</span><select id="setTheme"></select>
+      </div>
+      <p class="hint">ما تختاره هنا يُطبَّق فورًا على كل الطلاب ويُقفل الزر عندهم. «الطالب يختار» يفكّ القفل.</p>
+    </section>
+    <section>
       <h2>القسم</h2>
       <div class="row"><button class="danger" id="pause">إيقاف مؤقت: انتبهوا</button></div>
       <div class="row"><button id="newSession">حصة جديدة</button></div>
@@ -84,7 +101,9 @@ tr.off td{ opacity:.5; }
   <section>
     <h2>الطلاب</h2>
     <div class="summary" id="summary"></div>
-    <table><thead><tr><th>الطالب</th><th>الحاسوب (IP)</th><th>الوضع</th><th>التقدم</th><th>المرحلة الحالية</th><th>أخطاء</th><th>الوقت</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <div class="tools"><span class="hint">انقر على عنوان عمود للترتيب حسبه، وانقر مرة أخرى لعكس الترتيب. القائمة تُرتَّب من جديد كل ثانيتين.</span>
+      <button id="csvBtn">تصدير CSV</button></div>
+    <table><thead><tr id="heads"><th data-sort="name">الطالب</th><th data-sort="ip">الحاسوب (IP)</th><th data-sort="first">البدء</th><th data-sort="mode">الوضع</th><th data-sort="prog">التقدم</th><th data-sort="step">المرحلة الحالية</th><th data-sort="mistakes">أخطاء</th><th data-sort="time">الوقت</th><th></th></tr></thead><tbody id="rows"></tbody></table>
     <p class="empty" id="empty">لا أحد بعد. يفتح الطلاب العنوان المكتوب في الأعلى ويكتبون أسماءهم.</p>
   </section>
 </main>
@@ -95,13 +114,16 @@ lang="ar";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
-let ST={}, STEP_IDS=[], IN_ORDER=[], TS_CASES=[];
+let ST={}, STEP_IDS=[], IN_ORDER=[], TS_CASES=[], THEMES=[], LIST=[];
 
 // the lists come straight from the app's own files, so a new step or challenge shows up here by itself
 async function grab(file,re){ const m=(await (await fetch(file,{cache:"no-store"})).text()).match(re); return m?JSON.parse(m[1]):[]; }
 async function catalog(){
   [STEP_IDS,IN_ORDER,TS_CASES]=await Promise.all([grab("/js/game/state.js",/const STEP_IDS=(\[[\s\S]*?\]);/),
     grab("/js/game/install.js",/const IN_ORDER=(\[[\s\S]*?\]);/),grab("/js/game/trouble.js",/const TS_CASES=(\[[\s\S]*?\]\]);/)]);
+  const ph=await (await fetch("/js/game/photos.js",{cache:"no-store"})).text(), bt=ph.match(/const BUILTIN_THEMES=\{([^}]*)\}/);   // theme1, theme2, …
+  THEMES=[...(bt?[...bt[1].matchAll(/(\w+)\s*:/g)].map(m=>m[1]):[]),"none"];
+  $("setTheme").innerHTML=`<option value="">الطالب يختار</option>`+THEMES.map(k=>`<option value="${k}">${esc(t("th_"+k))}</option>`).join("");
   const stepOpt=(i,id)=>`<option value="${i+1}">${i+1}. ${esc(t("s_"+id))}</option>`;
   $("to").innerHTML=`<option value="0">كل المراحل</option>`+STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
   $("goto").innerHTML=STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
@@ -119,6 +141,8 @@ function renderState(){
   $("modes").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.mode===ST.mode));
   $("buildBox").hidden=ST.mode!=="build"; $("installBox").hidden=ST.mode!=="install"; $("troubleBox").hidden=ST.mode!=="trouble";
   if(document.activeElement!==$("to")) $("to").value=ST.to||0;
+  const tri=v=>v===true?"1":v===false?"0":"";
+  $("setTray").value=tri(ST.tray); $("setGlow").value=tri(ST.glow); $("setTheme").value=ST.theme||"";
   $("skip").checked=!!ST.skip; $("challenge").value=ST.challenge||""; $("tsCase").value=ST.tsCase??-1;
   $("pause").classList.toggle("on",!!ST.pause); $("pause").textContent=ST.pause?"استئناف الحصة":"إيقاف مؤقت: انتبهوا";
 }
@@ -130,8 +154,14 @@ $("skip").onchange=()=>send({skip:$("skip").checked});
 $("challenge").onchange=()=>send({challenge:$("challenge").value});
 $("tsCase").onchange=()=>send({tsCase:+$("tsCase").value});
 $("pause").onclick=()=>send({pause:!ST.pause});
+const triVal=v=>v===""?null:v==="1";
+$("setTray").onchange=()=>send({tray:triVal($("setTray").value)});
+$("setGlow").onchange=()=>send({glow:triVal($("setGlow").value)});
+$("setTheme").onchange=()=>send({theme:$("setTheme").value});
 // one listener for the table (its rows are redrawn): Reset = the student starts over with a new name
-$("rows").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; b.disabled=true;
+$("rows").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.rename){ const n=prompt("اسم الطالب:",b.dataset.name); if(n&&n.trim()&&n.trim()!==b.dataset.name) send({rename:{id:b.dataset.rename,name:n.trim()}}).then(poll); return; }
+  b.disabled=true;
   if(b.dataset.reset) send({resetStudent:b.dataset.reset}).then(poll);
   else if(b.dataset.forget) send({forget:b.dataset.forget}).then(poll); });
 $("newSession").onclick=()=>{ if(confirm("بدء حصة جديدة؟ كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1.")) send({newSession:true}).then(poll); };
@@ -144,18 +174,51 @@ function stepName(s){
   if(s.mode==="trouble") return s.tsCase==null?"يختار حالة":t("ts_case",{n:s.tsCase+1})+" · "+({power:"تشغيل",check:"فحص",fix:"إصلاح",retry:"إعادة التشغيل",solved:"حُلّت ✓"}[s.phase]||"");
   return "";
 }
+// sorting: a click on a column heading sorts by it, a second click flips it. Each column starts the useful way round:
+// names, IPs, start times A→Z / earliest first; progress, mistakes, time taken most first. Default: most progress first.
+// The list is sorted again on every poll (2 s), so it follows the class live
+const prog=s=>s.steps?Math.min(s.step,s.steps)/s.steps:s.done?s.done.length/100:0;
+const ipKey=ip=>String(ip||"").split(".").map(n=>String(+n||0).padStart(3,"0")).join(".");
+const clock=sec=>sec?new Date(sec*1000).toLocaleTimeString("ar-DZ-u-nu-latn",{hour:"2-digit",minute:"2-digit"}):"";
+const SORT_UP={name:(a,b)=>a.name.localeCompare(b.name,"ar"), ip:(a,b)=>ipKey(a.ip).localeCompare(ipKey(b.ip)), first:(a,b)=>(a.first||0)-(b.first||0),
+  mode:(a,b)=>String(a.mode).localeCompare(String(b.mode)), prog:(a,b)=>prog(a)-prog(b), step:(a,b)=>stepName(a).localeCompare(stepName(b),"ar"),
+  mistakes:(a,b)=>(a.mistakes||0)-(b.mistakes||0), time:(a,b)=>(a.time||0)-(b.time||0)};
+const SORT_DOWN_FIRST=["prog","mistakes","time"];
+let SORT={k:"prog",dir:-1};
+try{ const sv=JSON.parse(localStorage.getItem("teacherSort")); if(sv&&SORT_UP[sv.k]) SORT=sv; }catch(e){}
+function sortList(l){ const c=SORT_UP[SORT.k];
+  return l.sort((a,b)=>SORT.dir*c(a,b)||SORT_UP.name(a,b)); }
+function renderHeads(){ document.querySelectorAll("#heads th[data-sort]").forEach(th=>{ const on=th.dataset.sort===SORT.k;
+  th.classList.toggle("sorted",on); th.setAttribute("aria-sort",on?(SORT.dir>0?"ascending":"descending"):"none");
+  th.dataset.arrow=on?(SORT.dir>0?"▲":"▼"):""; }); }
+$("heads").onclick=e=>{ const th=e.target.closest("th[data-sort]"); if(!th) return; const k=th.dataset.sort;
+  SORT=SORT.k===k?{k,dir:-SORT.dir}:{k,dir:SORT_DOWN_FIRST.includes(k)?-1:1};
+  try{ localStorage.setItem("teacherSort",JSON.stringify(SORT)); }catch(e){}
+  renderHeads(); poll.last=""; poll(); };
+renderHeads();
+// CSV in the list's current order; the BOM lets Excel read the Arabic
+$("csvBtn").onclick=()=>{
+  const q=v=>{ v=String(v??""); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const head=["الطالب","IP","البدء","الوضع","التقدم","النسبة %","المرحلة الحالية","أخطاء","الوقت","متصل"];
+  const rows=LIST.map(s=>[s.name,s.ip,s.first?new Date(s.first*1000).toLocaleString("sv-SE"):"",t("mode_"+s.mode),
+    s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),s.online?"نعم":"لا"]);
+  const csv="﻿"+[head,...rows].map(r=>r.map(q).join(",")).join("\r\n");
+  const a=document.createElement("a"), d=new Date(), p=n=>String(n).padStart(2,"0");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`class-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
 async function poll(){
   try{
     const d=await (await fetch("/api/students",{cache:"no-store"})).json();
     if(JSON.stringify(d.state)!==JSON.stringify(ST)){ ST=d.state; renderState(); }
     $("urls").innerHTML=d.urls&&d.urls.length?"يفتح الطلاب: "+d.urls.map(u=>`<b>${esc(u)}</b>`).join(" أو "):"";
-    const list=d.students.sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+    const list=LIST=sortList(d.students);
     $("empty").hidden=list.length>0;
     const on=list.filter(s=>s.online), wait=on.filter(s=>s.wait).length;
     $("summary").innerHTML=`<span><b>${on.length}</b> متصل</span>`+(ST.mode==="build"&&ST.to?`<span><b>${wait}</b> من ${on.length} أنهوا المراحل المفتوحة</span>`:"");
     const html=list.map(s=>{ const p=s.steps?Math.round(100*Math.min(s.step,s.steps)/s.steps):0;
-      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}${s.wait?`<span class="tag">ينتظر</span>`:""}</td>
-        <td class="num ip">${esc(s.ip)}</td><td>${esc(t("mode_"+s.mode))}</td>
+      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}<button class="ren" data-rename="${esc(s.id)}" data-name="${esc(s.name)}" title="تعديل الاسم" aria-label="تعديل الاسم">✎</button>${s.wait?`<span class="tag">ينتظر</span>`:""}</td>
+        <td class="num ip">${esc(s.ip)}</td><td class="num">${esc(clock(s.first))}</td><td>${esc(t("mode_"+s.mode))}</td>
         <td class="num">${s.steps?`<span class="bar"><i style="width:${p}%"></i></span>${Math.min(s.step,s.steps)}/${s.steps}`:s.done?s.done.length+" ✓":""}</td>
         <td>${esc(stepName(s))}</td><td class="num">${s.mistakes>2?`<span class="tag warn">${s.mistakes}</span>`:s.mistakes||0}</td><td class="num">${fmt(s.time||0)}</td>
         <td>${s.online?`<button class="small" data-reset="${esc(s.id)}" data-name="${esc(s.name)} (${esc(s.ip)})">إعادة</button>`:`<button class="small" data-forget="${esc(s.id)}">احذف</button>`}</td></tr>`; }).join("");

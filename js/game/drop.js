@@ -26,6 +26,7 @@ function drop(){
     if(r===1||r===3) return wrong("e_holes",coolerYaw,COOLER_HOVER,2.4);
     if(r===2) return wrong("e_cable",coolerYaw,COOLER_HOVER,2.4);
     focus("coolerDrop",1100);                                              // swing down to 45° to watch it settle
+    if(BUILD_MODE) showPasteDemo();                                        // how the paste spreads under it (paste.js)
     seat(coolerYaw,COOLER_SEAT,1100,()=>{ pasteDot.scale.set(3.6,.03,3.6); toast(t("ok_cooler"),"ok"); setStep(ST.coolerScrews); });
   } else if(type==="m2"){
     if(!sn){ toast(t("e_m2Above"),"err"); return; }
@@ -35,7 +36,7 @@ function drop(){
     const p0=m2G.position.clone(), pre=seat.clone().addScaledVector(ax,-1.4), r0=m2G.rotation.z;
     tween(700,k=>{ m2G.position.lerpVectors(p0,pre,k); m2G.rotation.z=r0+(A-r0)*k; },()=>{
       tween(600,k=>{ m2G.position.lerpVectors(pre,seat,k); },()=>{
-        tween(700,k=>{ m2G.rotation.z=A*(1-k); },()=>{ S.busy=false; toast(t("ok_m2"),"ok"); setStep(ST.m2Screw); },easeOut); }); });
+        tween(700,k=>{ m2G.rotation.z=A*(1-k); },()=>{ toast(t("ok_m2"),"ok"); m2ScrewIn(); },easeOut); }); });
   } else if(type==="psu"){
     if(!sn){ toast(t("e_psuAbove"),"err"); return; }
     if(mod(S.rot.psu,2)!==0){ S.psuHoleAt=performance.now()+7000; return wrong("e_psuTurn",psuG,PSU_HOVER,PSU_HOVER-5); }   // the arrow shows a rear-wall hole left without a match (hints.js)

@@ -19,13 +19,13 @@ const VIEWS={ cpu:{pos:[-0.6,25,6.2],tgt:[-2.5,0.6,-5]}, ram:{pos:[6.8,31,-3.8],
   coolerTop:{pos:[-3,36,-2.4],tgt:[-3,1,-3]}, coolerDrop:{pos:[-1,24,19],tgt:[-1,1,-3]},   // placing the cooler: straight down; lowering it and the screws: 45° from the front
   fan:{pos:[9,13,1],tgt:[0,1,-8.5]},
   m2:{pos:[3,15,19],tgt:[-1,.5,5.5]}, m2Screw:{pos:[-2.6,7.5,12.5],tgt:[-5.4,.4,6.6]},   // close on the M.2 screw
-  m2Table:{pos:[7,38,14],tgt:[7,0,-1]},                                // the M.2 socket and the screw lying on the parts mat
   psu:{pos:[-93.9,31.2,-29.2],tgt:[4.9,16.2,-32.2]}, "case":{pos:[-35,58.2,-47.4],tgt:[0,0,-25]}, caseClose:{pos:[-35,58.2,-47.4],tgt:[2,4,-47]},
   gpu:{pos:[-4.8,55,-32.2],tgt:[-5.1,6.4,-46.3]}, sata:{pos:[36,28,-16],tgt:[18,2,-40]}, sataTop:{pos:[22.5,34,-34.4],tgt:[22.5,.75,-35]},
   sataPorts:{pos:[5,15,-29],tgt:[21,3,-35]},                          // SSD in hand: from the motherboard's side, so its SATA ports face the camera once it's turned right
   all:{pos:[96,46,-24],tgt:[22,10,-70]},
   atx24:{pos:[33,40,-45],tgt:[13,2,-52]}, cpuPwr:{pos:[4,34,-48],tgt:[-8,3,-60]},
-  battery:{pos:[-1.5,15,18],tgt:[-1.5,.5,9]}, boardTop:{pos:[2,46,-33],tgt:[0,1,-50]}, pcie:{pos:[5,12,-57],tgt:[-5,1,-47]},
+  battery:{pos:[-1.5,20,12.6],tgt:[-1.5,.5,9.4]},                   // almost straight down on BAT1: from an angle the hovering cell looked over the holder when it wasn't
+  boardTop:{pos:[2,46,-33],tgt:[0,1,-50]}, pcie:{pos:[5,12,-57],tgt:[-5,1,-47]},
   gpuPwr:{pos:[16,36,-22],tgt:[12,6,-46]}, gpuPwrPlug:{pos:[5.5,40,-25],tgt:[1,9,-48]}, frontPanel:{pos:[12.1,25.1,-38.3],tgt:[13,1.5,-41]}, caseFan:{pos:[18,38,-42],tgt:[-6,3,-58]},
   frontUsb:{pos:[24,27,-35],tgt:[13.9,1.5,-47.8]},
   rearIO:{pos:[-40,15,-49],tgt:[-16,3,-48]},

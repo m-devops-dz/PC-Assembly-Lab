@@ -26,14 +26,17 @@ INJECT = b"<script>window.CLASSROOM=true</script>\n"
 # choice). tsCase: troubleshooting case index (-1 = free choice). goto / msg: {n|text, seq}: seq is the send time (ms),
 # so each student applies it once, even after a server restart. session: a new one (the teacher's "New session") makes
 # every page forget its name and progress; resets: {student id: time}, the same for one student. pause: everyone's screen shows "eyes on the teacher". skip: Ctrl+H / sidebar skips allowed.
+# tray / glow: the parts bar and the highlights forced on (true) or off (false) on every page, None = each student chooses.
+# theme: the photo theme every page uses ("" = each student chooses). names: {student id: name} the teacher corrected.
 STATE = {"mode": "build", "to": 0, "challenge": "", "tsCase": -1, "goto": {"n": 0, "seq": 0},
-         "msg": {"text": "", "seq": 0}, "pause": False, "skip": False, "session": int(time.time() * 1000), "resets": {}}
-KEEP = ("mode", "to", "challenge", "tsCase", "skip", "session")          # kept in state.json; goto / msg / pause are for this class only
+         "msg": {"text": "", "seq": 0}, "pause": False, "skip": False, "session": int(time.time() * 1000), "resets": {},
+         "tray": None, "glow": None, "theme": "", "names": {}}
+KEEP = ("mode", "to", "challenge", "tsCase", "skip", "session", "tray", "glow", "theme", "names")   # kept in state.json; goto / msg / pause are for this class only
 try:
     with open(STATE_FILE, encoding="utf-8") as f: STATE.update({k: v for k, v in json.load(f).items() if k in KEEP})
 except (OSError, ValueError): pass
 
-STUDENTS = {}                                                  # id → the last progress report, plus "seen" (time)
+STUDENTS = {}                                                  # id → the last progress report, plus "seen" and "first" (times), "ip"
 lock = threading.Condition()
 version = 0                                                    # goes up on every teacher change; /events waits on it
 
@@ -137,7 +140,10 @@ class Handler(SimpleHTTPRequestHandler):
             if not sid: return self.send_error(400)
             data["seen"] = time.time(); data["ip"] = self.client_address[0]
             with lock:                                         # a page from before a reset / new session: not listed again
-                if sid not in STATE["resets"] and data.get("session") in (None, STATE["session"]): STUDENTS[sid] = data
+                if sid not in STATE["resets"] and data.get("session") in (None, STATE["session"]):
+                    data["first"] = STUDENTS.get(sid, {}).get("first") or data.get("first") or data["seen"]   # when they started (sorting, CSV)
+                    if sid in STATE["names"]: data["name"] = STATE["names"][sid]     # the teacher's spelling wins
+                    STUDENTS[sid] = data
             return self.send_json({"ok": True})
         if path == "/api/state":
             if not self.local(): return self.send_error(403)
@@ -145,11 +151,20 @@ class Handler(SimpleHTTPRequestHandler):
                 seq = int(time.time() * 1000)
                 if "forget" in data: STUDENTS.pop(str(data["forget"]), None)
                 if data.get("newSession"):                     # everyone types their name again and starts from step 1
-                    STUDENTS.clear(); STATE.update(session=seq, resets={}, pause=False, goto={"n": 0, "seq": seq}, msg={"text": "", "seq": seq})
+                    STUDENTS.clear(); STATE.update(session=seq, resets={}, names={}, pause=False, goto={"n": 0, "seq": seq}, msg={"text": "", "seq": seq})
                 if data.get("resetStudent"):
                     sid = str(data["resetStudent"]); STATE["resets"][sid] = seq; STUDENTS.pop(sid, None)
                 for k in ("mode", "to", "challenge", "tsCase", "pause", "skip"):
                     if k in data: STATE[k] = data[k]
+                for k in ("tray", "glow"):
+                    if k in data: STATE[k] = data[k] if isinstance(data[k], bool) else None
+                if "theme" in data: STATE["theme"] = re.sub(r"[^a-z0-9]", "", str(data["theme"] or ""))[:20]
+                rn = data.get("rename")
+                if isinstance(rn, dict) and rn.get("id"):             # the teacher fixes a name: the list and the student's page
+                    sid, name = str(rn["id"])[:40], " ".join(str(rn.get("name", "")).split())[:60]
+                    if name:
+                        STATE["names"][sid] = name
+                        if sid in STUDENTS: STUDENTS[sid]["name"] = name
                 if data.get("goto"):
                     n = int(data["goto"]); STATE["goto"] = {"n": n, "seq": seq}
                     if STATE["to"] and STATE["to"] < n: STATE["to"] = n      # the step they are sent to must be open

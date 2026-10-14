@@ -64,7 +64,7 @@ function renderSteps(){
   if(BUILD_MODE) document.getElementById("fsStep").textContent=fin?t("doneTitle"):(S.step+1)+"/"+STEPS+" · "+t("s_"+STEP_IDS[S.step]);
   if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
   if(S.step!==renderSteps.shown){ renderSteps.shown=S.step;
-    if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&BUILD_MODE){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
+    if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&BUILD_MODE&&(isPhone()||matchMedia("(pointer: coarse)").matches)){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
     else if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
   else if(!stepCard.hidden) showStepCard();   // language change: redraw it
 }
@@ -72,14 +72,14 @@ function renderSteps(){
 // with an OK button (Settings can turn it off). Tapping the step name in the full-screen bar opens it again.
 const stepCard=document.getElementById("stepCard");
 function showStepCard(){
-  if(!BUILD_MODE||S.step>=STEPS) return;
+  if(!BUILD_MODE||S.step>=STEPS||!pasteDemo.hidden) return;              // the paste demo shows it when it's closed (paste.js)
   document.getElementById("scNum").textContent=t("stepN",{n:S.step+1,m:STEPS});
   document.getElementById("scTitle").textContent=t("s_"+STEP_IDS[S.step]);
   document.getElementById("scText").textContent=t("s_"+STEP_IDS[S.step]+"d");
   const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
 function hideStepCard(){ stepCard.hidden=true; fsAsk.hidden=true; }
 document.getElementById("scOk").onclick=hideStepCard;
-// once the CPU is placed, offer full screen once per session (S.fsAsked); then the step pop-up shows as usual
+// once the CPU is placed, offer full screen once per session (S.fsAsked; phones and touch screens only, a computer's screen is big enough); then the step pop-up shows as usual
 const fsAsk=document.getElementById("fsAsk");
 function answerFsAsk(yes){ fsAsk.hidden=true; if(yes) setFs(true); if(S.card&&(window.innerWidth<=860||isFs())) showStepCard(); }
 document.getElementById("faYes").onclick=()=>answerFsAsk(true);
@@ -118,7 +118,7 @@ function applyLang(){
   document.getElementById("langBtn").textContent=lang==="ar"?"English":"عربي";
   const gb=document.getElementById("glowBtn"); gb.textContent=t(S.glow?"glowOn":"glowOff"); gb.setAttribute("aria-pressed",S.glow); gb.classList.toggle("off",!S.glow);
   document.getElementById("brightLbl").textContent=t("bright");
-  renderModeMenu(); if(typeof TS!=="undefined") renderTS(); if(typeof IN!=="undefined"){ renderIN(); renderScreen(); } if(typeof renderQuiz!=="undefined") renderQuiz();
+  renderModeMenu(); if(typeof TS!=="undefined") renderTS(); if(typeof IN!=="undefined"){ renderIN(); renderScreen(); } if(typeof renderQuiz!=="undefined") renderQuiz(); if(typeof renderFanAsk!=="undefined") renderFanAsk();
   [["rotL","rotL"],["rotR","rotR"],["flipBtn","flip"],["dropBtn","drop"]].forEach(([id,k])=>{ const b=document.getElementById(id); b.title=t(k); b.setAttribute("aria-label",t(k)); });
   renderModules(); renderSteps(); updateTray(); renderPhotoUI(); renderKeyView(); renderPsuInfo(); if(typeof renderVerAsk==="function") renderVerAsk(); renderHintBtn(); renderFsBtn(); renderSheetBtn();
   if(S.step>=STEPS) document.getElementById("doneText").textContent=t("doneText",{t:fmtTime(S.end-S.start),m:S.mistakes});
@@ -181,7 +181,7 @@ workEl.addEventListener("scroll",renderSheetBtn,{passive:true});
 function sheetOnStart(){ let f=null; try{ f=sessionStorage.getItem("pclabList"); sessionStorage.removeItem("pclabList"); }catch(e){}
   if(f&&window.innerWidth<=860&&!isFs()) setTimeout(()=>sheetShow(IN.on?document.querySelector("#inPanel .in-ch"):TS.on?document.getElementById("tsPanel"):null),400); }
 document.getElementById("againBtn").onclick=()=>{ document.getElementById("done").classList.remove("show"); };
-document.getElementById("viewBtn").onclick=()=>focus(IN.on?"inDesk":viewFor(S.step),700);
+document.getElementById("viewBtn").onclick=()=>IN.on?focus("inDesk",700):stepView(700);
 document.getElementById("topBtn").onclick=()=>topView();
 document.getElementById("rotL").onclick=()=>rotate(1);
 document.getElementById("rotR").onclick=()=>rotate(-1);

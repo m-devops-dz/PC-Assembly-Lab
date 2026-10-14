@@ -400,6 +400,20 @@ body.fs.fs-open aside{ display:flex; }
 @keyframes redFlash{ 0%{ opacity:1; } 100%{ opacity:0; } }
 @keyframes shake{ 10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(5px); } 30%,50%,70%{ transform:translateX(-10px); } 40%,60%{ transform:translateX(10px); } }
 @media (prefers-reduced-motion: reduce){ .app.hit{ animation:none; } }
+/* paste demo (paste.js): side view and top view of the X of paste being pressed flat by the cooler; same card as the quiz */
+.paste-demo{ display:grid; gap:8px; }
+.paste-demo h2{ margin:0 !important; }
+.paste-demo canvas{ width:100%; height:auto; border-radius:8px; background:#0f1416; }
+.paste-demo p{ margin:0; line-height:1.5; }
+.paste-demo button{ justify-self:end; }
+/* fan steps (fan-pick.js): which header, 1 or 2. A panel at the bottom of the view, the board stays in sight */
+.fan-ask{ position:absolute; bottom:62px; inset-inline:12px; z-index:5; max-width:440px; margin-inline:auto; padding:12px 14px 4px; background:var(--panel); color:var(--ink); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+.fan-ask[hidden]{ display:none; }
+.fan-q{ margin:0 0 10px; font-weight:700; }
+.fan-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.fan-row .quiz-choice{ align-items:center; font-weight:600; }
+.fan-ask .quiz-msg{ margin-top:8px; font-size:14px; }
+@media (max-width:860px){ .fan-ask{ bottom:54px; inset-inline:10px; padding:10px 12px 2px; } }
 /* step pop-up (ui.js): same card as the quiz */
 .step-card .quiz-card h2{ margin-bottom:8px; padding-inline-end:0; }
 .sc-text{ margin:0 0 18px; color:var(--ink); font-size:16px; line-height:1.6; }

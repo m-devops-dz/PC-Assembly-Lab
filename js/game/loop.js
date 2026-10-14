@@ -27,11 +27,12 @@ function frame(now){
   const bob=Math.sin(now/300)*.12; socketHint.position.y=1.3+bob; cpuHint.position.y=(S.flips%2?-1:1)*1.25+bob;
   slots.forEach((s,i)=>setGlow(s.mat,S.hints&&st===ST.clips&&GOOD.includes(i)&&!s.open,pulse));
   setGlow(bracketMat,st===ST.bracket,pulse);
+  fanLeadMats.forEach(m=>setGlow(m,S.hints&&st===ST.cooler&&S.held==="cooler",pulse));
   const o=S.tightOrder, next=o.length%2===1?(o[o.length-1]+2)%4:-1;
   coolerScrews.forEach((s,i)=>setGlow(s.mat,st===ST.coolerScrews&&!s.tight&&(next<0||!S.hints||i===next),pulse));
-  HEADERS.forEach(h=>setGlow(h.mat,S.hints&&(st===ST.fanCable&&h.ok||st===ST.caseFan&&!h.ok),pulse));
-  setGlow(m2ScrewMat,st===ST.m2Out||st===ST.m2Screw,pulse);
-  m2Ring.visible=S.glow&&(st===ST.m2Out||st===ST.m2Screw)&&!S.busy;
+  HEADERS.forEach(h=>setGlow(h.mat,S.hints&&!fanAsk&&(st===ST.fanCable&&h.ok||st===ST.caseFan&&!h.ok),pulse));   // not while the 1-or-2 question is up
+  setGlow(m2ScrewMat,st===ST.m2Out,pulse);
+  m2Ring.visible=S.glow&&st===ST.m2Out&&!S.busy;
   if(m2Ring.visible){ const k=(now%900)/900; m2Ring.position.set(m2Screw.position.x,m2Screw.position.y+.16,m2Screw.position.z); m2Ring.scale.setScalar(1+2.2*k); m2Ring.material.opacity=.95*(1-k); }
   setGlow(boardEdge,st===ST.board&&!S.held,pulse);
   setGlow(psuHoleMat,S.hints&&st===ST.psu,pulse);
@@ -80,7 +81,7 @@ function frame(now){
   if(S.powered&&S.caseFanOn) rearBlades.rotation.x-=dt*10;
   if(S.powered) gpuFans.forEach(r=>r.rotation.z-=dt*9);
   if(S.start&&!S.end&&now-(frame.last||0)>500){ frame.last=now; document.getElementById("timer").textContent=fmtTime(now-S.start); updateStepMark(); }
-  updateHints(now); updateRamGuides(); psuInspectFrame(now); updateTable(now); tsFrame(now); inFrame(now); updateCaseRgb(now,dt); updateDeskRgb(dt); updateMouseLed();
+  updateHints(now); updateFanAsk(); updateRamGuides(); psuInspectFrame(now); updateTable(now); tsFrame(now); inFrame(now); updateCaseRgb(now,dt); updateDeskRgb(dt); updateMouseLed();
   controls.update(); renderer.render(scene,camera);
   if(!window.__sceneReady){ window.__sceneReady=true; const lm=document.getElementById("loadMsg"); if(lm&&!lm.classList.contains("err")) lm.style.display="none"; }
   requestAnimationFrame(frame);

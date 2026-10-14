@@ -49,7 +49,7 @@ function takeSata(){ if(S.used.sata){ toast(t("e_taken")); return; } if(!gate(ST
 function takeBattery(){ if(S.used.battery){ toast(t("e_taken")); return; } if(!gate(ST.battery)||!quizOk("battery",takeBattery)) return; S.used.battery=true;
   S.batFlip=Math.random()<.5?1:0; batFlip.rotation.z=S.batFlip*Math.PI; spawn("battery",batG,V3(-6,8,14),V3(-4,BAT_HOVER,12.5),0); }
 function takeScrews(){ if(S.used.screws){ toast(t("e_taken")); return; } if(!gate(ST.boardScrews)) return; S.used.screws=true; toast(t("ok_takeScrews"),"ok"); updateTray(); screwAllBoard(); }
-function pickBoard(){ if(!gate(ST.board)) return; boardRoot.rotation.set(0,0,0); spawn("board",boardRoot,V3(0,0,0),V3(L.x+2,L.y+21,L.z+2),1); focus("caseClose",1200); }
+function pickBoard(){ if(!gate(ST.board)) return; boardRoot.rotation.set(0,0,0); spawn("board",boardRoot,V3(0,0,0),V3(L.x,L.y+21,L.z),1,()=>{ S.snap=HELD.board.snap(L.x,L.z); }); focus("caseClose",1200); }   // straight over the standoffs: only the turn is left
 function spawnCable(c){
   if(c.id==="fan") fanLead.visible=false;
   c.tgts=c.targets(); const a=c.anchor(); c.plug.visible=true; c.plug.rotation.set(0,0,0);

@@ -31,7 +31,7 @@ function answerQuiz(k){
   quiz.right=true; S.quizDone[quiz.id]=true; renderQuiz();
   const q=quiz; setTimeout(()=>{ if(quiz!==q) return; closeQuiz();
     S.fromTable=q.from; q.retry(); S.fromTable=null;
-    if(q.from) focus(viewFor(S.step),1000); },1100);
+    if(q.from) stepView(1000); },1100);
 }
 function closeQuiz(){ quiz=null; quizEl.hidden=true; S.busy=false; }
 // the whole page shakes and flashes red (no shake with reduced motion, just the flash)

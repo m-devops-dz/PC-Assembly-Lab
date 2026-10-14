@@ -83,7 +83,7 @@ function clickTablePart(id){
     tween(1300,k=>{ p.rotation.y=k*Math.PI*2; p.rotation.x=Math.sin(k*Math.PI)*.45; p.position.y=y0+lift+Math.sin(k*Math.PI*2)*.35; },()=>{
       p.rotation.set(0,0,0);
       S.fromTable=p.getWorldPosition(V3(0,0,0)); const was=!!S.used[id]; it.take(); S.fromTable=null;
-      if(!was&&S.used[id]){ tablePop=null; p.position.y=y0; focus(viewFor(S.step),1000); }
+      if(!was&&S.used[id]){ tablePop=null; p.position.y=y0; stepView(1000); }
       else tween(450,k=>{ p.position.y=y0+lift*(1-k); },()=>{ tablePop=null; },easeOut);
     });
   },easeOut);

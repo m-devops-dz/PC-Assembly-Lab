@@ -1,7 +1,7 @@
 /* ---------------- state machine ---------------- */
 // step order. Code refers to steps by name (ST.gpu), never by number, so steps can be inserted freely.
 // Step text lives in I18N as s_<id> (title) and s_<id>d (explanation).
-const STEP_IDS=["leverUp","takeCpu","placeCpu","leverDown","clips","ram1","ram2","bracket","paste","cooler","coolerScrews","fanCable","m2Out","m2In","m2Screw","battery",
+const STEP_IDS=["leverUp","takeCpu","placeCpu","leverDown","clips","ram1","ram2","bracket","paste","cooler","coolerScrews","fanCable","m2Out","m2In","battery",
   "psu","board","boardScrews","pcieLatch","gpu","wifi","sata",
   "dataSsd","dataMb","sataPower","atx24","cpu8","gpuPower",
   "frontPanel","frontUsb","caseFan","closeCase","usbKeyboard","usbMouse","hdmi","antennas","powerCord","powerOn"];
@@ -34,8 +34,7 @@ function viewFor(n){
   if(n===ST.cooler) return "coolerTop";
   if(n===ST.coolerScrews) return "coolerDrop";
   if(n===ST.m2Out) return "m2Screw";
-  if(n===ST.m2Screw) return "m2Table";
-  if(n<=ST.m2Screw) return "m2";
+  if(n<=ST.m2In) return "m2";
   if(n===ST.battery) return "battery";
   if(n===ST.psu) return "psu";
   if(n===ST.board) return "case";
@@ -62,7 +61,9 @@ function setStep(n){
   const prev=viewFor(S.step), now=performance.now(); if(n>S.step) S.stepMs[S.step]=stepTime(S.step,now); S.step=n; S.stepAt=now;
   if(viewFor(n)!==prev){ const v=nextConnView(n);                  // SATA cable steps: close-up framing instead of a fixed view
     if(v) focusPoint(v.pos,v.tgt,900); else focus(viewFor(n),n===ST.psu||n===ST.board||n===ST.closeCase?1400:900); }
-  if(n===ST.fanCable) spawnCable(CABLES.fan);
+  if(fanAsk&&n!==ST.fanCable&&n!==ST.caseFan) closeFanAsk();             // skipped while the header question was up
+  if(n>ST.coolerScrews&&!pasteDemo.hidden) hidePasteDemo();
+  if(n===ST.fanCable) BUILD_MODE?startFanAsk(CABLES.fan):spawnCable(CABLES.fan);   // build mode: pick header 1 or 2 (fan-pick.js)
   if(n===ST.psu) showCase();
   if(n!==ST.psu&&PI.on) hidePsuInfo();                                  // PSU cables view: closed when the step is skipped
   if(n===ST.clips&&BUILD_MODE) toast(t("ok_redSlots"));
@@ -70,13 +71,15 @@ function setStep(n){
   if(n===ST.dataSsd) showConnCables();
   if(n===ST.frontPanel) spawnCable(CABLES.fp);
   if(n===ST.frontUsb) spawnCable(CABLES.fusb);
-  if(n===ST.caseFan) spawnCable(CABLES.caseFan);
+  if(n===ST.caseFan) BUILD_MODE?startFanAsk(CABLES.caseFan):spawnCable(CABLES.caseFan);
   if(n===ST.closeCase) showSidePanel();
   if(n===ST.usbKeyboard) showPeripherals();
   renderSteps(); renderModules(); updateTools(); updateTray();
   if(n===STEPS) finish();
   clStep();                                                              // classroom: keep and report the step
 }
+// back to the current step's camera, as setStep frames it (Reset view, after taking a part from the table or the quiz)
+function stepView(dur){ const v=nextConnView(S.step); if(v) focusPoint(v.pos,v.tgt,dur); else focus(viewFor(S.step),dur); }
 function mistake(){ S.mistakes++; S.stepMis[S.step]=(S.stepMis[S.step]||0)+1; document.getElementById("mistakes").textContent=S.mistakes; updateStepMark(); }
 // time on a step: the current one counts from when it started (or the clock started), finished ones are stored
 function stepTime(i,now=performance.now()){ return i===S.step?(S.start?Math.max(0,now-Math.max(S.stepAt,S.start)):0):S.stepMs[i]||0; }
@@ -84,15 +87,18 @@ function stepMark(i){ return stepTime(i)>60000?"slow":(S.stepMis[i]||0)>2?"warn"
 function startClock(){ if(!S.start) S.start=performance.now(); }
 const canManipulate=()=>!!S.held&&!S.busy&&!dragging;
 
+// pivot: turns about that local point (the M.2's middle) instead of its origin (the gold-finger end)
+// fixed: the part comes in straight over its place and can only be turned and lowered, not dragged
+// (students dragged the RAM into another slot or the PSU off its bay when the camera angle fooled them)
 const HELD={
   cpu:{obj:()=>cpuYaw,step:Math.PI/2,hover:CPU_HOVER,snap:(x,z)=>nearPt(x,z,SX,SZ,1.5)?{x:SX,z:SZ,key:"cpu",msg:t("ok_snap")}:null},
-  ram:{obj:()=>rams[S.ram].yaw,step:Math.PI,hover:RAM_HOVER,snap:(x,z)=>{ for(let i=0;i<4;i++) if(Math.abs(x-SLOT_X[i])<.5&&Math.abs(z-SLOT_Z)<3.5) return {x:SLOT_X[i],z:SLOT_Z,key:i,msg:t("ok_snapRam",{s:SLOT_NAMES[i]})}; return null; }},
+  ram:{obj:()=>rams[S.ram].yaw,step:Math.PI,hover:RAM_HOVER,fixed:true,snap:(x,z)=>{ for(let i=0;i<4;i++) if(Math.abs(x-SLOT_X[i])<.5&&Math.abs(z-SLOT_Z)<3.5) return {x:SLOT_X[i],z:SLOT_Z,key:i,msg:t("ok_snapRam",{s:SLOT_NAMES[i]})}; return null; }},
   paste:{obj:()=>pasteG,step:0,hover:PASTE_HOVER,snap:(x,z)=>nearPt(x,z,SX,SZ,.9)?{x:SX,z:SZ,key:"p",msg:t("ok_snapPaste")}:null},
   cooler:{obj:()=>coolerYaw,step:Math.PI/2,hover:COOLER_HOVER,snap:(x,z)=>nearPt(x,z,SX,SZ,1.5)?{x:SX,z:SZ,key:"c",msg:t("ok_snapCooler")}:null},
-  m2:{obj:()=>m2G,step:Math.PI,hover:M2_HOVER,snap:(x,z)=>nearPt(x,z,M2_SEAT.x-2,M2_SEAT.z,3)?{x:M2_SEAT.x,z:M2_SEAT.z,key:"m",msg:t("ok_snapM2")}:null},
+  m2:{obj:()=>m2G,step:Math.PI,hover:M2_HOVER,pivot:V3(-4,0,0),snap:(x,z)=>nearPt(x,z,M2_SEAT.x-2,M2_SEAT.z,3)?{x:M2_SEAT.x,z:M2_SEAT.z,key:"m",msg:t("ok_snapM2")}:null},
   // PSU: flips over about its back-to-front axis (fan toward the bottom vent, or into the case); its back always faces the rear wall
-  psu:{obj:()=>psuG,step:Math.PI,axis:"x",hover:PSU_HOVER,snap:(x,z)=>nearPt(x,z,PSU_POS.x,PSU_POS.z,3.5)?{x:PSU_POS.x,z:PSU_POS.z,key:"u",msg:t("ok_snapPsu")}:null},
-  board:{obj:()=>boardRoot,step:Math.PI,hover:L.y+21,snap:(x,z)=>nearPt(x,z,L.x,L.z,3.5)?{x:L.x,z:L.z,key:"b",msg:t("ok_snapBoard")}:null},
+  psu:{obj:()=>psuG,step:Math.PI,axis:"x",hover:PSU_HOVER,fixed:true,snap:(x,z)=>nearPt(x,z,PSU_POS.x,PSU_POS.z,3.5)?{x:PSU_POS.x,z:PSU_POS.z,key:"u",msg:t("ok_snapPsu")}:null},
+  board:{obj:()=>boardRoot,step:Math.PI,hover:L.y+21,fixed:true,snap:(x,z)=>nearPt(x,z,L.x,L.z,3.5)?{x:L.x,z:L.z,key:"b",msg:t("ok_snapBoard")}:null},
   wifi:{obj:()=>wifiG,step:Math.PI,hover:WIFI_HOVER,snap:(x,z)=>{ for(const s of WIFI_SLOTS) if(Math.abs(x-WIFI_X-1)<4&&Math.abs(z-(L.z+s.z))<.8) return {x:WIFI_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapWifi",{s:s.name})}; return null; }},
   gpu:{obj:()=>gpuG,step:Math.PI,hover:GPU_HOVER,snap:(x,z)=>{ for(const s of GPU_SLOTS) if(Math.abs(x-GPU_X-5)<7&&Math.abs(z-(L.z+s.z))<1.3) return {x:GPU_X,z:L.z+s.z,key:s.name,slot:s,msg:t("ok_snapGpu",{s:s.name})}; return null; }},
   sata:{obj:()=>sataG,step:Math.PI/2,hover:SATA_HOVER,snap:(x,z)=>nearPt(x,z,SATA_POS.x,SATA_POS.z,3)?{x:SATA_POS.x,z:SATA_POS.z,key:"d",msg:t("ok_snapSata")}:null},

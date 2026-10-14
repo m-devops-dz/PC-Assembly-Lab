@@ -3,7 +3,8 @@
    copy and the offline zip don't have it, so everything below stays off there.
    The student types their name once per browser session (pclabStudent). The page then follows the teacher's panel over
    Server-Sent Events (/events): the mode, how far the build may go (CL_MAX: from that step on a card says to wait), the
-   install challenge or troubleshooting case, "everyone to step N", pause, a message, and whether skipping is allowed.
+   install challenge or troubleshooting case, "everyone to step N", pause, a message, whether skipping is allowed,
+   the parts bar / highlights / photo theme (clForce: set and locked) and a name the teacher corrected (st.names).
    Progress goes back with a POST (/api/progress) every few seconds and after each step.
    A reload (a mode change from the teacher, F5) would lose the build, so the build's step is kept (pclabStep) and the
    page skips back up to it at start (clRestore).
@@ -62,12 +63,23 @@ function clApply(st){
   if(["build","trouble","install"].includes(st.mode)&&st.mode!==appMode){ appMode=st.mode; persist(); location.reload(); return; }
   if(IN.on&&IN_SCENARIOS[st.challenge]&&IN.sc!==st.challenge){ inGo(st.challenge); return; }
   if(TS.on&&TS_CASES[st.tsCase]&&TS.n!==st.tsCase){ tsGo(st.tsCase); return; }
+  const nn=st.names&&st.names[CL.me.id];                                // the teacher corrected the name
+  if(nn&&nn!==CL.me.name){ CL.me.name=nn; clSave("pclabStudent",CL.me); if(CL.dot) CL.dot.querySelector("span").textContent=nn; }
+  clForce(st);
   CL_MAX=BUILD_MODE&&st.to>0&&st.to<STEPS?st.to:Infinity;
   if(st.goto&&st.goto.seq>CL.me.goto){ CL.me.goto=st.goto.seq; clSave("pclabStudent",CL.me); clGoto(st.goto.n-1); }
   if(st.msg&&st.msg.seq>CL.me.msg){ CL.me.msg=st.msg.seq; clSave("pclabStudent",CL.me); if(st.msg.text) toast(t("cl_msg",{m:st.msg.text}),"",true); }
   const p=clCover("clPause",`<h2>${t("cl_pauseTitle")}</h2><p class="sc-text">${t("cl_pauseText")}</p>`); p.hidden=!st.pause;
   if(IN.on) renderIN(); if(TS.on) renderTS();
   renderSteps(); clWait();
+}
+// the teacher's view settings: parts bar, highlights, photo theme. A forced one is set here and its control is locked
+function clForce(st){
+  const tray=typeof st.tray==="boolean", glow=typeof st.glow==="boolean", theme=!!st.theme&&(!!BUILTIN_THEMES[st.theme]||st.theme==="none");
+  if(tray&&S.tray!==st.tray){ S.tray=st.tray; persist(); applySettings(); updateTray(); }
+  if(glow&&S.glow!==st.glow){ S.glow=st.glow; persist(); applyLang(); }
+  if(theme&&themeChoice!==st.theme) pickTheme(st.theme,true);
+  setTray.disabled=tray; document.getElementById("glowBtn").disabled=glow; themeSel.disabled=theme;
 }
 // "everyone to step n": skip forward to it (never back)
 function clGoto(n){

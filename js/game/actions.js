@@ -34,20 +34,23 @@ function clickM2Screw(){
   // out: unscrewed straight up, then it flies over to the parts mat and lies down there
   if(S.step===ST.m2Out){ S.busy=true; const y0=m2Screw.position.y;
     tween(700,k=>{ m2Screw.position.y=y0+k*1.2; m2Screw.rotation.y=k*12; },()=>{
-      const p0=m2Screw.position.clone(), p1=m2Park(); focus("m2Table",1100);
+      const p0=m2Screw.position.clone(), p1=m2Park();   // the camera stays on the slot
       tween(1100,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*4; m2Screw.rotation.z=k*Math.PI/2; },
         ()=>{ S.busy=false; S.m2screw="parked"; toast(t("ok_m2out"),"ok"); setStep(ST.m2In); },easeOut); }); }
-  // back in: picked up from the mat, stood upright over the standoff, then screwed down onto the SSD
-  else if(S.step===ST.m2Screw){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,M2_SCREW_Y.fastened+1.2,M2Z);
-    focus("m2Screw",1100);
-    tween(1100,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*4; m2Screw.rotation.z=Math.PI/2*(1-k); },()=>{
-      tween(700,k=>{ m2Screw.position.y=M2_SCREW_Y.fastened+1.2*(1-k); m2Screw.rotation.y=-k*12; },
-        ()=>{ S.busy=false; S.m2screw="fastened"; toast(t("ok_m2screw"),"ok"); setStep(ST.battery); }); },easeOut); }
   else toast(t("e_notNow"));
 }
+// back in, by itself once the SSD is pressed down: picked up from the mat, stood upright over the standoff, then screwed down onto the SSD
+function m2ScrewIn(){ S.busy=true; const p0=m2Screw.position.clone(), p1=V3(M2_SCREW.x,M2_SCREW_Y.fastened+1.2,M2Z);
+  focus("m2Screw",1100);
+  tween(1100,k=>{ m2Screw.position.lerpVectors(p0,p1,k); m2Screw.position.y+=Math.sin(k*Math.PI)*4; m2Screw.rotation.z=Math.PI/2*(1-k); },()=>{
+    tween(700,k=>{ m2Screw.position.y=M2_SCREW_Y.fastened+1.2*(1-k); m2Screw.rotation.y=-k*12; },
+      ()=>{ S.busy=false; S.m2screw="fastened"; toast(t("ok_m2screw"),"ok"); setStep(ST.battery); }); },easeOut); }
 function rotate(dir){
   if(!canManipulate()) return; if(S.held==="conn"){ rollConn(dir); return; } const type=S.held, h=HELD[type]; if(!h.step) return;
-  S.rot[type]+=dir; S.busy=true; renderKeyView(); animTo(h.obj().rotation,h.axis||"y",S.rot[type]*h.step,type==="board"?700:400,()=>{ S.busy=false; });
+  S.rot[type]+=dir; S.busy=true; renderKeyView();
+  if(h.pivot){ const o=h.obj(), Y=V3(0,1,0), a0=o.rotation.y, a1=S.rot[type]*h.step, c=o.position.clone().add(h.pivot.clone().applyAxisAngle(Y,a0));
+    tween(400,k=>{ const a=a0+(a1-a0)*easeInOut(k); o.rotation.y=a; o.position.copy(c).sub(h.pivot.clone().applyAxisAngle(Y,a)); },()=>{ S.busy=false; }); return; }
+  animTo(h.obj().rotation,h.axis||"y",S.rot[type]*h.step,type==="board"?700:400,()=>{ S.busy=false; });
 }
 function flip(){
   if(!canManipulate()) return;
