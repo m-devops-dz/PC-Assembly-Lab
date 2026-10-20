@@ -5,7 +5,8 @@
    Server-Sent Events (/events): the mode, how far the build may go (CL_MAX: from that step on a card says to wait), which
    install challenges / troubleshooting cases the student sees (challenges / tsCases: an empty list = all), "everyone to
    step N", pause, a message, whether skipping is allowed,
-   the parts bar / highlights / photo theme (clForce: set and locked) and a name the teacher corrected (st.names).
+   the parts bar / highlights / questions / step card / photo theme (clForce: set and locked) and a name the teacher
+   corrected (st.names).
    Progress goes back with a POST (/api/progress) every few seconds and after each step.
    A reload (a mode change from the teacher, F5) would lose the build, so the build's step is kept (pclabStep) and the
    page skips back up to it at start (clRestore).
@@ -80,6 +81,10 @@ function clApply(st){
 // the teacher's view settings: parts bar, highlights, photo theme. A forced one is set here and its control is locked
 function clForce(st){
   const tray=typeof st.tray==="boolean", glow=typeof st.glow==="boolean", theme=!!st.theme&&(!!BUILTIN_THEMES[st.theme]||st.theme==="none");
+  const quizF=typeof st.quiz==="boolean", cardF=typeof st.card==="boolean";
+  if(quizF&&S.quiz!==st.quiz){ S.quiz=st.quiz; persist(); applySettings(); }
+  if(cardF&&S.card!==st.card){ S.card=st.card; persist(); applySettings(); }
+  setQuiz.disabled=quizF; setCard.disabled=cardF;
   if(tray&&S.tray!==st.tray){ S.tray=st.tray; persist(); applySettings(); updateTray(); }
   if(glow&&S.glow!==st.glow){ S.glow=st.glow; persist(); applyLang(); }
   if(theme&&themeChoice!==st.theme) pickTheme(st.theme,true);
@@ -123,10 +128,12 @@ function clReset(){ try{ sessionStorage.removeItem("pclabStudent"); }catch(e){} 
 // Start over: the build starts again from step 1 (resetAll)
 function clForget(){ try{ sessionStorage.removeItem("pclabStep"); }catch(e){} }
 
+// steps finished in under half the time it takes to read them: the student didn't read (skipped steps don't count)
+function clRush(){ return STEP_IDS.filter((id,i)=>i<S.step&&!S.skipped[i]&&S.stepMs[i]>0&&S.stepMs[i]<readMs(t("s_"+id+"d"))/2).length; }
 function clReport(){
   if(!CL.on||!CL.me) return;
   const r={id:CL.me.id, name:CL.me.name, session:CL.me.session, mode:appMode, mistakes:S.mistakes, time:S.start?Math.round(((S.end||performance.now())-S.start)/1000):0, wait:CL.waiting};
-  if(BUILD_MODE){ r.step=S.step; r.steps=STEPS; r.stepId=STEP_IDS[S.step]||"done"; }
+  if(BUILD_MODE){ r.step=S.step; r.steps=STEPS; r.stepId=STEP_IDS[S.step]||"done"; r.checkBad=S.checkBad; r.rush=clRush(); }
   if(IN.on){ r.sc=IN.sc; r.step=IN.step; r.steps=IN_STEPS.length; r.stepId=inCur()||"done"; r.done=IN.done; }
   if(TS.on){ r.tsCase=TS.n; r.phase=TS.phase; r.done=TS.done; }
   fetch("/api/progress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(r),keepalive:true}).catch(()=>{});

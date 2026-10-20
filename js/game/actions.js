@@ -24,6 +24,7 @@ function clickBracket(){
 function clickScrew(i){
   if(S.busy||S.step!==ST.coolerScrews) return;
   const sc=coolerScrews[i]; if(sc.tight) return;
+  if(!checkOk(()=>clickScrew(i))) return;                                // the order question (check.js)
   const o=S.tightOrder;
   if(o.length%2===1&&i!==(o[o.length-1]+2)%4){ mistake(); toast(t("e_diag"),"err"); return; }
   sc.tight=true; o.push(i); S.busy=true;

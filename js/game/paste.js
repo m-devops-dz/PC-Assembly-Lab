@@ -37,5 +37,5 @@ function drawPasteDemo(k){
 function pdFrame(now){ const e=now-pdT0, k=e<PD_MS*2?(e%PD_MS)/PD_MS:1; drawPasteDemo(k); pdRaf=e<PD_MS*2&&!pasteDemo.hidden?requestAnimationFrame(pdFrame):0; }
 function showPasteDemo(){ hideStepCard(); pasteDemo.hidden=false; document.getElementById("pdOk").focus({preventScroll:true}); pdT0=performance.now(); cancelAnimationFrame(pdRaf); pdRaf=requestAnimationFrame(pdFrame); }
 function hidePasteDemo(){ pasteDemo.hidden=true; cancelAnimationFrame(pdRaf); pdRaf=0; }
-document.getElementById("pdOk").onclick=()=>{ hidePasteDemo(); if(S.card&&(window.innerWidth<=860||isFs())) showStepCard(); };   // then the screws step's own card
+document.getElementById("pdOk").onclick=()=>{ hidePasteDemo(); if(cardWanted()) showStepCard(); };   // then the screws step's own card
 pasteDemo.addEventListener("keydown",e=>{ if(e.key==="Escape") document.getElementById("pdOk").click(); });

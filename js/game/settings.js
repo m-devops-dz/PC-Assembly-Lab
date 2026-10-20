@@ -1,6 +1,8 @@
 /* ---------------- settings menu (header ⚙) ----------------
    Parts bar: off by default, the parts wait on the 3D table instead (table.js). RGB lights: the desk strip and
-   the case fans' light rings. Part quiz: quiz.js. All are kept with the rest of the session (persist). */
+   the case fans' light rings. Questions: the part quiz (quiz.js) and the step checks (check.js). Step card: each
+   step's explanation in a card (ui.js). All are kept with the rest of the session (persist); the teacher can force
+   some of them (clForce, classroom.js). */
 const setBtn=document.getElementById("setBtn"), setPop=document.getElementById("setPop");
 const setTray=document.getElementById("setTray"), setRgb=document.getElementById("setRgb"), setQuiz=document.getElementById("setQuiz"), setCard=document.getElementById("setCard");
 function applySettings(){ document.body.classList.toggle("no-tray",!S.tray); setTray.checked=S.tray; setRgb.checked=S.rgb; setQuiz.checked=S.quiz; setCard.checked=S.card; }

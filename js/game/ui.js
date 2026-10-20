@@ -65,23 +65,46 @@ function renderSteps(){
   if(window.innerWidth>860&&!document.body.classList.contains("fs")) box.scrollIntoView({block:"center"});
   if(S.step!==renderSteps.shown){ renderSteps.shown=S.step;
     if(S.step===ST.leverDown&&!S.fsAsked&&!isFs()&&BUILD_MODE&&(isPhone()||matchMedia("(pointer: coarse)").matches)){ S.fsAsked=true; persist(); fsAsk.hidden=false; document.getElementById("faYes").focus({preventScroll:true}); }
-    else if(S.card&&!fin&&(window.innerWidth<=860||isFs())) showStepCard(); }
+    else if(cardWanted()&&!fin) showStepCard(); }
   else if(!stepCard.hidden) showStepCard();   // language change: redraw it
 }
-// step pop-up: on phones and in full screen the sidebar isn't in sight, so each new step's instructions open in a card
-// with an OK button (Settings can turn it off). Tapping the step name in the full-screen bar opens it again.
-const stepCard=document.getElementById("stepCard");
-function showStepCard(){
+/* step card: each new step's explanation opens in a card with an OK button. On phones and in full screen (the sidebar
+   isn't in sight) it's on by default (Settings: S.card), with no wait. On a PC it only shows when the teacher turns it
+   on for the class (classroom st.card true, cardForced): then on every screen, and OK unlocks after a read time that
+   grows with the text (readMs). After a mistake the card opens again with what went wrong on top (stepCardAgain).
+   Tapping the step name in the full-screen bar opens it again. */
+const stepCard=document.getElementById("stepCard"), scOk=document.getElementById("scOk"), scErr=document.getElementById("scErr");
+const cardForced=()=>CL.on&&CL.st.card===true;                          // the teacher's "step card on": every screen, with the read time
+const cardWanted=()=>cardForced()||S.card&&(window.innerWidth<=860||isFs());
+// about how long reading a text takes: 280 ms a word, 2 to 8 s
+const readMs=txt=>Math.min(8000,Math.max(2000,String(txt).trim().split(/\s+/).length*280));
+// OK stays disabled for ms, counting down
+function scWait(ms){ clearInterval(scWait.t); let n=Math.ceil(ms/1000);
+  const tick=()=>{ scOk.disabled=n>0; scOk.textContent=n>0?t("sc_wait",{s:n}):t("ok");
+    if(n<=0){ clearInterval(scWait.t); if(!stepCard.hidden) scOk.focus({preventScroll:true}); } n--; };
+  tick(); scWait.t=setInterval(tick,1000); }
+// err: what went wrong (after a mistake), wait: the read time (default: from the text). Called again while it is open
+// (a language change) it only redraws the text
+function showStepCard(err,wait){
   if(!BUILD_MODE||S.step>=STEPS||!pasteDemo.hidden) return;              // the paste demo shows it when it's closed (paste.js)
+  const txt=t("s_"+STEP_IDS[S.step]+"d"), was=stepCard.hidden;
   document.getElementById("scNum").textContent=t("stepN",{n:S.step+1,m:STEPS});
   document.getElementById("scTitle").textContent=t("s_"+STEP_IDS[S.step]);
-  document.getElementById("scText").textContent=t("s_"+STEP_IDS[S.step]+"d");
-  const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
-function hideStepCard(){ stepCard.hidden=true; fsAsk.hidden=true; }
-document.getElementById("scOk").onclick=hideStepCard;
+  document.getElementById("scText").textContent=txt;
+  stepCard.hidden=false;
+  if(was||err!==undefined){ scErr.textContent=err?t("sc_err",{e:err}):""; scErr.hidden=!err; scWait(cardForced()?wait??readMs(txt):0); } }
+function hideStepCard(){ stepCard.hidden=true; fsAsk.hidden=true; clearInterval(scWait.t); scOk.disabled=false; scOk.textContent=t("ok"); }
+scOk.onclick=hideStepCard;
+// a mistake: the step's explanation again, with the error on top. Not over another card (a question, the fan or PSU
+// question, the paste demo), and not when the step has moved on
+function stepCardAgain(){
+  if(!BUILD_MODE||!cardWanted()) return; clearTimeout(stepCardAgain.t); const at=S.step;
+  stepCardAgain.t=setTimeout(()=>{
+    if(S.step!==at||!stepCard.hidden||quiz||(typeof PI!=="undefined"&&PI.ask)||fanAsk||!pasteDemo.hidden||!fsAsk.hidden) return;
+    showStepCard(S.lastErr,1500); },1100); }
 // once the CPU is placed, offer full screen once per session (S.fsAsked; phones and touch screens only, a computer's screen is big enough); then the step pop-up shows as usual
 const fsAsk=document.getElementById("fsAsk");
-function answerFsAsk(yes){ fsAsk.hidden=true; if(yes) setFs(true); if(S.card&&(window.innerWidth<=860||isFs())) showStepCard(); }
+function answerFsAsk(yes){ fsAsk.hidden=true; if(yes) setFs(true); if(cardWanted()) showStepCard(); }
 document.getElementById("faYes").onclick=()=>answerFsAsk(true);
 document.getElementById("faNo").onclick=()=>answerFsAsk(false);
 fsAsk.addEventListener("keydown",e=>{ if(e.key==="Escape") answerFsAsk(false); });
@@ -108,7 +131,7 @@ function updateTools(){
 }
 let toastTimer=0;
 // sticky: stays up with an OK button (long warnings); otherwise it hides after a time that grows with the text
-function toast(msg,type,sticky){ const el=document.getElementById("toast"); el.textContent=msg; el.className="toast show"+(type?" "+type:"")+(sticky?" sticky":""); clearTimeout(toastTimer);
+function toast(msg,type,sticky){ if(type==="err") S.lastErr=msg; const el=document.getElementById("toast"); el.textContent=msg; el.className="toast show"+(type?" "+type:"")+(sticky?" sticky":""); clearTimeout(toastTimer);
   if(sticky){ const b=document.createElement("button"); b.className="primary"; b.textContent=t("ok"); b.onclick=()=>el.classList.remove("show"); el.appendChild(b); return; }
   toastTimer=setTimeout(()=>el.classList.remove("show"),Math.max(type==="err"?5500:3200,msg.length*65)); }
 function fmtTime(ms){ const s=Math.max(0,Math.floor(ms/1000)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }

@@ -1,5 +1,6 @@
 function drop(){
   if(!canManipulate()) return;
+  if(!checkOk(drop)) return;                                             // some steps first ask a question from their explanation (check.js)
   const type=S.held, sn=S.snap;
   if(type==="conn"){ insertConn(); return; }
   if(type==="cpu"){

@@ -17,8 +17,9 @@ const BUILD_MODE=appMode==="build";                                   // the oth
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
   hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
   tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights
-  quiz:saved.quiz!==false, quizDone:{},                   // Settings: part quiz before a part is first taken (quiz.js); the parts already answered
-  card:saved.card!==false, fsAsked:saved.fsAsked===true,                                // Settings: step pop-up on phones / in full screen (ui.js)
+  quiz:saved.quiz!==false, quizDone:{},                   // Settings: questions (part quiz, quiz.js, and step checks, check.js); the parts already answered
+  checkDone:{}, checkOk:0, checkBad:0, lastErr:"",          // step checks answered, right / wrong answers; the last error toast (shown again on the step card)
+  card:saved.card!==false, fsAsked:saved.fsAsked===true,                                // Settings: the step card with each step's explanation (ui.js)
   stepMis:{}, stepMs:{}, skipped:{},                       // skipped: steps skipped with Ctrl+H or a sidebar click (shown grey, not green)                                  // mistakes and time spent, per step (sidebar marks: orange > 2 mistakes, red > 60 s)
   used:{}, tightOrder:[], fanOn:false, caseFanOn:false, powered:false, m2screw:"standoff", batFlip:0, mbScrews:0 };
 const mod=(v,n)=>((v%n)+n)%n;
@@ -80,7 +81,7 @@ function setStep(n){
 }
 // back to the current step's camera, as setStep frames it (Reset view, after taking a part from the table or the quiz)
 function stepView(dur){ const v=nextConnView(S.step); if(v) focusPoint(v.pos,v.tgt,dur); else focus(viewFor(S.step),dur); }
-function mistake(){ S.mistakes++; S.stepMis[S.step]=(S.stepMis[S.step]||0)+1; document.getElementById("mistakes").textContent=S.mistakes; updateStepMark(); }
+function mistake(){ S.mistakes++; S.stepMis[S.step]=(S.stepMis[S.step]||0)+1; document.getElementById("mistakes").textContent=S.mistakes; updateStepMark(); stepCardAgain(); }
 // time on a step: the current one counts from when it started (or the clock started), finished ones are stored
 function stepTime(i,now=performance.now()){ return i===S.step?(S.start?Math.max(0,now-Math.max(S.stepAt,S.start)):0):S.stepMs[i]||0; }
 function stepMark(i){ return stepTime(i)>60000?"slow":(S.stepMis[i]||0)>2?"warn":""; }

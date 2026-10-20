@@ -4,7 +4,8 @@
    parts bar) opens the view before the PSU is taken: the camera zooms in, one plug and its wires at a time are red
    (click a plug, or Prev / Next / arrow keys) and the card says where it goes, with a small picture: plug, power running
    along a wire, the part it feeds. The 4+4 and 6+2 plugs come apart and join again. Done unlocks once all four were
-   seen; then the PSU is taken as usual. */
+   seen and then glows (some students never noticed it). Pressing it asks one question first (PI.ask): which cable
+   powers the CPU, 24-pin, 6+2 or 4+4? A wrong answer is a mistake; the right one takes the PSU as usual. */
 const psuInfo=document.getElementById("psuInfo");
 const PI_ROWS=[
   {id:"cpu", plug:`<g class="pi-plug"><rect x="2" y="13" width="24" height="26" rx="2"/><g class="pi-pins">${[[8,19],[20,19],[8,31],[20,31]].map(([x,y])=>`<rect x="${x-3}" y="${y-3}" width="6" height="6"/>`).join("")}</g></g>
@@ -37,7 +38,7 @@ const PI_SCALE=1.3, PI_YAW=-.5, PI_FACE=V3(Math.cos(PI_YAW),0,-Math.sin(PI_YAW))
 const PI_HOLE=V3(7.1,3,-2);                                                         // the cable hole on psuG's +x face (psu.js)
 // camera: the PSU, its wires and plugs, nudged away from the card (it sits at the inline end: left in Arabic, right in English)
 function piCam(){ return {pos:V3(97.6,45,26.6),tgt:V3(65,.5,-5)}; }   // 1.3× farther than before: the plugs were cut off
-const PI={on:false,sel:0,seen:new Set(),sets:[],built:false,shown:false};
+const PI={on:false,sel:0,seen:new Set(),sets:[],built:false,shown:false,ask:null};   // ask: {order, wrong, right} while the question is up
 const piRed=new T.MeshStandardMaterial({color:0xa80c12,emissive:0xff0a00,emissiveIntensity:.3,roughness:.5});
 const piWireMat=new T.MeshStandardMaterial({color:0x18191c,roughness:.6});
 function piSet(id,sc=PI_SCALE,yaw=PI_YAW,part="psuPlug"){
@@ -133,8 +134,8 @@ function piHandFrame(){
 }
 function piShow(on){ PI.shown=on; PI.sets.forEach(st=>{ st.g.visible=on; st.wires.forEach(m=>m.visible=on); }); }
 const piSetOf=k=>PI.sets.find(s=>s.k===mod(k,PI_LIST.length));
-function piPaint(){ PI.sets.forEach(st=>{ const on=PI.on&&st.k===PI.sel; st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half&&st.half.position.z!==st.half0){ st.half.position.z=st.half0; piDraw(st); } }); }
-function piSelect(k){ if(!PI.on) return; PI.sel=mod(k,PI_LIST.length); PI.seen.add(PI.sel); piPaint(); renderPsuInfo(); }
+function piPaint(){ PI.sets.forEach(st=>{ const on=PI.on&&!PI.ask&&st.k===PI.sel; st.meshes.forEach(m=>m.material=on?piRed:m.userData.m0); if(st.half&&st.half.position.z!==st.half0){ st.half.position.z=st.half0; piDraw(st); } }); }
+function piSelect(k){ if(!PI.on||PI.ask) return; PI.sel=mod(k,PI_LIST.length); PI.seen.add(PI.sel); piPaint(); renderPsuInfo(); }
 // power running down the red wire: three bright beads from the PSU to the plug
 const piBeads=[0,1,2].map(()=>{ const m=new T.Mesh(new T.SphereGeometry(.34,12,10),new T.MeshBasicMaterial({color:0xffd21f,toneMapped:false})); m.visible=false; m.raycast=()=>{}; scene.add(m); return m; });
 function openPsuInspect(){
@@ -143,7 +144,7 @@ function openPsuInspect(){
   psuInfo.hidden=false; piSelect(0);
 }
 function closePsuInspect(take){
-  psuInfo.hidden=true; psuInfo.innerHTML="";
+  psuInfo.hidden=true; psuInfo.innerHTML=""; PI.ask=null;
   if(!PI.on) return;
   PI.on=false; piBeads.forEach(b=>b.visible=false); piPaint();
   if(take){ S.psuSeen=true; const it=piItem(); S.fromTable=it&&it.home.visible?it.pivot.getWorldPosition(V3(0,0,0)):null;   // it flies in from the mat
@@ -160,6 +161,7 @@ function psuInspectFrame(now){
   const it=piItem(), show=PI.on||!!it&&it.home.visible&&!S.used.psu;
   if(show!==PI.shown) piShow(show);
   if(!PI.on) return;
+  if(PI.ask){ piBeads.forEach(b=>b.visible=false); return; }
   piRed.emissiveIntensity=.15+.3*Math.abs(Math.sin(now/380));
   const st=piSetOf(PI.sel);
   piBeads.forEach((b,i)=>{ b.visible=true; b.position.copy(st.curve.getPoint(((now/1700)+i/3)%1)); });
@@ -167,19 +169,35 @@ function psuInspectFrame(now){
   const k=(now%3200)/3200, out=k<.3?0:k<.45?(k-.3)/.15:k<.7?1:k<.85?1-(k-.7)/.15:0;
   const z=st.half0+st.gap*(out*out*(3-2*out)); if(z!==st.half.position.z){ st.half.position.z=z; piDraw(st); }   // its wires go with it
 }
+// Done: before the PSU is taken, which cable powers the processor? (answers in a new order each time)
+const PI_ANS=["24","62","44"];
+function piAsk(){ PI.ask={order:PI_ANS.slice().sort(()=>Math.random()-.5),wrong:new Set(),right:false}; piPaint(); renderPsuInfo(); }
+function piAnswer(k){ const a=PI.ask; if(!a||a.right||a.wrong.has(k)) return;
+  if(k==="44"){ a.right=true; renderPsuInfo(); setTimeout(()=>{ if(PI.ask===a) closePsuInspect(true); },1400); return; }
+  a.wrong.add(k); mistake(); shakeRed(); renderPsuInfo(); }
+// "6+2" / "4+4" stay in that order inside Arabic text (on their own they'd show as "2+6")
+const piNum=s=>s.replace(/(\d+\+\d+)/g,'<bdi dir="ltr">$1</bdi>');
+function renderPsuAsk(){ const a=PI.ask, last=[...a.wrong].pop();
+  psuInfo.innerHTML=`<div class="pi-head"><b>${t("pi_q")}</b></div><div class="quiz-choices pi-q">`
+    +a.order.map((k,i)=>`<button class="quiz-choice${a.wrong.has(k)?" wrong":""}${a.right&&k==="44"?" right":""}" data-a="${k}"${a.wrong.has(k)||a.right?" disabled":""}><b>${i+1}</b><span>${piNum(t("pi_a"+k))}</span></button>`).join("")
+    +`</div><p class="quiz-msg${a.right?" ok":last?" err":""}">${piNum(a.right?t("pi_qOk"):last?t("pi_qNo"+last):"")}</p>`;
+  psuInfo.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>piAnswer(b.dataset.a));
+  const f=psuInfo.querySelector("[data-a]:not(:disabled)"); if(f) f.focus({preventScroll:true});
+}
 function renderPsuInfo(){ if(psuInfo.hidden||!PI.on) return;
+  if(PI.ask){ renderPsuAsk(); return; }
   const r=PI_LIST[PI.sel], all=PI.seen.size===PI_LIST.length;
   psuInfo.innerHTML=`<div class="pi-head"><b>${t("pi_title")}</b><span class="pi-count">${PI.sel+1} / ${PI_LIST.length}</span></div>`
     +`<div class="pi-one pi-${r.id}">${piSvg(r)}</div><p class="pi-desc"><b>${t("pi_"+r.id)}</b> ${t("pi_"+r.id+"D")}</p>`
     +(r.id==="cpu"||r.id==="gpu"?`<p class="pi-note">${t("pi_split_"+r.id)}</p>`:"")
     +`<div class="pi-dots">${PI_LIST.map((x,i)=>`<button class="pi-dot${i===PI.sel?" cur":""}${PI.seen.has(i)?" seen":""}" data-k="${i}" aria-label="${t("pi_"+x.id)}"></button>`).join("")}</div>`
     +`<div class="pi-nav"><button id="piPrev">${t("pi_prev")}</button><button id="piNext">${t("pi_next")}</button>`
-    +`<button class="primary" id="piDone"${all?"":" disabled"}>${t("pi_done")}</button></div>`
+    +`<button class="primary${all&&S.glow?" hint-glow":""}" id="piDone"${all?"":" disabled"}>${t("pi_done")}</button></div>`
     +(all?"":`<p class="pi-note">${t("pi_seeAll")}</p>`);
   document.getElementById("piPrev").onclick=()=>piSelect(PI.sel-1);
   document.getElementById("piNext").onclick=()=>piSelect(PI.sel+1);
-  document.getElementById("piDone").onclick=()=>closePsuInspect(true);
+  document.getElementById("piDone").onclick=piAsk;
   psuInfo.querySelectorAll(".pi-dot").forEach(b=>b.onclick=()=>piSelect(+b.dataset.k));
 }
-window.addEventListener("keydown",e=>{ if(!PI.on||e.target.tagName==="INPUT") return;
+window.addEventListener("keydown",e=>{ if(!PI.on||PI.ask||e.target.tagName==="INPUT") return;
   if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ e.preventDefault(); piSelect(PI.sel+((e.key==="ArrowRight")===(lang!=="ar")?1:-1)); } });

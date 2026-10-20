@@ -4,6 +4,7 @@ function clickConn(id){
   if(S.busy) return;
   if(job&&job.choose==="usb"&&id==="hdmi"&&!S.held){ toast(t("e_hdmiNotUsb"),"err"); flashHdmi(); return; }   // keyboard/mouse step: that's the monitor's cable
   if(!job||job.c.id!==id||S.held){ toast(t("e_notNow")); return; }
+  if(!checkOk(()=>clickConn(id))) return;                                // "what if you forget this cable?" (check.js)
   if(job.choose&&!job.port){ S.connPick=job.choose; toast(t(job.choose==="usb"?"pick_usb":"pick_hdmi")); return; }   // next: click a port
   if(job.pick&&!S.connPort){ S.connPick="sata"; toast(t(job.c.id==="power"?"pick_sataPower":job.pick==="mb"?"pick_sataMb":"pick_sataSsd")); return; }
   const w=portWorld(job.port), pre=w.p.clone().addScaledVector(w.out,2.4), P=job.plug; P.loose=false;   // picked up: its wires take the direct way

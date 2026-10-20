@@ -101,6 +101,8 @@ tr.off td{ opacity:.5; }
       <div class="set">
         <span data-k="tray"></span><select id="setTray"><option value="" data-k="choose"></option><option value="1" data-k="show"></option><option value="0" data-k="hide"></option></select>
         <span data-k="glow"></span><select id="setGlow"><option value="" data-k="choose"></option><option value="1" data-k="on"></option><option value="0" data-k="off"></option></select>
+        <span data-k="quiz"></span><select id="setQuiz"><option value="" data-k="choose"></option><option value="1" data-k="on"></option><option value="0" data-k="off"></option></select>
+        <span data-k="card"></span><select id="setCard"><option value="" data-k="choose"></option><option value="1" data-k="on"></option><option value="0" data-k="off"></option></select>
         <span data-k="theme"></span><select id="setTheme"></select>
       </div>
       <p class="hint" data-k="viewHint"></p>
@@ -133,8 +135,9 @@ ar:{title:"لوحة الأستاذ", other:"English", modeT:"الوضع (لكل 
   skip:"السماح للطلاب بالتخطي (Ctrl+H والنقر على المراحل)",
   chT:"تثبيت ويندوز: التحديات التي يراها الطلاب", tsT:"استكشاف الأعطال: الحالات التي يراها الطلاب", allOn:"تحديد الكل", allOff:"إلغاء الكل", only:"هذا فقط", cause:"السبب",
   picksHint:"علّم ما يظهر في قائمة الطالب. «هذا فقط» يترك واحدًا، فيفتحه الطالب مباشرة.", keepOne:"يجب أن يبقى واحد على الأقل معلَّمًا.",
-  viewT:"إعدادات العرض (لكل الطلاب)", tray:"شريط القطع", glow:"التوضيحات", theme:"السمة", choose:"الطالب يختار", show:"إظهار", hide:"إخفاء", on:"تشغيل", off:"إيقاف",
-  viewHint:"ما تختاره هنا يُطبَّق فورًا على كل الطلاب ويُقفل الزر عندهم. «الطالب يختار» يفكّ القفل.",
+  viewT:"إعدادات العرض (لكل الطلاب)", tray:"شريط القطع", glow:"التوضيحات", quiz:"الأسئلة", card:"بطاقة الشرح على كل الشاشات",
+  rushing:"يتسرّع", rushTip:"أنهى {r} مراحل أسرع من وقت قراءتها، وأخطأ في {c} أسئلة من الشرح", hRush:"مراحل دون قراءة", hCheck:"أسئلة الشرح الخاطئة", theme:"السمة", choose:"الطالب يختار", show:"إظهار", hide:"إخفاء", on:"تشغيل", off:"إيقاف",
+  viewHint:"ما تختاره هنا يُطبَّق فورًا على كل الطلاب ويُقفل الزر عندهم. «الطالب يختار» يفكّ القفل. بطاقة الشرح «تشغيل»: تظهر أيضًا على الحواسيب، ولا يعمل زر «حسنًا» إلا بعد وقت قراءة.",
   classT:"القسم", pause:"إيقاف مؤقت: انتبهوا", resume:"استئناف الحصة", newSession:"حصة جديدة",
   newHint:"حصة جديدة: كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1، وتُمحى القائمة.", msgPh:"رسالة تظهر لكل الطلاب", send:"أرسل",
   studentsT:"الطلاب", sortHint:"انقر على عنوان عمود للترتيب حسبه، وانقر مرة أخرى لعكس الترتيب. القائمة تُرتَّب من جديد كل ثانيتين.", csv:"تصدير CSV",
@@ -144,15 +147,16 @@ ar:{title:"لوحة الأستاذ", other:"English", modeT:"الوضع (لكل 
   done:"انتهى ✓", picking:"يختار حالة", ph_power:"تشغيل", ph_check:"فحص", ph_fix:"إصلاح", ph_retry:"إعادة التشغيل", ph_solved:"حُلّت ✓",
   askMode:"ستُعاد صفحات كل الطلاب إلى وضع «{m}». متابعة؟", askGoto:"نقل كل الطلاب إلى المرحلة {n}؟ من لم يصلها ستُتخطّى مراحله.",
   askNew:"بدء حصة جديدة؟ كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1.", askName:"اسم الطالب:", noServer:"الخادم لا يجيب. هل نافذة الخادم مفتوحة؟",
-  csvHead:["الطالب","IP","البدء","الوضع","التقدم","النسبة %","المرحلة الحالية","أخطاء","الوقت","متصل"], yes:"نعم", no:"لا", locale:"ar-DZ-u-nu-latn"},
+  csvHead:["الطالب","IP","البدء","الوضع","التقدم","النسبة %","المرحلة الحالية","أخطاء","الوقت","متصل","مراحل دون قراءة","أسئلة الشرح الخاطئة"], yes:"نعم", no:"لا", locale:"ar-DZ-u-nu-latn"},
 en:{title:"Teacher's panel", other:"عربي", modeT:"Mode (all students)", modeHint:"Changing the mode reloads the students' pages. Their build progress comes back by itself.",
   buildT:"Build a PC", toLbl:"Steps open up to", allSteps:"All steps", toMore:"+10 steps", toAll:"Open all",
   gotoLbl:"Move everyone to", gotoBtn:"Move", gotoHint:"Moving only skips forward: students already past that step stay where they are.",
   skip:"Let students skip (Ctrl+H and clicking steps)",
   chT:"Install Windows: challenges students see", tsT:"Troubleshooting: cases students see", allOn:"Select all", allOff:"Clear all", only:"Only this", cause:"Cause",
   picksHint:"Tick what shows in the students' list. \"Only this\" leaves one, and students open it straight away.", keepOne:"At least one must stay ticked.",
-  viewT:"Display settings (all students)", tray:"Parts bar", glow:"Highlights", theme:"Theme", choose:"Student chooses", show:"Show", hide:"Hide", on:"On", off:"Off",
-  viewHint:"What you pick here applies to every student at once and locks their control. \"Student chooses\" unlocks it.",
+  viewT:"Display settings (all students)", tray:"Parts bar", glow:"Highlights", quiz:"Questions", card:"Step card on every screen",
+  rushing:"rushing", rushTip:"Finished {r} steps faster than it takes to read them, and got {c} explanation questions wrong", hRush:"Steps not read", hCheck:"Explanation questions wrong", theme:"Theme", choose:"Student chooses", show:"Show", hide:"Hide", on:"On", off:"Off",
+  viewHint:"What you pick here applies to every student at once and locks their control. \"Student chooses\" unlocks it. Step card \"On\": it shows on PCs too, and OK only works after a reading time.",
   classT:"Class", pause:"Pause: eyes on me", resume:"Resume the class", newSession:"New session",
   newHint:"New session: every student types their name again and starts from step 1; the list is cleared.", msgPh:"A message for every student", send:"Send",
   studentsT:"Students", sortHint:"Click a column heading to sort by it, click again to reverse. The list re-sorts every 2 seconds.", csv:"Export CSV",
@@ -162,7 +166,7 @@ en:{title:"Teacher's panel", other:"عربي", modeT:"Mode (all students)", mode
   done:"Done ✓", picking:"choosing a case", ph_power:"power on", ph_check:"checking", ph_fix:"fixing", ph_retry:"testing again", ph_solved:"solved ✓",
   askMode:"Every student's page will switch to \"{m}\". Continue?", askGoto:"Move every student to step {n}? Steps they haven't reached are skipped.",
   askNew:"Start a new session? Every student types their name again and starts from step 1.", askName:"Student's name:", noServer:"The server isn't answering. Is the server window open?",
-  csvHead:["Student","IP","Started","Mode","Progress","Percent","Current step","Mistakes","Time","Online"], yes:"yes", no:"no", locale:"en-GB"}
+  csvHead:["Student","IP","Started","Mode","Progress","Percent","Current step","Mistakes","Time","Online","Steps not read","Explanation questions wrong"], yes:"yes", no:"no", locale:"en-GB"}
 };
 try{ lang=localStorage.getItem("teacherLang")==="en"?"en":"ar"; }catch(e){ lang="ar"; }
 const tx=(k,v)=>String(TX[lang][k]).replace(/\{(\w+)\}/g,(m,n)=>v&&v[n]!==undefined?v[n]:m);
@@ -236,7 +240,7 @@ function renderState(force){
   $("buildBox").hidden=ST.mode!=="build"; $("installBox").hidden=ST.mode!=="install"; $("troubleBox").hidden=ST.mode!=="trouble";
   if(document.activeElement!==$("to")) $("to").value=ST.to||0;
   const tri=v=>v===true?"1":v===false?"0":"";
-  $("setTray").value=tri(ST.tray); $("setGlow").value=tri(ST.glow); $("setTheme").value=ST.theme||"";
+  $("setTray").value=tri(ST.tray); $("setGlow").value=tri(ST.glow); $("setQuiz").value=tri(ST.quiz); $("setCard").value=tri(ST.card); $("setTheme").value=ST.theme||"";
   $("skip").checked=!!ST.skip;
   const pk=lang+JSON.stringify([ST.challenges,ST.tsCases,IN_ORDER.length,TS_CASES.length]);
   if(force||pk!==picksShown){ picksShown=pk; renderPicks("challenges"); renderPicks("tsCases"); }   // not on every poll: a redraw under the pointer loses the click
@@ -251,6 +255,8 @@ $("pause").onclick=()=>send({pause:!ST.pause});
 const triVal=v=>v===""?null:v==="1";
 $("setTray").onchange=()=>send({tray:triVal($("setTray").value)});
 $("setGlow").onchange=()=>send({glow:triVal($("setGlow").value)});
+$("setQuiz").onchange=()=>send({quiz:triVal($("setQuiz").value)});
+$("setCard").onchange=()=>send({card:triVal($("setCard").value)});
 $("setTheme").onchange=()=>send({theme:$("setTheme").value});
 // one listener for the table (its rows are redrawn): Reset = the student starts over with a new name
 $("rows").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
@@ -297,12 +303,14 @@ applyTx(); renderHeads();
 $("csvBtn").onclick=()=>{
   const q=v=>{ v=String(v??""); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
   const rows=LIST.map(s=>[s.name,s.ip,s.first?new Date(s.first*1000).toLocaleString("sv-SE"):"",t("mode_"+s.mode),
-    s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),tx(s.online?"yes":"no")]);
+    s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),tx(s.online?"yes":"no"),s.rush||0,s.checkBad||0]);
   const csv="﻿"+[TX[lang].csvHead,...rows].map(r=>r.map(q).join(",")).join("\r\n");
   const a=document.createElement("a"), d=new Date(), p=n=>String(n).padStart(2,"0");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download=`class-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+// a student who builds without reading: steps done faster than their read time, or explanation questions wrong
+const rushing=s=>(s.rush||0)>=3||(s.checkBad||0)>=3;
 async function poll(){
   try{
     const d=await (await fetch("/api/students",{cache:"no-store"})).json();
@@ -313,7 +321,7 @@ async function poll(){
     const on=list.filter(s=>s.online), wait=on.filter(s=>s.wait).length;
     $("summary").innerHTML=`<span><b>${on.length}</b> ${esc(tx("online"))}</span>`+(ST.mode==="build"&&ST.to?`<span><b>${wait}</b> ${esc(tx("finished",{n:on.length}))}</span>`:"");
     const html=list.map(s=>{ const p=s.steps?Math.round(100*Math.min(s.step,s.steps)/s.steps):0;
-      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}<button class="ren" data-rename="${esc(s.id)}" data-name="${esc(s.name)}" title="${esc(tx("rename"))}" aria-label="${esc(tx("rename"))}">✎</button>${s.wait?`<span class="tag">${esc(tx("waiting"))}</span>`:""}</td>
+      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}<button class="ren" data-rename="${esc(s.id)}" data-name="${esc(s.name)}" title="${esc(tx("rename"))}" aria-label="${esc(tx("rename"))}">✎</button>${s.wait?`<span class="tag">${esc(tx("waiting"))}</span>`:""}${rushing(s)?`<span class="tag warn" title="${esc(tx("rushTip",{r:s.rush||0,c:s.checkBad||0}))}">${esc(tx("rushing"))}</span>`:""}</td>
         <td class="num ip">${esc(s.ip)}</td><td class="num">${esc(clock(s.first))}</td><td>${esc(t("mode_"+s.mode))}</td>
         <td class="num">${s.steps?`<span class="bar"><i style="width:${p}%"></i></span>${Math.min(s.step,s.steps)}/${s.steps}`:s.done?s.done.length+" ✓":""}</td>
         <td>${esc(stepName(s))}</td><td class="num">${s.mistakes>2?`<span class="tag warn">${s.mistakes}</span>`:s.mistakes||0}</td><td class="num">${fmt(s.time||0)}</td>

@@ -26,12 +26,13 @@ INJECT = b"<script>window.CLASSROOM=true</script>\n"
 # students see ([] = all). tsCases: the troubleshooting case indexes they see ([] = all). goto / msg: {n|text, seq}: seq is the send time (ms),
 # so each student applies it once, even after a server restart. session: a new one (the teacher's "New session") makes
 # every page forget its name and progress; resets: {student id: time}, the same for one student. pause: everyone's screen shows "eyes on the teacher". skip: Ctrl+H / sidebar skips allowed.
-# tray / glow: the parts bar and the highlights forced on (true) or off (false) on every page, None = each student chooses.
+# tray / glow / quiz / card: the parts bar, the highlights, the questions (part quiz and step checks) and the step card
+# forced on (true) or off (false) on every page, None = each student chooses.
 # theme: the photo theme every page uses ("" = each student chooses). names: {student id: name} the teacher corrected.
 STATE = {"mode": "build", "to": 0, "challenges": [], "tsCases": [], "goto": {"n": 0, "seq": 0},
          "msg": {"text": "", "seq": 0}, "pause": False, "skip": False, "session": int(time.time() * 1000), "resets": {},
-         "tray": None, "glow": None, "theme": "", "names": {}}
-KEEP = ("mode", "to", "challenges", "tsCases", "skip", "session", "tray", "glow", "theme", "names")   # kept in state.json; goto / msg / pause are for this class only
+         "tray": None, "glow": None, "quiz": None, "card": None, "theme": "", "names": {}}
+KEEP = ("mode", "to", "challenges", "tsCases", "skip", "session", "tray", "glow", "quiz", "card", "theme", "names")   # kept in state.json; goto / msg / pause are for this class only
 
 
 def id_list(v):          # install scenario ids
@@ -171,7 +172,7 @@ class Handler(SimpleHTTPRequestHandler):
                     if k in data: STATE[k] = data[k]
                 if "challenges" in data: STATE["challenges"] = id_list(data["challenges"])
                 if "tsCases" in data: STATE["tsCases"] = int_list(data["tsCases"])
-                for k in ("tray", "glow"):
+                for k in ("tray", "glow", "quiz", "card"):
                     if k in data: STATE[k] = data[k] if isinstance(data[k], bool) else None
                 if "theme" in data: STATE["theme"] = re.sub(r"[^a-z0-9]", "", str(data["theme"] or ""))[:20]
                 rn = data.get("rename")

@@ -124,7 +124,7 @@ function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen()
   if(IN_STEP_HOOK[id]) IN_STEP_HOOK[id]();                               // a challenge's own start for this step (in-challenges.js)
   if(!note) inStepCardSoon(); }
 // phones / full screen: the step's card, once no other card is up (never two cards at once)
-function inStepCardSoon(){ if(!S.card||!(window.innerWidth<=860||isFs())) return; const at=IN.step;
+function inStepCardSoon(){ if(!cardWanted()) return; const at=IN.step;
   const go=()=>{ if(IN.step!==at) return; if(!inCardEl.hidden){ setTimeout(go,400); return; } inStepCard(); }; setTimeout(go,60); }
 function inSkip(){
   if(IN.step>=IN_STEPS.length) return;
@@ -177,7 +177,7 @@ inCardEl.addEventListener("keydown",e=>{ if(e.key==="Escape"&&icBtns.hidden) inC
 function inStepCard(){ if(IN.step>=IN_STEPS.length) return;
   document.getElementById("scNum").textContent=t("stepN",{n:IN.step+1,m:IN_STEPS.length});
   document.getElementById("scTitle").textContent=inStepT(inCur()); document.getElementById("scText").textContent=inStepD(inCur());
-  const was=stepCard.hidden; stepCard.hidden=false; if(was) document.getElementById("scOk").focus({preventScroll:true}); }
+  const was=stepCard.hidden; stepCard.hidden=false; if(was){ scErr.hidden=true; scWait(cardForced()?readMs(inStepD(inCur())):0); } }
 // a scenario reloads the page, the way a troubleshooting case does: every one starts from a clean PC
 function inGo(id){ IN.sc=id; persist(); location.reload(); }
 // the end of a scenario: congratulations, time and mistakes, OK (the list in the sidebar has the others)

@@ -146,6 +146,8 @@ details.photos p.theme-name:empty{ display:none; }
 .pi-nav button{ flex:1; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--btn); color:var(--btn-ink); cursor:pointer; font-weight:600; }
 .pi-nav button.primary{ background:var(--gold); color:var(--gold-ink); border-color:var(--gold); }
 .pi-nav button:disabled{ opacity:.45; cursor:not-allowed; }
+.pi-q{ margin-top:10px; } .pi-q .quiz-choice{ align-items:center; padding:8px 12px; font-weight:600; }
+.psu-info .quiz-msg{ margin-top:8px; font-size:13.5px; }
 .pi-plug rect:first-child, .pi-plug path:first-child{ fill:#1b1c1f; stroke:#6b7478; stroke-width:1; }
 .pi-plug > rect:nth-child(2){ fill:#1b1c1f; }
 .pi-pins rect{ fill:#d9b55b; }
@@ -392,6 +394,8 @@ body.fs.fs-open aside{ display:flex; }
 .quiz-choice.right{ border-color:var(--ok); background:color-mix(in srgb, var(--ok) 14%, var(--btn)); }
 .quiz-choice.right b{ background:var(--ok); color:#fff; }
 .quiz-msg{ margin:12px 0 0; min-height:1.5em; font-weight:600; }
+.sc-err{ margin:0 0 10px; padding:8px 12px; border-radius:8px; background:color-mix(in srgb, var(--err) 14%, transparent); color:var(--err); font-weight:600; }
+#scOk:disabled{ opacity:.6; cursor:wait; }
 .quiz-msg.ok{ color:var(--ok); } .quiz-msg.err{ color:var(--err); }
 /* wrong answer: the page shakes and a red glow flashes around the edges */
 .red-flash{ position:fixed; inset:0; z-index:100; pointer-events:none; opacity:0; box-shadow:inset 0 0 120px 30px rgba(220,20,20,.85); background:rgba(220,20,20,.12); }
