@@ -22,19 +22,32 @@ PORT = next((int(a) for a in sys.argv[1:] if a.isdigit()), 8080)
 OPEN_PANEL = "--no-browser" not in sys.argv                   # opens the teacher's panel in the browser at start
 INJECT = b"<script>window.CLASSROOM=true</script>\n"
 
-# mode: build / trouble / install. to: build steps 1..to are open (0 = all). challenge: install scenario id ("" = free
-# choice). tsCase: troubleshooting case index (-1 = free choice). goto / msg: {n|text, seq}: seq is the send time (ms),
+# mode: build / trouble / install. to: build steps 1..to are open (0 = all). challenges: the install scenario ids the
+# students see ([] = all). tsCases: the troubleshooting case indexes they see ([] = all). goto / msg: {n|text, seq}: seq is the send time (ms),
 # so each student applies it once, even after a server restart. session: a new one (the teacher's "New session") makes
 # every page forget its name and progress; resets: {student id: time}, the same for one student. pause: everyone's screen shows "eyes on the teacher". skip: Ctrl+H / sidebar skips allowed.
 # tray / glow: the parts bar and the highlights forced on (true) or off (false) on every page, None = each student chooses.
 # theme: the photo theme every page uses ("" = each student chooses). names: {student id: name} the teacher corrected.
-STATE = {"mode": "build", "to": 0, "challenge": "", "tsCase": -1, "goto": {"n": 0, "seq": 0},
+STATE = {"mode": "build", "to": 0, "challenges": [], "tsCases": [], "goto": {"n": 0, "seq": 0},
          "msg": {"text": "", "seq": 0}, "pause": False, "skip": False, "session": int(time.time() * 1000), "resets": {},
          "tray": None, "glow": None, "theme": "", "names": {}}
-KEEP = ("mode", "to", "challenge", "tsCase", "skip", "session", "tray", "glow", "theme", "names")   # kept in state.json; goto / msg / pause are for this class only
+KEEP = ("mode", "to", "challenges", "tsCases", "skip", "session", "tray", "glow", "theme", "names")   # kept in state.json; goto / msg / pause are for this class only
+
+
+def id_list(v):          # install scenario ids
+    return [x for x in (re.sub(r"[^A-Za-z0-9]", "", str(i))[:20] for i in v) if x][:50] if isinstance(v, list) else []
+
+
+def int_list(v):         # troubleshooting case indexes
+    return sorted({int(i) for i in v if isinstance(i, int) and 0 <= i < 100}) if isinstance(v, list) else []
+
+
 try:
-    with open(STATE_FILE, encoding="utf-8") as f: STATE.update({k: v for k, v in json.load(f).items() if k in KEEP})
-except (OSError, ValueError): pass
+    with open(STATE_FILE, encoding="utf-8") as f: old = json.load(f)
+    STATE.update({k: v for k, v in old.items() if k in KEEP})
+    if old.get("challenge") and "challenges" not in old: STATE["challenges"] = id_list([old["challenge"]])   # older state.json: one forced challenge / case
+    if isinstance(old.get("tsCase"), int) and old["tsCase"] >= 0 and "tsCases" not in old: STATE["tsCases"] = [old["tsCase"]]
+except (OSError, ValueError, AttributeError): pass
 
 STUDENTS = {}                                                  # id → the last progress report, plus "seen" and "first" (times), "ip"
 lock = threading.Condition()
@@ -154,8 +167,10 @@ class Handler(SimpleHTTPRequestHandler):
                     STUDENTS.clear(); STATE.update(session=seq, resets={}, names={}, pause=False, goto={"n": 0, "seq": seq}, msg={"text": "", "seq": seq})
                 if data.get("resetStudent"):
                     sid = str(data["resetStudent"]); STATE["resets"][sid] = seq; STUDENTS.pop(sid, None)
-                for k in ("mode", "to", "challenge", "tsCase", "pause", "skip"):
+                for k in ("mode", "to", "pause", "skip"):
                     if k in data: STATE[k] = data[k]
+                if "challenges" in data: STATE["challenges"] = id_list(data["challenges"])
+                if "tsCases" in data: STATE["tsCases"] = int_list(data["tsCases"])
                 for k in ("tray", "glow"):
                     if k in data: STATE[k] = data[k] if isinstance(data[k], bool) else None
                 if "theme" in data: STATE["theme"] = re.sub(r"[^a-z0-9]", "", str(data["theme"] or ""))[:20]

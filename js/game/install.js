@@ -360,12 +360,11 @@ function renderIN(){
     if(i===IN.step) h+=`<li class="exp"><div class="explain"><h2>${inStepT(id)}</h2><p>${inStepD(id)}</p>${id==="diskPlan"&&!IN.plan?`<p><button class="primary in-plan-btn" data-plan>${t("in_planPick")}</button></p>`:""}</div></li>`; });
   h+=`</ol>`;
   if(IN.step>=IN_STEPS.length) h+=`<div class="ts-win"><b>${t("in_sc_"+IN.sc)} ✓</b><p>${inT("in_doneP_"+IN.sc)}</p><p class="ts-muted">${t("in_doneStats",{t:fmtTime((S.end||performance.now())-S.start),m:S.mistakes})}</p></div>`;
-  h+=`<div class="in-ch"><p class="module-title">${t("in_chTitle")}</p><ol class="ts-pick">${IN_ORDER.map(k=>{ const d=IN.done.includes(k);
+  h+=`<div class="in-ch"><p class="module-title">${t("in_chTitle")}</p><ol class="ts-pick">${IN_ORDER.filter(clScOk).map(k=>{ const d=IN.done.includes(k);
     return `<li><button data-sc="${k}" class="${d?"solved":""}${k===IN.sc?" cur":""}"><i>${d?"✓":k==="main"?"★":IN_ORDER.indexOf(k)}</i><b>${t("in_sc_"+k)}</b><span>${t("in_scd_"+k)}</span></button></li>`; }).join("")}</ol></div>`;
   el.innerHTML=h;
   el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>inGo(b.dataset.sc));
   el.querySelectorAll("[data-plan]").forEach(b=>b.onclick=inPlanCard);
-  clLock(el);                                                            // classroom: the teacher picked the challenge
   const cur=el.querySelector("li.current"); if(cur&&window.innerWidth>860&&!isFs()) cur.scrollIntoView({block:"center"});
   document.getElementById("fsStep").textContent=IN.step>=IN_STEPS.length?t("in_sc_"+IN.sc)+" ✓":(IN.step+1)+"/"+IN_STEPS.length+" · "+inStepT(inCur());
 }

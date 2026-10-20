@@ -2,8 +2,9 @@
    Only on when that server served the page: it adds <script>window.CLASSROOM=true</script>. The live site, a file://
    copy and the offline zip don't have it, so everything below stays off there.
    The student types their name once per browser session (pclabStudent). The page then follows the teacher's panel over
-   Server-Sent Events (/events): the mode, how far the build may go (CL_MAX: from that step on a card says to wait), the
-   install challenge or troubleshooting case, "everyone to step N", pause, a message, whether skipping is allowed,
+   Server-Sent Events (/events): the mode, how far the build may go (CL_MAX: from that step on a card says to wait), which
+   install challenges / troubleshooting cases the student sees (challenges / tsCases: an empty list = all), "everyone to
+   step N", pause, a message, whether skipping is allowed,
    the parts bar / highlights / photo theme (clForce: set and locked) and a name the teacher corrected (st.names).
    Progress goes back with a POST (/api/progress) every few seconds and after each step.
    A reload (a mode change from the teacher, F5) would lose the build, so the build's step is kept (pclabStep) and the
@@ -14,6 +15,9 @@ const CL={on:!!window.CLASSROOM, st:{}, me:null, restoring:false, waiting:false,
 let CL_MAX=Infinity;                                        // build mode: steps from this index on wait for the teacher
 // may the student skip up to step n (Ctrl+H, a sidebar click)? Always outside the classroom
 function clMaySkip(n){ return !CL.on||(!!CL.st.skip&&n<=CL_MAX); }
+// the teacher's choice of what the student sees (an empty or missing list = everything; always everything outside the classroom)
+const clAllowed=(list,k)=>!CL.on||!Array.isArray(list)||!list.length||list.includes(k);
+const clScOk=k=>clAllowed(CL.st.challenges,k), clCaseOk=n=>clAllowed(CL.st.tsCases,n);
 const clLoad=k=>{ try{ return JSON.parse(sessionStorage.getItem(k)||"null"); }catch(e){ return null; } };
 const clSave=(k,v)=>{ try{ sessionStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
 
@@ -61,8 +65,8 @@ function clApply(st){
   if(!CL.me.session){ CL.me.session=st.session; clSave("pclabStudent",CL.me); }
   if(CL.me.session!==st.session||(st.resets&&st.resets[CL.me.id])){ clReset(); return; }
   if(["build","trouble","install"].includes(st.mode)&&st.mode!==appMode){ appMode=st.mode; persist(); location.reload(); return; }
-  if(IN.on&&IN_SCENARIOS[st.challenge]&&IN.sc!==st.challenge){ inGo(st.challenge); return; }
-  if(TS.on&&TS_CASES[st.tsCase]&&TS.n!==st.tsCase){ tsGo(st.tsCase); return; }
+  if(IN.on&&!clScOk(IN.sc)){ const k=IN_ORDER.find(clScOk); if(k){ inGo(k); return; } }   // this challenge was taken off the list
+  if(TS.on) clCases();
   const nn=st.names&&st.names[CL.me.id];                                // the teacher corrected the name
   if(nn&&nn!==CL.me.name){ CL.me.name=nn; clSave("pclabStudent",CL.me); if(CL.dot) CL.dot.querySelector("span").textContent=nn; }
   clForce(st);
@@ -93,11 +97,11 @@ function clWait(){
   const el=clCover("clWait",w?`<p class="quiz-part">${t("stepN",{n:S.step,m:STEPS})}</p><h2>${t("cl_waitTitle")}</h2><p class="sc-text">${t("cl_waitText",{n:CL_MAX,m:STEPS})}</p>`:undefined);
   el.hidden=!w; if(w) hideStepCard(); CL.waiting=w;
 }
-// the teacher picked the challenge / case: the sidebar list can't switch to another one (renderIN, renderTS)
-function clLock(el){
-  if(!CL.on) return;
-  if(IN.on&&IN_SCENARIOS[CL.st.challenge]) el.querySelectorAll("[data-sc]").forEach(b=>b.disabled=b.dataset.sc!==CL.st.challenge);
-  if(TS.on&&TS_CASES[CL.st.tsCase]) el.querySelectorAll("[data-case],[data-go],[data-act=list]").forEach(b=>b.disabled=true);
+// troubleshooting: a case the teacher took off the list closes (back to the list); one case only opens by itself
+function clCases(){
+  const cs=tsCases();
+  if(TS.n!==null&&!clCaseOk(TS.n)) tsGo(cs.length===1?cs[0]:null);
+  else if(cs.length===1&&TS.n!==cs[0]) tsGo(cs[0]);
 }
 // setStep calls this after every step
 function clStep(){

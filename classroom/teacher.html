@@ -11,9 +11,10 @@
 @media (prefers-color-scheme: dark){ :root{ --paper:#111618; --panel:#182023; --ink:#e4ebec; --muted:#93a3a8; --line:#2a3639; --btn:#212b2f; } }
 *{ box-sizing:border-box; }
 body{ margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans Arabic","Noto Kufi Arabic",system-ui,sans-serif; font-size:15px; }
+html[lang=en] body{ font-family:"Barlow","IBM Plex Sans Arabic",system-ui,sans-serif; }
 header{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); }
 h1{ font-size:20px; margin:0; } h2{ font-size:15px; margin:0 0 10px; color:var(--muted); }
-.urls{ color:var(--muted); } .urls b{ color:var(--ink); direction:ltr; unicode-bidi:embed; user-select:all; }
+.urls{ color:var(--muted); flex:1; margin:0; } .urls b{ color:var(--ink); direction:ltr; unicode-bidi:embed; user-select:all; }
 main{ display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:16px; padding:16px 20px; align-items:start; }
 @media (max-width:900px){ main{ grid-template-columns:1fr; } }
 section{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
@@ -26,6 +27,7 @@ button.danger.on{ background:var(--err); border-color:var(--err); color:#fff; }
 select,input[type=text]{ border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:7px 10px; min-width:0; flex:1; }
 label.chk{ display:flex; gap:8px; align-items:center; }
 .hint{ color:var(--muted); font-size:13px; margin:4px 0 0; }
+.hint.err{ color:var(--err); }
 [hidden]{ display:none !important; }
 table{ width:100%; border-collapse:collapse; }
 th,td{ text-align:start; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
@@ -51,66 +53,119 @@ tr.off td{ opacity:.5; }
 #heads th[data-sort]::after{ content:attr(data-arrow); margin-inline-start:4px; font-size:11px; }
 .ren{ border:0; background:none; padding:2px 6px; color:var(--muted); cursor:pointer; }
 .ren:hover{ color:var(--ink); }
+/* which challenges / cases the students see: one row each, "only" leaves just that one */
+.picks{ display:flex; flex-direction:column; gap:2px; max-height:480px; overflow:auto; margin:6px 0; }
+.pick{ display:flex; align-items:center; gap:8px; padding:3px 4px; border-radius:6px; }
+.pick:hover{ background:var(--paper); }
+.pick label{ display:flex; gap:8px; align-items:center; flex:1; cursor:pointer; }
+.pick input{ width:17px; height:17px; accent-color:var(--gold); flex:none; }
+.pick .only{ visibility:hidden; }
+.pick:hover .only, .pick .only:focus{ visibility:visible; }
 </style>
 </head>
 <body>
 <header>
-  <h1>لوحة الأستاذ</h1>
+  <h1 data-k="title"></h1>
   <p class="urls" id="urls"></p>
+  <button id="langBtn" class="small"></button>
 </header>
 <main>
   <div>
     <section>
-      <h2>الوضع (لكل الطلاب)</h2>
+      <h2 data-k="modeT"></h2>
       <div class="row" id="modes"></div>
-      <p class="hint">تغيير الوضع يعيد تحميل صفحات الطلاب. تقدّمهم في التجميع يُسترجع تلقائيا.</p>
+      <p class="hint" data-k="modeHint"></p>
     </section>
     <section id="buildBox">
-      <h2>تجميع الحاسوب</h2>
-      <div class="row"><span>المراحل المفتوحة حتى</span><select id="to"></select></div>
-      <div class="row"><button id="toMore">+10 مراحل</button><button id="toAll">افتح الكل</button></div>
-      <div class="row"><span>انقل الجميع إلى</span><select id="goto"></select><button class="primary" id="gotoBtn">انقل</button></div>
-      <p class="hint">النقل يتخطى المراحل إلى الأمام فقط، ومن تجاوزها لا يرجع.</p>
-      <label class="chk"><input type="checkbox" id="skip"> السماح للطلاب بالتخطي (Ctrl+H والنقر على المراحل)</label>
+      <h2 data-k="buildT"></h2>
+      <div class="row"><span data-k="toLbl"></span><select id="to"></select></div>
+      <div class="row"><button id="toMore" data-k="toMore"></button><button id="toAll" data-k="toAll"></button></div>
+      <div class="row"><span data-k="gotoLbl"></span><select id="goto"></select><button class="primary" id="gotoBtn" data-k="gotoBtn"></button></div>
+      <p class="hint" data-k="gotoHint"></p>
+      <label class="chk"><input type="checkbox" id="skip"> <span data-k="skip"></span></label>
     </section>
     <section id="installBox">
-      <h2>تثبيت ويندوز: التحدي</h2>
-      <div class="row"><select id="challenge"></select></div>
+      <h2 data-k="chT"></h2>
+      <div class="row"><button class="small" id="chAll"></button></div>
+      <div class="picks" id="challenges"></div>
+      <p class="hint" id="chHint" data-k="picksHint"></p>
     </section>
     <section id="troubleBox">
-      <h2>استكشاف الأعطال: الحالة</h2>
-      <div class="row"><select id="tsCase"></select></div>
+      <h2 data-k="tsT"></h2>
+      <div class="row"><button class="small" id="tsAll"></button></div>
+      <div class="picks" id="tsCases"></div>
+      <p class="hint" id="tsHint" data-k="picksHint"></p>
     </section>
     <section>
-      <h2>إعدادات العرض (لكل الطلاب)</h2>
+      <h2 data-k="viewT"></h2>
       <div class="set">
-        <span>شريط القطع</span><select id="setTray"><option value="">الطالب يختار</option><option value="1">إظهار</option><option value="0">إخفاء</option></select>
-        <span>التوضيحات</span><select id="setGlow"><option value="">الطالب يختار</option><option value="1">تشغيل</option><option value="0">إيقاف</option></select>
-        <span>السمة</span><select id="setTheme"></select>
+        <span data-k="tray"></span><select id="setTray"><option value="" data-k="choose"></option><option value="1" data-k="show"></option><option value="0" data-k="hide"></option></select>
+        <span data-k="glow"></span><select id="setGlow"><option value="" data-k="choose"></option><option value="1" data-k="on"></option><option value="0" data-k="off"></option></select>
+        <span data-k="theme"></span><select id="setTheme"></select>
       </div>
-      <p class="hint">ما تختاره هنا يُطبَّق فورًا على كل الطلاب ويُقفل الزر عندهم. «الطالب يختار» يفكّ القفل.</p>
+      <p class="hint" data-k="viewHint"></p>
     </section>
     <section>
-      <h2>القسم</h2>
-      <div class="row"><button class="danger" id="pause">إيقاف مؤقت: انتبهوا</button></div>
-      <div class="row"><button id="newSession">حصة جديدة</button></div>
-      <p class="hint">حصة جديدة: كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1، وتُمحى القائمة.</p>
-      <div class="row"><input type="text" id="msg" maxlength="300" placeholder="رسالة تظهر لكل الطلاب"><button id="msgBtn">أرسل</button></div>
+      <h2 data-k="classT"></h2>
+      <div class="row"><button class="danger" id="pause"></button></div>
+      <div class="row"><button id="newSession" data-k="newSession"></button></div>
+      <p class="hint" data-k="newHint"></p>
+      <div class="row"><input type="text" id="msg" maxlength="300" data-kp="msgPh"><button id="msgBtn" data-k="send"></button></div>
     </section>
   </div>
   <section>
-    <h2>الطلاب</h2>
+    <h2 data-k="studentsT"></h2>
     <div class="summary" id="summary"></div>
-    <div class="tools"><span class="hint">انقر على عنوان عمود للترتيب حسبه، وانقر مرة أخرى لعكس الترتيب. القائمة تُرتَّب من جديد كل ثانيتين.</span>
-      <button id="csvBtn">تصدير CSV</button></div>
-    <table><thead><tr id="heads"><th data-sort="name">الطالب</th><th data-sort="ip">الحاسوب (IP)</th><th data-sort="first">البدء</th><th data-sort="mode">الوضع</th><th data-sort="prog">التقدم</th><th data-sort="step">المرحلة الحالية</th><th data-sort="mistakes">أخطاء</th><th data-sort="time">الوقت</th><th></th></tr></thead><tbody id="rows"></tbody></table>
-    <p class="empty" id="empty">لا أحد بعد. يفتح الطلاب العنوان المكتوب في الأعلى ويكتبون أسماءهم.</p>
+    <div class="tools"><span class="hint" data-k="sortHint"></span>
+      <button id="csvBtn" data-k="csv"></button></div>
+    <table><thead><tr id="heads"><th data-sort="name" data-k="hName"></th><th data-sort="ip" data-k="hIp"></th><th data-sort="first" data-k="hFirst"></th><th data-sort="mode" data-k="hMode"></th><th data-sort="prog" data-k="hProg"></th><th data-sort="step" data-k="hStep"></th><th data-sort="mistakes" data-k="hMis"></th><th data-sort="time" data-k="hTime"></th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="empty" id="empty" data-k="empty"></p>
   </section>
 </main>
 <script src="/js/core/i18n.js"></script>
 <script src="/js/core/i18n-install.js"></script>
 <script>
-lang="ar";
+// the panel's own words (the steps, challenges and cases come from the app's i18n through t())
+const TX={
+ar:{title:"لوحة الأستاذ", other:"English", modeT:"الوضع (لكل الطلاب)", modeHint:"تغيير الوضع يعيد تحميل صفحات الطلاب. تقدّمهم في التجميع يُسترجع تلقائيا.",
+  buildT:"تجميع الحاسوب", toLbl:"المراحل المفتوحة حتى", allSteps:"كل المراحل", toMore:"+10 مراحل", toAll:"افتح الكل",
+  gotoLbl:"انقل الجميع إلى", gotoBtn:"انقل", gotoHint:"النقل يتخطى المراحل إلى الأمام فقط، ومن تجاوزها لا يرجع.",
+  skip:"السماح للطلاب بالتخطي (Ctrl+H والنقر على المراحل)",
+  chT:"تثبيت ويندوز: التحديات التي يراها الطلاب", tsT:"استكشاف الأعطال: الحالات التي يراها الطلاب", allOn:"تحديد الكل", allOff:"إلغاء الكل", only:"هذا فقط", cause:"السبب",
+  picksHint:"علّم ما يظهر في قائمة الطالب. «هذا فقط» يترك واحدًا، فيفتحه الطالب مباشرة.", keepOne:"يجب أن يبقى واحد على الأقل معلَّمًا.",
+  viewT:"إعدادات العرض (لكل الطلاب)", tray:"شريط القطع", glow:"التوضيحات", theme:"السمة", choose:"الطالب يختار", show:"إظهار", hide:"إخفاء", on:"تشغيل", off:"إيقاف",
+  viewHint:"ما تختاره هنا يُطبَّق فورًا على كل الطلاب ويُقفل الزر عندهم. «الطالب يختار» يفكّ القفل.",
+  classT:"القسم", pause:"إيقاف مؤقت: انتبهوا", resume:"استئناف الحصة", newSession:"حصة جديدة",
+  newHint:"حصة جديدة: كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1، وتُمحى القائمة.", msgPh:"رسالة تظهر لكل الطلاب", send:"أرسل",
+  studentsT:"الطلاب", sortHint:"انقر على عنوان عمود للترتيب حسبه، وانقر مرة أخرى لعكس الترتيب. القائمة تُرتَّب من جديد كل ثانيتين.", csv:"تصدير CSV",
+  hName:"الطالب", hIp:"الحاسوب (IP)", hFirst:"البدء", hMode:"الوضع", hProg:"التقدم", hStep:"المرحلة الحالية", hMis:"أخطاء", hTime:"الوقت",
+  empty:"لا أحد بعد. يفتح الطلاب العنوان المكتوب في الأعلى ويكتبون أسماءهم.", urls:"يفتح الطلاب: ", or:" أو ",
+  online:"متصل", finished:"من {n} أنهوا المراحل المفتوحة", waiting:"ينتظر", rename:"تعديل الاسم", reset:"إعادة", forget:"احذف",
+  done:"انتهى ✓", picking:"يختار حالة", ph_power:"تشغيل", ph_check:"فحص", ph_fix:"إصلاح", ph_retry:"إعادة التشغيل", ph_solved:"حُلّت ✓",
+  askMode:"ستُعاد صفحات كل الطلاب إلى وضع «{m}». متابعة؟", askGoto:"نقل كل الطلاب إلى المرحلة {n}؟ من لم يصلها ستُتخطّى مراحله.",
+  askNew:"بدء حصة جديدة؟ كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1.", askName:"اسم الطالب:", noServer:"الخادم لا يجيب. هل نافذة الخادم مفتوحة؟",
+  csvHead:["الطالب","IP","البدء","الوضع","التقدم","النسبة %","المرحلة الحالية","أخطاء","الوقت","متصل"], yes:"نعم", no:"لا", locale:"ar-DZ-u-nu-latn"},
+en:{title:"Teacher's panel", other:"عربي", modeT:"Mode (all students)", modeHint:"Changing the mode reloads the students' pages. Their build progress comes back by itself.",
+  buildT:"Build a PC", toLbl:"Steps open up to", allSteps:"All steps", toMore:"+10 steps", toAll:"Open all",
+  gotoLbl:"Move everyone to", gotoBtn:"Move", gotoHint:"Moving only skips forward: students already past that step stay where they are.",
+  skip:"Let students skip (Ctrl+H and clicking steps)",
+  chT:"Install Windows: challenges students see", tsT:"Troubleshooting: cases students see", allOn:"Select all", allOff:"Clear all", only:"Only this", cause:"Cause",
+  picksHint:"Tick what shows in the students' list. \"Only this\" leaves one, and students open it straight away.", keepOne:"At least one must stay ticked.",
+  viewT:"Display settings (all students)", tray:"Parts bar", glow:"Highlights", theme:"Theme", choose:"Student chooses", show:"Show", hide:"Hide", on:"On", off:"Off",
+  viewHint:"What you pick here applies to every student at once and locks their control. \"Student chooses\" unlocks it.",
+  classT:"Class", pause:"Pause: eyes on me", resume:"Resume the class", newSession:"New session",
+  newHint:"New session: every student types their name again and starts from step 1; the list is cleared.", msgPh:"A message for every student", send:"Send",
+  studentsT:"Students", sortHint:"Click a column heading to sort by it, click again to reverse. The list re-sorts every 2 seconds.", csv:"Export CSV",
+  hName:"Student", hIp:"PC (IP)", hFirst:"Started", hMode:"Mode", hProg:"Progress", hStep:"Current step", hMis:"Mistakes", hTime:"Time",
+  empty:"Nobody yet. Students open the address shown at the top and type their name.", urls:"Students open: ", or:" or ",
+  online:"online", finished:"of {n} finished the open steps", waiting:"waiting", rename:"Edit name", reset:"Reset", forget:"Remove",
+  done:"Done ✓", picking:"choosing a case", ph_power:"power on", ph_check:"checking", ph_fix:"fixing", ph_retry:"testing again", ph_solved:"solved ✓",
+  askMode:"Every student's page will switch to \"{m}\". Continue?", askGoto:"Move every student to step {n}? Steps they haven't reached are skipped.",
+  askNew:"Start a new session? Every student types their name again and starts from step 1.", askName:"Student's name:", noServer:"The server isn't answering. Is the server window open?",
+  csvHead:["Student","IP","Started","Mode","Progress","Percent","Current step","Mistakes","Time","Online"], yes:"yes", no:"no", locale:"en-GB"}
+};
+try{ lang=localStorage.getItem("teacherLang")==="en"?"en":"ar"; }catch(e){ lang="ar"; }
+const tx=(k,v)=>String(TX[lang][k]).replace(/\{(\w+)\}/g,(m,n)=>v&&v[n]!==undefined?v[n]:m);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
@@ -123,36 +178,75 @@ async function catalog(){
     grab("/js/game/install.js",/const IN_ORDER=(\[[\s\S]*?\]);/),grab("/js/game/trouble.js",/const TS_CASES=(\[[\s\S]*?\]\]);/)]);
   const ph=await (await fetch("/js/game/photos.js",{cache:"no-store"})).text(), bt=ph.match(/const BUILTIN_THEMES=\{([^}]*)\}/);   // theme1, theme2, …
   THEMES=[...(bt?[...bt[1].matchAll(/(\w+)\s*:/g)].map(m=>m[1]):[]),"none"];
-  $("setTheme").innerHTML=`<option value="">الطالب يختار</option>`+THEMES.map(k=>`<option value="${k}">${esc(t("th_"+k))}</option>`).join("");
+  fillLists();
+}
+// everything with words in it, in the panel's language (the language button calls this again)
+function applyTx(){
+  document.documentElement.lang=lang; document.documentElement.dir=lang==="ar"?"rtl":"ltr"; document.title=tx("title");
+  document.querySelectorAll("[data-k]").forEach(e=>e.textContent=tx(e.dataset.k));
+  document.querySelectorAll("[data-kp]").forEach(e=>e.placeholder=tx(e.dataset.kp));
+  $("langBtn").textContent=tx("other");
+}
+function fillLists(){
+  $("setTheme").innerHTML=`<option value="">${esc(tx("choose"))}</option>`+THEMES.map(k=>`<option value="${k}">${esc(t("th_"+k))}</option>`).join("");
   const stepOpt=(i,id)=>`<option value="${i+1}">${i+1}. ${esc(t("s_"+id))}</option>`;
-  $("to").innerHTML=`<option value="0">كل المراحل</option>`+STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
-  $("goto").innerHTML=STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
-  $("challenge").innerHTML=`<option value="">حر: الطالب يختار</option>`+IN_ORDER.map(k=>`<option value="${k}">${esc(t("in_sc_"+k))}</option>`).join("");
-  $("tsCase").innerHTML=`<option value="-1">حر: الطالب يختار</option>`+TS_CASES.map(([s],i)=>`<option value="${i}">${esc(t("ts_case",{n:i+1}))} · ${esc(t("ts_"+s))}</option>`).join("");
+  const g=$("goto").value;
+  $("to").innerHTML=`<option value="0">${esc(tx("allSteps"))}</option>`+STEP_IDS.map((id,i)=>stepOpt(i,id)).join("");
+  $("goto").innerHTML=STEP_IDS.map((id,i)=>stepOpt(i,id)).join(""); if(g) $("goto").value=g;
   $("modes").innerHTML=["build","trouble","install"].map(m=>`<button data-mode="${m}">${esc(t("mode_"+m))}</button>`).join("");
   $("modes").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(b.dataset.mode===ST.mode) return;
-    if(confirm("ستُعاد صفحات كل الطلاب إلى وضع «"+b.textContent+"». متابعة؟")) send({mode:b.dataset.mode}); });
+    if(confirm(tx("askMode",{m:b.textContent}))) send({mode:b.dataset.mode}); });
+  renderState(true);
 }
 async function send(change){
   const r=await fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(change)});
   if(r.ok){ ST=await r.json(); renderState(); } }
 
-function renderState(){
+/* which challenges / cases the students see: a checkbox each. All ticked is sent as [] (= everything, so a challenge
+   added to the app later shows up too). The last ticked one can't be unticked. The top button selects all, or, when all
+   are ticked, clears all but the first one (students can't be shown an empty list). */
+// a case as the teacher needs it: number, symptom and its exact cause (several cases share a symptom)
+const tsLabel=i=>{ const [s,f]=TS_CASES[i]; return t("ts_case",{n:i+1})+" · "+t("ts_"+s)+" · "+tx("cause")+": "+t("ts_c_"+f); };
+const PICKS={
+  challenges:{el:"challenges", hint:"chHint", btn:"chAll", items:()=>IN_ORDER.map(k=>[k,t("in_sc_"+k)]), val:v=>v},
+  tsCases:{el:"tsCases", hint:"tsHint", btn:"tsAll", items:()=>TS_CASES.map(([s],i)=>[i,tsLabel(i)]), val:v=>+v}
+};
+function renderPicks(key){ const P=PICKS[key], sel=ST[key]||[], all=!sel.length, el=$(P.el);
+  el.innerHTML=P.items().map(([v,l])=>`<div class="pick"><label><input type="checkbox" value="${esc(v)}"${all||sel.includes(v)?" checked":""}><span>${esc(l)}</span></label><button class="small only" data-only="${esc(v)}">${esc(tx("only"))}</button></div>`).join("");
+  pickHint(key,"picksHint"); pickBtn(key); }
+function pickHint(key,k,err){ const h=$(PICKS[key].hint); h.textContent=tx(k); h.classList.toggle("err",!!err); }
+// the top button: "Select all" while any box is empty, "Clear all" when every box is ticked
+function pickBtn(key){ const P=PICKS[key], boxes=[...$(P.el).querySelectorAll("input")];
+  $(P.btn).textContent=tx(boxes.length&&boxes.every(b=>b.checked)?"allOff":"allOn"); }
+function sendPicks(key,list){ send({[key]:list.length===PICKS[key].items().length?[]:list}); }
+Object.entries(PICKS).forEach(([key,P])=>{
+  $(P.el).addEventListener("change",e=>{ const boxes=[...$(P.el).querySelectorAll("input")], on=boxes.filter(b=>b.checked);
+    if(!on.length){ e.target.checked=true; pickHint(key,"keepOne",true); return; }
+    sendPicks(key,on.map(b=>P.val(b.value))); });
+  $(P.el).addEventListener("click",e=>{ const b=e.target.closest("[data-only]"); if(b) sendPicks(key,[P.val(b.dataset.only)]); });
+  $(P.btn).onclick=()=>{ const boxes=[...$(P.el).querySelectorAll("input")]; if(!boxes.length) return;
+    const all=boxes.every(b=>b.checked);
+    boxes.forEach((b,i)=>b.checked=!all||i===0); pickHint(key,"picksHint"); pickBtn(key);   // at once, before the server answers
+    sendPicks(key,all?[P.val(boxes[0].value)]:[]); };
+});
+
+let picksShown="";
+function renderState(force){
   $("modes").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.mode===ST.mode));
   $("buildBox").hidden=ST.mode!=="build"; $("installBox").hidden=ST.mode!=="install"; $("troubleBox").hidden=ST.mode!=="trouble";
   if(document.activeElement!==$("to")) $("to").value=ST.to||0;
   const tri=v=>v===true?"1":v===false?"0":"";
   $("setTray").value=tri(ST.tray); $("setGlow").value=tri(ST.glow); $("setTheme").value=ST.theme||"";
-  $("skip").checked=!!ST.skip; $("challenge").value=ST.challenge||""; $("tsCase").value=ST.tsCase??-1;
-  $("pause").classList.toggle("on",!!ST.pause); $("pause").textContent=ST.pause?"استئناف الحصة":"إيقاف مؤقت: انتبهوا";
+  $("skip").checked=!!ST.skip;
+  const pk=lang+JSON.stringify([ST.challenges,ST.tsCases,IN_ORDER.length,TS_CASES.length]);
+  if(force||pk!==picksShown){ picksShown=pk; renderPicks("challenges"); renderPicks("tsCases"); }   // not on every poll: a redraw under the pointer loses the click
+  $("pause").classList.toggle("on",!!ST.pause); $("pause").textContent=tx(ST.pause?"resume":"pause");
 }
 $("to").onchange=()=>send({to:+$("to").value});
 $("toMore").onclick=()=>{ const n=(ST.to||0)+10; send({to:n>=STEP_IDS.length?0:n}); };
 $("toAll").onclick=()=>send({to:0});
-$("gotoBtn").onclick=()=>{ const n=+$("goto").value; if(confirm("نقل كل الطلاب إلى المرحلة "+n+"؟ من لم يصلها ستُتخطّى مراحله.")) send({goto:n}); };
+$("gotoBtn").onclick=()=>{ const n=+$("goto").value; if(confirm(tx("askGoto",{n}))) send({goto:n}); };
 $("skip").onchange=()=>send({skip:$("skip").checked});
-$("challenge").onchange=()=>send({challenge:$("challenge").value});
-$("tsCase").onchange=()=>send({tsCase:+$("tsCase").value});
 $("pause").onclick=()=>send({pause:!ST.pause});
 const triVal=v=>v===""?null:v==="1";
 $("setTray").onchange=()=>send({tray:triVal($("setTray").value)});
@@ -160,18 +254,21 @@ $("setGlow").onchange=()=>send({glow:triVal($("setGlow").value)});
 $("setTheme").onchange=()=>send({theme:$("setTheme").value});
 // one listener for the table (its rows are redrawn): Reset = the student starts over with a new name
 $("rows").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
-  if(b.dataset.rename){ const n=prompt("اسم الطالب:",b.dataset.name); if(n&&n.trim()&&n.trim()!==b.dataset.name) send({rename:{id:b.dataset.rename,name:n.trim()}}).then(poll); return; }
+  if(b.dataset.rename){ const n=prompt(tx("askName"),b.dataset.name); if(n&&n.trim()&&n.trim()!==b.dataset.name) send({rename:{id:b.dataset.rename,name:n.trim()}}).then(poll); return; }
   b.disabled=true;
   if(b.dataset.reset) send({resetStudent:b.dataset.reset}).then(poll);
   else if(b.dataset.forget) send({forget:b.dataset.forget}).then(poll); });
-$("newSession").onclick=()=>{ if(confirm("بدء حصة جديدة؟ كل الطلاب يكتبون أسماءهم من جديد ويبدؤون من المرحلة 1.")) send({newSession:true}).then(poll); };
+$("newSession").onclick=()=>{ if(confirm(tx("askNew"))) send({newSession:true}).then(poll); };
 $("msgBtn").onclick=()=>{ const m=$("msg").value.trim(); if(!m) return; send({msg:m}); $("msg").value=""; };
 $("msg").onkeydown=e=>{ if(e.key==="Enter") $("msgBtn").click(); };
+$("langBtn").onclick=()=>{ lang=lang==="ar"?"en":"ar"; try{ localStorage.setItem("teacherLang",lang); }catch(e){}
+  applyTx(); fillLists(); renderHeads(); poll.last=""; poll(); };
 
 function stepName(s){
-  if(s.mode==="build") return s.stepId==="done"?"انتهى ✓":t("s_"+s.stepId);
-  if(s.mode==="install") return t("in_sc_"+s.sc)+" · "+(s.stepId==="done"?"انتهى ✓":t("in_s_"+s.stepId));
-  if(s.mode==="trouble") return s.tsCase==null?"يختار حالة":t("ts_case",{n:s.tsCase+1})+" · "+({power:"تشغيل",check:"فحص",fix:"إصلاح",retry:"إعادة التشغيل",solved:"حُلّت ✓"}[s.phase]||"");
+  const n=(s.step|0)+1+". ";                                              // the step's number, as the student's sidebar shows it
+  if(s.mode==="build") return s.stepId==="done"?tx("done"):n+t("s_"+s.stepId);
+  if(s.mode==="install") return t("in_sc_"+s.sc)+" · "+(s.stepId==="done"?tx("done"):n+t("in_s_"+s.stepId));
+  if(s.mode==="trouble") return s.tsCase==null||!TS_CASES[s.tsCase]?tx("picking"):tsLabel(s.tsCase)+" · "+(TX[lang]["ph_"+s.phase]||"");
   return "";
 }
 // sorting: a click on a column heading sorts by it, a second click flips it. Each column starts the useful way round:
@@ -179,9 +276,9 @@ function stepName(s){
 // The list is sorted again on every poll (2 s), so it follows the class live
 const prog=s=>s.steps?Math.min(s.step,s.steps)/s.steps:s.done?s.done.length/100:0;
 const ipKey=ip=>String(ip||"").split(".").map(n=>String(+n||0).padStart(3,"0")).join(".");
-const clock=sec=>sec?new Date(sec*1000).toLocaleTimeString("ar-DZ-u-nu-latn",{hour:"2-digit",minute:"2-digit"}):"";
-const SORT_UP={name:(a,b)=>a.name.localeCompare(b.name,"ar"), ip:(a,b)=>ipKey(a.ip).localeCompare(ipKey(b.ip)), first:(a,b)=>(a.first||0)-(b.first||0),
-  mode:(a,b)=>String(a.mode).localeCompare(String(b.mode)), prog:(a,b)=>prog(a)-prog(b), step:(a,b)=>stepName(a).localeCompare(stepName(b),"ar"),
+const clock=sec=>sec?new Date(sec*1000).toLocaleTimeString(tx("locale"),{hour:"2-digit",minute:"2-digit"}):"";
+const SORT_UP={name:(a,b)=>a.name.localeCompare(b.name,lang), ip:(a,b)=>ipKey(a.ip).localeCompare(ipKey(b.ip)), first:(a,b)=>(a.first||0)-(b.first||0),
+  mode:(a,b)=>String(a.mode).localeCompare(String(b.mode)), prog:(a,b)=>prog(a)-prog(b), step:(a,b)=>stepName(a).localeCompare(stepName(b),lang),
   mistakes:(a,b)=>(a.mistakes||0)-(b.mistakes||0), time:(a,b)=>(a.time||0)-(b.time||0)};
 const SORT_DOWN_FIRST=["prog","mistakes","time"];
 let SORT={k:"prog",dir:-1};
@@ -195,14 +292,13 @@ $("heads").onclick=e=>{ const th=e.target.closest("th[data-sort]"); if(!th) retu
   SORT=SORT.k===k?{k,dir:-SORT.dir}:{k,dir:SORT_DOWN_FIRST.includes(k)?-1:1};
   try{ localStorage.setItem("teacherSort",JSON.stringify(SORT)); }catch(e){}
   renderHeads(); poll.last=""; poll(); };
-renderHeads();
+applyTx(); renderHeads();
 // CSV in the list's current order; the BOM lets Excel read the Arabic
 $("csvBtn").onclick=()=>{
   const q=v=>{ v=String(v??""); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
-  const head=["الطالب","IP","البدء","الوضع","التقدم","النسبة %","المرحلة الحالية","أخطاء","الوقت","متصل"];
   const rows=LIST.map(s=>[s.name,s.ip,s.first?new Date(s.first*1000).toLocaleString("sv-SE"):"",t("mode_"+s.mode),
-    s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),s.online?"نعم":"لا"]);
-  const csv="﻿"+[head,...rows].map(r=>r.map(q).join(",")).join("\r\n");
+    s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),tx(s.online?"yes":"no")]);
+  const csv="﻿"+[TX[lang].csvHead,...rows].map(r=>r.map(q).join(",")).join("\r\n");
   const a=document.createElement("a"), d=new Date(), p=n=>String(n).padStart(2,"0");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download=`class-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.csv`;
@@ -211,20 +307,20 @@ async function poll(){
   try{
     const d=await (await fetch("/api/students",{cache:"no-store"})).json();
     if(JSON.stringify(d.state)!==JSON.stringify(ST)){ ST=d.state; renderState(); }
-    $("urls").innerHTML=d.urls&&d.urls.length?"يفتح الطلاب: "+d.urls.map(u=>`<b>${esc(u)}</b>`).join(" أو "):"";
+    $("urls").innerHTML=d.urls&&d.urls.length?esc(tx("urls"))+d.urls.map(u=>`<b>${esc(u)}</b>`).join(esc(tx("or"))):"";
     const list=LIST=sortList(d.students);
     $("empty").hidden=list.length>0;
     const on=list.filter(s=>s.online), wait=on.filter(s=>s.wait).length;
-    $("summary").innerHTML=`<span><b>${on.length}</b> متصل</span>`+(ST.mode==="build"&&ST.to?`<span><b>${wait}</b> من ${on.length} أنهوا المراحل المفتوحة</span>`:"");
+    $("summary").innerHTML=`<span><b>${on.length}</b> ${esc(tx("online"))}</span>`+(ST.mode==="build"&&ST.to?`<span><b>${wait}</b> ${esc(tx("finished",{n:on.length}))}</span>`:"");
     const html=list.map(s=>{ const p=s.steps?Math.round(100*Math.min(s.step,s.steps)/s.steps):0;
-      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}<button class="ren" data-rename="${esc(s.id)}" data-name="${esc(s.name)}" title="تعديل الاسم" aria-label="تعديل الاسم">✎</button>${s.wait?`<span class="tag">ينتظر</span>`:""}</td>
+      return `<tr class="${s.online?"":"off"}"><td><span class="dot ${s.online?"on":""}"></span>${esc(s.name)}<button class="ren" data-rename="${esc(s.id)}" data-name="${esc(s.name)}" title="${esc(tx("rename"))}" aria-label="${esc(tx("rename"))}">✎</button>${s.wait?`<span class="tag">${esc(tx("waiting"))}</span>`:""}</td>
         <td class="num ip">${esc(s.ip)}</td><td class="num">${esc(clock(s.first))}</td><td>${esc(t("mode_"+s.mode))}</td>
         <td class="num">${s.steps?`<span class="bar"><i style="width:${p}%"></i></span>${Math.min(s.step,s.steps)}/${s.steps}`:s.done?s.done.length+" ✓":""}</td>
         <td>${esc(stepName(s))}</td><td class="num">${s.mistakes>2?`<span class="tag warn">${s.mistakes}</span>`:s.mistakes||0}</td><td class="num">${fmt(s.time||0)}</td>
-        <td>${s.online?`<button class="small" data-reset="${esc(s.id)}" data-name="${esc(s.name)} (${esc(s.ip)})">إعادة</button>`:`<button class="small" data-forget="${esc(s.id)}">احذف</button>`}</td></tr>`; }).join("");
+        <td>${s.online?`<button class="small" data-reset="${esc(s.id)}" data-name="${esc(s.name)} (${esc(s.ip)})">${esc(tx("reset"))}</button>`:`<button class="small" data-forget="${esc(s.id)}">${esc(tx("forget"))}</button>`}</td></tr>`; }).join("");
     if(html!==poll.last){ poll.last=html; $("rows").innerHTML=html; }   // only when something changed: a redraw under the pointer loses the click
 
-  }catch(e){ $("summary").textContent="الخادم لا يجيب. هل نافذة الخادم مفتوحة؟"; }
+  }catch(e){ $("summary").textContent=tx("noServer"); }
 }
 catalog().then(()=>{ poll(); setInterval(poll,2000); });
 </script>
