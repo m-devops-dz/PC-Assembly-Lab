@@ -16,7 +16,7 @@ if(saved.lang!=="en") lang="ar";                                     // Arabic i
 let appMode=["trouble","install"].includes(saved.mode)?saved.mode:"build";   // "trouble": troubleshooting mode (trouble.js), "install": Windows install (install.js)
 const BUILD_MODE=appMode==="build";                                   // the other modes start fully built and skip the build-only helpers
 const S={ step:0, busy:false, held:null, ram:-1, rot:{}, flips:0, snap:null, cable:null, mistakes:0, start:0, end:0, stepAt:0,
-  hints:saved.hints!==false, glow:true, bright:saved.bright||1.8,
+  hints:saved.hints!==false, glow:true, bright:saved.bright||1.15,
   tray:saved.tray===true, rgb:saved.rgb!==false,          // Settings: parts bar under the 3D view (off: parts come from the table), RGB lights
   quiz:saved.quiz!==false, quizDone:{},                   // Settings: questions (part quiz, quiz.js, and step checks, check.js); the parts already answered
   checkDone:{}, checkOk:0, checkBad:0, lastErr:"",          // step checks answered, right / wrong answers; the last error toast (shown again on the step card)

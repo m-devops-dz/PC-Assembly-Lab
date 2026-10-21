@@ -73,7 +73,7 @@ const IN_FINISH={
   stickPc:()=>{ stickToPc(inPort("front1"),true); },
   powerF11:()=>{ gptStick(); STICK.iso=true; if(!S.powered) powerUp(); PC.boot++; PC.mode="menu"; PC.sel=0; PC.menuSeen=true; },
   bootPick:()=>{ gptStick(); STICK.iso=true; PC.boot++; PC.ventoySeen=true; if(IN.sc==="usb"){ PC.mode="ventoy"; return; } PC.mode="setup"; PC.setup=true; WS.page="lang"; },
-  setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
+  setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,agree:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
   diskClean:()=>{ WS.parts=WS.parts.filter(p=>!(p.drive===WS.m2&&p.old)); WS.cleaned=true; WS.sel=m2U(); WS.dlg=null; },
   diskPlan:()=>{ IN.plan=IN.plan||1; inCardEl.hidden=true; },
   diskNew:()=>{ WS.parts=WS.parts.filter(p=>p.drive!==WS.m2||p.old); WS.dlg=null; const plan=IN.plan||1;

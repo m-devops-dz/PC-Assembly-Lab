@@ -66,7 +66,7 @@ function photosChanged(){ hasCustom=Object.keys(photoBlobs).length>0; themeChoic
 
 Object.entries(PHOTO_URLS).forEach(([k,u])=>{ if(u) applyPhoto(k,u).then(drawThumbs,()=>{}); });
 /* theme menu: built-in zips, none (generated surfaces), or the user's own photos from IndexedDB */
-const BUILTIN_THEMES={ theme1:"real-parts.zip" };                     // add theme2:"theme2.zip" back once themes/theme2.zip (+ .zip.js) is in the repo
+const BUILTIN_THEMES={ theme1:"real-parts.zip" };
 const themeSel=document.getElementById("themeSel");
 let themeChoice="theme1", hasCustom=false;
 try{ themeChoice=localStorage.getItem("pcLabTheme")||"theme1"; }catch(e){}
@@ -101,6 +101,7 @@ themeSel.onchange=()=>pickTheme(themeSel.value);
 photoDB("readonly",st=>st.get("theme")).then(rec=>{
   hasCustom=!!(rec&&rec.photos&&Object.keys(rec.photos).length);
   if(themeChoice==="custom"&&!hasCustom) themeChoice="theme1";
+  if(!BUILTIN_THEMES[themeChoice]&&!["none","custom"].includes(themeChoice)) themeChoice="theme1";   // a saved theme that no longer exists (theme2)
   renderThemeSel(); pickTheme(themeChoice,true); });
 document.querySelectorAll("[data-photo]").forEach(inp=>inp.addEventListener("change",async()=>{ const f=inp.files&&inp.files[0]; inp.value=""; if(!f) return;
   try{ await applyPhoto(inp.dataset.photo,f); photosChanged(); toast(t("ok_photo"),"ok"); }catch(e){ toast(t("e_photo"),"err"); } }));
