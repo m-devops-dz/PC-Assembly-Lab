@@ -44,10 +44,21 @@ const lapLid=new T.Group(); lapLid.position.set(-LAP_D/2+.4,LAP_H,0); lapLid.rot
     mesh(box(1.1,.16,.035),new T.MeshStandardMaterial({color:0x1f5fd1,roughness:.4}),[3,.86,z],lapG,{cast:false}); });   // blue tongue: USB 3
 })();
 const LAP_PORT=V3(3,.75,-LAP_W/2);                                   // the stick's port, laptop space; the stick goes in along +z
-// external backup drive on the left, already plugged in
+// external backup drive on the left, already plugged in. hddFace: the angry face it pulls when Ventoy nearly wipes it (laptop-apps.js)
+const hddG=new T.Group(), hddMat=new T.MeshStandardMaterial({color:0x1d1f24,roughness:.45,emissive:0x000000});
+const hddFace=new T.Sprite(new T.SpriteMaterial({depthTest:false,transparent:true,map:canvasTex(256,256,(g,W,H)=>{
+  g.fillStyle="#e8453c"; g.beginPath(); g.arc(W/2,H/2+10,100,0,Math.PI*2); g.fill(); g.strokeStyle="#7a1410"; g.lineWidth=10; g.stroke();
+  g.fillStyle="#fff"; [[88,118],[168,118]].forEach(([x,y])=>{ g.beginPath(); g.arc(x,y,20,0,Math.PI*2); g.fill(); });
+  g.fillStyle="#1b1f24"; [[92,124],[164,124]].forEach(([x,y])=>{ g.beginPath(); g.arc(x,y,9,0,Math.PI*2); g.fill(); });
+  g.strokeStyle="#1b1f24"; g.lineWidth=12; g.lineCap="round";
+  g.beginPath(); g.moveTo(58,78); g.lineTo(112,100); g.moveTo(198,78); g.lineTo(144,100); g.stroke();     // eyebrows down in the middle
+  g.beginPath(); g.arc(W/2,212,46,Math.PI*1.15,Math.PI*1.85); g.stroke();                                  // frown
+  g.strokeStyle="#ffd23f"; g.lineWidth=8; [[214,26],[232,48]].forEach(([x,y])=>{ g.beginPath(); g.moveTo(x-12,y); g.lineTo(x+12,y); g.moveTo(x,y-12); g.lineTo(x,y+12); g.stroke(); });   // anger sparks
+})}));
+hddFace.scale.set(8,8,1); hddFace.position.set(0,8,0); hddFace.visible=false; hddFace.renderOrder=10;
 (function backupDrive(){
-  const hdd=new T.Group(); hdd.position.set(2,0,LAP_W/2+10); hdd.rotation.y=.25; lapG.add(hdd);
-  mesh(roundSlab(8,11.5,1.7,1.2),new T.MeshStandardMaterial({color:0x1d1f24,roughness:.45}),[0,0,0],hdd);
+  const hdd=hddG; hdd.position.set(2,0,LAP_W/2+10); hdd.rotation.y=.25; lapG.add(hdd); hdd.add(hddFace);
+  mesh(roundSlab(8,11.5,1.7,1.2),hddMat,[0,0,0],hdd);
   const lbl=canvasTex(256,256,(g,W,H)=>{ g.fillStyle="#1d1f24"; g.fillRect(0,0,W,H); g.fillStyle="#c9ced4"; g.font="700 40px 'Barlow Semi Condensed', Arial"; g.textAlign="center";
     g.fillText("BACKUP",W/2,H/2-6); g.font="600 30px Barlow, Arial"; g.fillStyle="#8a9099"; g.fillText("1 TB",W/2,H/2+34); g.fillStyle="#3ecf6e"; g.beginPath(); g.arc(W/2,H-40,8,0,Math.PI*2); g.fill(); });
   const top=new T.PlaneGeometry(7,7); top.rotateX(-Math.PI/2); top.rotateY(Math.PI/2);

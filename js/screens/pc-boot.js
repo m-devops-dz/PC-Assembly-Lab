@@ -90,6 +90,9 @@ function pcIso(){
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; PC.setup=true; WS.page="lang"; renderScreen(); inCheck(); },2600); }
+// an MBR stick a second time: the PC's monitor shows its BIOS mode (UEFI) and why, then back to the laptop
+function pcUefiShow(){ closeScreen(); setTimeout(()=>{ PC.uefiBack=PC.mode; PC.mode="uefi"; openScreen("pc"); },950); }
+function pcUefiBack(){ IN.uefiSeen=true; PC.mode=PC.uefiBack||"off"; closeScreen(); setTimeout(()=>openScreen("laptop"),950); }
 function pcBar(){ const b=document.getElementById("pcBar"); if(b) b.style.width=((1-PC.k)*100).toFixed(1)+"%"; }
 function pcRender(){
   if(SCR.dev!=="pc") return;
@@ -100,6 +103,10 @@ function pcRender(){
       <p class="pc-foot">↑ and ↓ to move selection<br>ENTER to select boot device<br>ESC to boot using defaults</p></div></div>`;
   else if(m==="bios"&&IN.cfg.bios) s=bxRender();
   else if(m==="bsod") s=bsodRender();
+  else if(m==="uefi") s=`<div class="pc bx uefi"><div class="bx-top"><b class="bx-msi">msi</b><span>CLICK BIOS 5</span></div>
+      <div class="bx-info"><div><small>CPU Speed</small><b>3.90 GHz</b></div><div class="bx-mode point"><small>BIOS Mode</small><b>UEFI</b></div><div><small>CSM</small><b>Disabled</b></div></div>
+      <div class="bx-main"><section class="bx-box uefi-why"><h4>${t("in_mbrAgain_t")}</h4>${t("in_mbrAgain").split("\n").map(l=>`<p>${l}</p>`).join("")}
+        <p><button class="ws-next" data-k="uefiBack">${t("pc_uefiBack")}</button></p></section></div></div>`;
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
   else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&IN.sc!=="usb"?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
@@ -115,6 +122,7 @@ scrBody.addEventListener("click",e=>{
   if(SCR.dev!=="pc") return; const el=e.target.closest("[data-k]"); if(!el) return;
   const k=el.dataset.k;
   if(k==="pick"){ PC.sel=+el.dataset.v; pcChoose(PC.sel); }
+  else if(k==="uefiBack") pcUefiBack();
   else if(k==="restart"){ startClock(); pcPost(); }
   else pcKey(k);
 });

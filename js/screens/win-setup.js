@@ -2,7 +2,7 @@
    Pages: lang → start (Install now) → key (I don't have a product key) → edition → license → type (Custom) → disk →
    installing (copy progress) → restart (countdown) → oobe (first start: "Is this the right country or region?").
    Inspired by the classic Setup, not a copy. Drawn by pcRender (pc-boot.js) while PC.mode is "setup".
-   Two disk layouts (wsSetDisks): "fresh" (a new PC: Drive 0 the empty M.2, Drive 1 the empty SATA SSD) and "used"
+   Two disk layouts (wsSetDisks): "fresh" (a new PC: only Drive 0, the empty M.2; its empty SATA SSD isn't listed) and "used"
    (the customer challenge, on purpose: Drive 0 is the SATA SSD with the customer's files, its partition carrying the
    name the student gave it; Drive 1 is the M.2 with the old Windows). Windows doesn't promise the M.2 is Drive 0, so
    the size and the name tell them apart, not the number. Setup also selects the first row by itself.
@@ -10,15 +10,21 @@
    On every page before the disks, the button to click next glows (wsHl) while hints are on.
    The M.2's layout follows the plan the student picks (IN.plan, install.js): 1 Windows only, 2 Windows + files,
    3 Windows + room for Linux (left unallocated: its installer makes its own ext4 partitions) + files. Sizes are typed in
-   New's dialog and checked against the plan (WS_PLAN) before the partition is made.
+   New's dialog (it starts empty, as it would for a student who has to work the size out) and checked against the plan
+   before the partition is made. What to type, the largest size and what was wrong show in the note under the window, not
+   in Setup's own dialog; in the challenges a size that doesn't fit the plan is a mistake.
+   Next on a Windows partition under 200 GB (WIN_REC) asks first; under 25 GB (WIN_MIN) Setup refuses.
+   The System and MSR partitions Windows adds get arrows until they've been clicked (their note explains them), but
+   Next doesn't wait for that: it counts the diskParts step as seen.
+   Partitions after the first are made unformatted (raw): Format here, or the new Windows asks for it when D: is opened.
    Mistakes: Next on the customer's partition; Delete or Format it is the serious one: a 60 s wait (inPenalty).
    A note under the window explains whatever row is selected. */
-const M2_GB=931.5, SATA_GB=476.9, WIN_MIN=120, WIN_MAX=400, LINUX_MIN=100;   // GB
+const M2_GB=931.5, SATA_GB=476.9, WIN_MIN=25, WIN_REC=200, WIN_MAX=400, LINUX_MIN=100;   // GB
 const WS={page:"lang", started:false, noKey:false, key:"", ed:-1, license:false, custom:false, msg:null, dlg:null, size:"",
   disks:"used", drives:[], m2:1, sel:"d0p1", parts:[], cleaned:false, seen:{}, installing:false, prog:0, copied:false, left:0, oobeDone:false, region:0, user:"", draft:""};
 function wsSetDisks(kind){
   WS.disks=kind;
-  if(kind==="fresh"){ Object.assign(WS,{drives:[M2_GB,SATA_GB],m2:0,parts:[],sel:"d0u",cleaned:true}); return; }
+  if(kind==="fresh"){ Object.assign(WS,{drives:[M2_GB],m2:0,parts:[],sel:"d0u",cleaned:true}); return; }
   Object.assign(WS,{drives:[SATA_GB,M2_GB],m2:1,sel:"d0p1",cleaned:false,parts:[{id:"d0p1",drive:0,gb:476.9,free:112.4,type:"Primary",data:true},
     {id:"d1a",drive:1,gb:.0977,free:.0664,type:"System",old:true},{id:"d1b",drive:1,gb:.0156,free:.0156,type:"MSR",old:true},
     {id:"d1c",drive:1,gb:930.79,free:810.3,type:"Primary",old:true},{id:"d1d",drive:1,gb:.5947,free:.082,type:"Recovery",old:true}]}); }
@@ -65,11 +71,11 @@ function wsRender(){
       <p><button class="ws-link" data-w="nokey">${t("ws_noKey")}</button></p>`; next="keyNext"; }
   else if(p==="edition"){ body=`<h2>${t("ws_edH")}</h2><div class="ws-table"><div class="ws-th"><span>${t("ws_os")}</span><span>${t("ws_arch")}</span><span>${t("ws_date")}</span></div>
       ${WS_EDITIONS.map((e,i)=>`<button class="ws-tr${WS.ed===i?" on":""}" data-w="ed" data-v="${i}"><span>Windows 11 ${e}</span><span>x64</span><span>9/30/2025</span></button>`).join("")}</div>`; next="edNext"; }
-  else if(p==="license"){ body=`<h2>${t("ws_licH")}</h2><div class="ws-lic">${t("ws_licText")}</div><label class="ws-chk"><input type="checkbox" id="wsLic"${WS.license?" checked":""}> ${t("ws_licAccept")}</label>`; next="licNext"; }
+  else if(p==="license"){ body=`<h2>${t("ws_licH")}</h2><div class="ws-lic">${t("ws_licText").split("\n").map(l=>`<p>${l}</p>`).join("")}</div><label class="ws-chk"><input type="checkbox" id="wsLic"${WS.license?" checked":""}> ${t("ws_licAccept")}</label>`; next="licNext"; }
   else if(p==="type") body=`<h2>${t("ws_typeH")}</h2><button class="ws-opt" data-w="upgrade"><b>${t("ws_up")}</b><span>${t("ws_upD")}</span></button><button class="ws-opt" data-w="custom"><b>${t("ws_custom")}</b><span>${t("ws_customD")}</span></button>`;
   else if(p==="disk"){ const rows=wsRows(), sel=wsRow(WS.sel);
     body=`<h2>${t("ws_diskH")}</h2><div class="ws-table disk"><div class="ws-th"><span>${t("ws_name")}</span><span>${t("ws_total")}</span><span>${t("ws_free")}</span><span>${t("ws_type")}</span></div>
-      ${rows.map(r=>`<button class="ws-tr${WS.sel===r.id?" on":""}" data-w="sel" data-v="${r.id}"><span>${OS_ICON.drive}${r.name}</span><span>${gbFmt(r.gb)}</span><span>${gbFmt(r.free)}</span><span>${typeName(r.type)}</span></button>`).join("")}</div>
+      ${rows.map(r=>`<button class="ws-tr${WS.sel===r.id?" on":""}${wsPoint(r)?" point":""}" data-w="sel" data-v="${r.id}"><span>${OS_ICON.drive}${r.name}</span><span>${gbFmt(r.gb)}</span><span>${gbFmt(r.free)}</span><span>${typeName(r.type)}</span></button>`).join("")}</div>
       <div class="ws-tools">${[["refresh","ws_refresh"],["delete","ws_delete"],["format","ws_format"],["new","ws_new"],["load","ws_load"],["extend","ws_extend"]].map(([a,k])=>{
         const off=!sel||(a==="delete"||a==="format")&&sel.unalloc||a==="format"&&(sel.type==="System"||sel.type==="MSR")||a==="new"&&!sel.unalloc||a==="extend";   // EFI and MSR: never formatted by hand
         return `<button class="ws-link" data-w="${a}"${off?" disabled":""}>${t(k)}</button>`; }).join("")}</div>`; next="diskNext"; }
@@ -91,14 +97,18 @@ function wsOobe(){
     <h2>${t("ob_h")}</h2><div class="oobe-list">${OOBE_REGIONS.map((r,i)=>`<button class="${WS.region===i?"on":""}" data-w="region" data-v="${i}">${t("rg_"+r)}</button>`).join("")}</div>
     <footer><button class="ws-next" data-w="oobeYes">${t("ob_yes")}</button></footer></div></div></div>`;
 }
-// the teaching note under the window: what the selected row is
-function wsNote(){ const r=wsRow(WS.sel); if(!r) return "";
+// an arrow on the System and MSR partitions Windows added, until each one has been clicked
+const wsPoint=r=>S.glow&&S.hints&&!r.old&&(r.type==="System"&&!WS.seen.sys||r.type==="MSR"&&!WS.seen.msr);
+// the teaching note under the window: what the selected row is; while New's dialog is up, what size to type
+function wsNote(){
+  const d=WS.dlg; if(d&&d.kind==="new") return `<p class="ws-note${d.err?" bad":""}">${d.err?"⚠ "+d.err+"<br>":"ⓘ "}${t("ws_sizeMax",{n:Math.floor(wsNewRoom()*1024)})}${IN.plan?" "+t("ws_sizeHelp"+IN.plan):""}</p>`;
+  const r=wsRow(WS.sel); if(!r) return "";
   const pr=m2Prim(), k=r.data?"in_ex_data":r.old?"in_ex_old":r.unalloc&&r.drive!==WS.m2?"in_ex_sata":r.unalloc?(IN.plan===3&&pr.length===2?"in_ex_linux":"in_ex_free")
     :r.type==="Primary"?(pr[0]&&r.id===pr[0].id?"in_ex_pri":"in_ex_files"):{System:"in_ex_sys",MSR:"in_ex_msr"}[r.type];
-  return `<p class="ws-note">ⓘ ${inT(k)}</p>`; }
+  return `<p class="ws-note">ⓘ ${inT(k)}${k==="in_ex_files"&&r.raw?" "+t("in_ex_raw"):""}</p>`; }
 function wsDlg(){ const d=WS.dlg;
-  const txt={delete:"ws_delWarn",format:"ws_fmtWarn",new:"ws_newWarn"}[d.kind];
-  return `<div class="ws-dlg-bg"><div class="ws-dlg" role="alertdialog"><p>${t(txt)}</p>${d.kind==="new"?`<label class="ws-f"><span>${t("ws_size")}</span><input id="wsSize" inputmode="numeric" value="${WS.size}"></label>${IN.plan?`<p class="ws-small">${t("ws_sizeHelp"+IN.plan)}</p>`:""}`:""}
+  const txt={delete:"ws_delWarn",format:"ws_fmtWarn",new:"ws_newWarn",small:"ws_smallWarn"}[d.kind];
+  return `<div class="ws-dlg-bg"><div class="ws-dlg" role="alertdialog"><p>${t(txt,{g:d.kind==="small"?gbFmt(wsRow(d.id).gb):""})}</p>${d.kind==="new"?`<label class="ws-f"><span>${t("ws_size")}</span><input id="wsSize" inputmode="numeric" value="${WS.size}"></label>`:""}
     <div><button class="ws-next" data-w="dlgOk">${t(d.kind==="new"?"ws_apply":"ok")}</button><button class="ws-next ghost" data-w="dlgNo">${t("ws_cancel")}</button></div></div></div>`; }
 function wsAct(a,v){
   WS.msg=null;
@@ -118,7 +128,7 @@ function wsAct(a,v){
     case "refresh": break;
     case "delete": case "format": WS.dlg={kind:a,id:WS.sel}; break;
     case "new": if(!inGate("diskNew")) return; if(wsRow(WS.sel).drive!==WS.m2){ toast(t("in_useM2")); return; }
-      WS.dlg={kind:"new",id:WS.sel}; WS.size=String(Math.floor(wsSuggest()*1024)); break;
+      WS.dlg={kind:"new",id:WS.sel}; WS.size=""; break;                 // the student types it
     case "load": toast(t("in_loadDrv")); return;
     case "dlgNo": WS.dlg=null; break;
     case "dlgOk": wsDlgOk(); return;
@@ -131,27 +141,28 @@ function wsAct(a,v){
   }
   renderScreen(); inCheck();
 }
-// what New offers (GB): 200 for Windows when the plan has more than one partition, then the rest (plan 3: less 150 for Linux)
-function wsSuggest(){ const room=wsNewRoom(), n=m2Prim().length;
-  if(IN.plan>1&&n===0) return 200; if(IN.plan===3&&n===1) return Math.max(1,room-150); return room; }
 // room for the next Primary partition: the free space, less System and MSR when Windows still has to add them
 const wsNewRoom=()=>m2Free()-(m2Parts().some(p=>p.type==="System")?0:.0977+.0156);
 function wsDlgOk(){
   const d=WS.dlg, r=wsRow(d.id);
-  if(d.kind==="new"){ if(wsNew(parseFloat(WS.size)/1024)){ WS.dlg=null; renderScreen(); inCheck(); } return; }
+  if(d.kind==="new"){ if(wsNew(parseFloat(WS.size)/1024)){ WS.dlg=null; inCheck(); } renderScreen(); return; }
+  if(d.kind==="small"){ WS.dlg=null; wsInstall(); return; }            // under 200 GB, and the student chose to go on
   WS.dlg=null;
   if(r&&r.data){ renderScreen(); inPenalty(d.kind==="delete"?"in_m_delData":"in_m_fmtData"); return; }   // the customer's files: nothing is really lost here
+  if(d.kind==="format"&&r&&r.type==="Primary"&&!r.old){ const p=WS.parts.find(x=>x.id===d.id); if(p.raw){ p.raw=false; toast(t("in_fmtDone"),"ok"); } }
   if(d.kind==="delete"){ if(!inGate("diskClean")){ renderScreen(); return; } WS.parts=WS.parts.filter(p=>p.id!==d.id); WS.sel=wsRows()[0].id;
     if(!WS.parts.some(p=>p.drive===WS.m2&&p.old)) WS.cleaned=true; }
   renderScreen(); inCheck();
 }
 /* New on Drive 1's free space, gb big (clamped to the room there, as Setup does). Windows adds System (EFI) and MSR in
-   front the first time. The size has to fit the plan; if it doesn't, a hint says what to type and nothing is made. */
+   front the first time. The size has to fit the plan; if it doesn't, a hint in the dialog says what to type (in the
+   challenges it's a mistake) and nothing is made. */
 function wsNew(gb,force){
   const room=wsNewRoom(), pr=m2Prim(), plan=IN.plan;
-  if(!(gb>0)) { toast(t("in_sizeNum")); return false; }
+  const say=k=>{ if(WS.dlg) WS.dlg.err=t(k); else toast(t(k),"err"); return false; };
+  if(!(gb>0)) return say("in_sizeNum");
   gb=Math.min(gb,room);
-  const left=room-gb, hint=k=>{ toast(t(k),"err"); return false; };
+  const left=room-gb, hint=k=>{ if(IN.sc!=="main"){ mistake(); shakeRed(); } return say(k); };
   if(force);                                                            // Ctrl+H and a challenge's starting point
   else if(pr.length===0){
     if(plan===1&&left>1) return hint("in_size1");
@@ -163,7 +174,7 @@ function wsNew(gb,force){
   } else return hint("in_planFull");
   const add=[];
   if(!m2Parts().some(p=>p.type==="System")) add.push({id:"n1",drive:WS.m2,gb:.0977,free:.0742,type:"System"},{id:"n2",drive:WS.m2,gb:.0156,free:.0156,type:"MSR"});
-  const id="p"+(pr.length+1); add.push({id,drive:WS.m2,gb,free:gb-.1,type:"Primary"});
+  const id="p"+(pr.length+1); add.push({id,drive:WS.m2,gb,free:gb-.1,type:"Primary",raw:id!=="p1"});   // Windows formats its own; the others stay raw
   WS.parts=[...WS.parts,...add]; WS.sel=id; if(id==="p1") WS.seen.pri=1; else WS.seen.files=1;
   if(add.length>1&&!force) setTimeout(()=>inCard(t("in_note"),t("in_newParts_t"),t("in_newParts"),{cls:"info"}),300);
   return true;
@@ -171,12 +182,16 @@ function wsNew(gb,force){
 function wsNext(){
   const r=wsRow(WS.sel); if(!r) return;
   if(r.data){ inMistake("in_m_instData"); return; }
+  if(inCur()==="diskParts"){ WS.seen={sys:1,msr:1,pri:1,files:1}; inCheck(); }   // the arrows explained System and MSR; not a must
   if(!inGate("diskInstall")) return;
   const pr=m2Prim();
   if(r.type==="Primary"&&pr[1]&&r.id===pr[1].id){ toast(t("in_filesPart"),"err"); return; }   // the files partition: Windows goes in the first one
   if(r.unalloc||r.type!=="Primary"){ WS.msg="ws_cant"; renderScreen(); return; }
-  WS.installing=true; WS.page="installing"; WS.prog=0; renderScreen(); inCheck(); wsCopy();
+  if(r.gb<WIN_MIN){ WS.msg="ws_tooSmall"; renderScreen(); return; }
+  if(r.gb<WIN_REC){ WS.dlg={kind:"small",id:r.id}; renderScreen(); return; }
+  wsInstall();
 }
+function wsInstall(){ WS.installing=true; WS.page="installing"; WS.prog=0; renderScreen(); inCheck(); wsCopy(); }
 /* phase 6: Setup copies from the stick (slower when it was kept in a USB 2.0 port), then counts down to a restart.
    Pulling the stick out before the copy ends is a mistake (install.js); leaving it in at the restart starts Setup again. */
 // WS.copyN: a blue screen (in-challenges.js) stops this copy; a new one starts after the restart

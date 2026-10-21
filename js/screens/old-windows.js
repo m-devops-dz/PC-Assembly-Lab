@@ -5,50 +5,78 @@
    Also shown when nobody presses F11 in phase 3 (lock screen; Start → Restart). Drawn by pcRender (pc-boot.js).
    OW.fresh: the new Windows at the end, same desktop with a new wallpaper and the drives from the student's plan:
    C: (Windows) and the files partition if there is one. On a new PC (WS.disks "fresh") the SATA SSD has no partition, so
-   Windows gives it no letter: C: and D: (Data, empty). On the customer's PC, D: stays their drive and the files are E:. */
+   Windows gives it no letter: C: and D: (Data, empty). On the customer's PC, D: stays their drive and the files are E:.
+   The files partition comes from Setup unformatted unless it was formatted there (raw, win-setup.js): opening it asks to
+   format it first (OW.dlg). The install stick, while it's in the PC, is one more drive after the others (Ventoy, the ISO). */
 const OW={view:"lock", seen:false, openedD:false, shut:false, app:false, dm:false, loc:"pc", sel:null, renaming:false, draft:"", start:false, fresh:false, checked:false};   // dm: Disk Management open (disk-mgmt.js)
-// the drives This PC shows: sizes in GB
+// the drives This PC shows: sizes in GB (raw: never formatted; usb: the install stick)
 function owDrives(){
+  const ds=owDisks();
+  if(IN.stick==="pc"){ const last=ds.map(d=>d.k).sort().pop(); ds.push({k:String.fromCharCode(last.charCodeAt(0)+1),size:28.6,free:28.6-(STICK.iso?ISO_GB:0)-.03,usb:true}); }
+  return ds;
+}
+function owDisks(){
   if(IN.sc==="split") return dmDrives();                              // the one-partition challenge: what Disk Management made
   const d={k:"d",size:476.9,free:112.4};
   if(!OW.fresh) return [{k:"c",size:930.8,free:810.3},d];
   const pr=m2Prim(), c=pr[0]?pr[0].gb:931.4, used=WS.disks==="used";
-  return [{k:"c",size:c,free:c-24.6},...(used?[d]:[]),...(pr[1]?[{k:used?"e":"d",size:pr[1].gb,free:pr[1].gb-.1}]:[])];
+  return [{k:"c",size:c,free:c-24.6},...(used?[d]:[]),...(pr[1]?[{k:used?"e":"d",size:pr[1].gb,free:pr[1].gb-.1,raw:pr[1].raw,label:pr[1].label,part:pr[1]}]:[])];
 }
+const owDrive=k=>owDrives().find(d=>d.k===k);
 const owCustomer=k=>k==="d"&&(!OW.fresh||WS.disks==="used");      // D: is the customer's drive (their files, their name for it)
 const owName=k=>{ const dp=IN.sc==="split"&&DM.parts.find(p=>p.letter===k.toUpperCase()&&p.kind==="d"); if(dp) return dmName(dp);
-  return owCustomer(k)?(IN.label||t("ow_disk"))+" (D:)":t("ow_disk")+" ("+k.toUpperCase()+":)"; };
+  const dr=owDrive(k); if(dr&&dr.usb) return t("ow_usb",{l:k.toUpperCase()});
+  return owCustomer(k)?(IN.label||t("ow_disk"))+" (D:)":(dr&&dr.label||t("ow_disk"))+" ("+k.toUpperCase()+":)"; };
 const OW_RECYCLE=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.2 13.2a1.5 1.5 0 0 1-1.5 1.3H8.7a1.5 1.5 0 0 1-1.5-1.3z" fill="#cfe3f5" stroke="#6f8aa3"/><path d="M4.5 7h15M9.5 4h5" stroke="#6f8aa3" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 function owFiles(loc){
   if(loc==="c") return [["Program Files"],["Users"],["Windows"]].map(([n])=>({n,k:"folder"}));
+  const dr=owDrive(loc); if(dr&&dr.usb) return STICK.iso?[{n:LAP.iso,k:"iso",s:ISO_GB+" GB"}]:[];
   if(loc!=="c"&&!owCustomer(loc)) return [];                          // a new, empty partition
   return [{n:t("fl_d1"),k:"folder"},{n:t("ow_docs"),k:"folder"},{n:t("ow_uni"),k:"folder"},{n:t("fl_d2"),k:"folder"},
     {n:t("ow_cv")+".docx",k:"file",s:"48 KB"},{n:t("ow_tax")+".xlsx",k:"file",s:"220 KB"}];
 }
+// the "Shut down the PC" step: Shut down is the only way out (a restart would only start this Windows again)
+const owOffOnly=()=>inCur()==="oldShutdown";
 function owRender(){
-  if(OW.view==="lock") return `<div class="pc lock" data-o="unlock"><b>14:35</b><span>${t("pc_date")}</span><p>${t("pc_oldUser")} · ${t("ow_click")}</p><button class="pc-power" data-k="restart">${PWR_SVG} ${t("pc_restart")}</button></div>`;
+  if(OW.view==="lock") return `<div class="pc lock" data-o="unlock"><b>14:35</b><span>${t("pc_date")}</span><p>${t("pc_oldUser")} · ${t("ow_click")}</p>${owOffOnly()?`<button class="pc-power" data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`:`<button class="pc-power" data-k="restart">${PWR_SVG} ${t("pc_restart")}</button>`}</div>`;
   return `<div class="os old${OW.fresh?" fresh":""}">
     <div class="os-desk"><button class="os-ico" data-o="open">${OS_ICON.files}<span>${t("ow_explorer")}</span></button><button class="os-ico" data-o="bin">${OW_RECYCLE}<span>${t("ow_bin")}</span></button></div>
     ${OW.dm?dmWindow():OW.wu?wuWindow():OW.app?owExplorer():""}
-    ${OW.start?`<div class="ow-start" role="menu"><p>${OW.fresh?WS.user:t("ow_user")}</p>${OW.fresh?`${IN.cfg.wifi?`<button data-o="wu">${WU_ICON} ${t("wu_title")}</button>`:""}<button data-o="dm">${DM_ICON} ${t("dm_title")}</button>`:`<button data-o="restart">↻ ${t("pc_restart")}</button><button data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`}</div>`:""}
+    ${OW.start?`<div class="ow-start" role="menu"><p>${OW.fresh?WS.user:t("ow_user")}</p>${OW.fresh?`${IN.cfg.wifi?`<button data-o="wu">${WU_ICON} ${t("wu_title")}</button>`:""}<button data-o="dm">${DM_ICON} ${t("dm_title")}</button>`:`${owOffOnly()?"":`<button data-o="restart">↻ ${t("pc_restart")}</button>`}<button data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`}</div>`:""}
     ${OW.net?netFlyout():""}
     <footer class="os-bar"><div class="os-apps"><button data-o="start" class="${OW.start?"on":""} ow-startbtn" title="${t("ow_startMenu")}" aria-label="${t("ow_startMenu")}"><i></i><i></i><i></i></button>
       <button data-o="open" class="${OW.app&&!OW.dm&&!OW.wu?"on":""}" title="${t("ow_explorer")}" aria-label="${t("ow_explorer")}">${OS_ICON.files}</button>${OW.dm?`<button data-o="dm" class="on" title="${t("dm_title")}" aria-label="${t("dm_title")}">${DM_ICON}</button>`:""}${OW.wu?`<button data-o="wu" class="on" title="${t("wu_title")}" aria-label="${t("wu_title")}">${WU_ICON}</button>`:""}</div>
       <div class="os-tray">${IN.cfg.wifi&&OW.fresh?netBtn():""}<span>14:36</span></div></footer></div>`;
 }
 function owExplorer(){
-  const loc=OW.loc, drives=owDrives(), side=[["pc",OS_ICON.drive,t("fl_pc")],...drives.map(d=>[d.k,OS_ICON.drive,owName(d.k)])];
+  const drives=owDrives(); if(OW.loc!=="pc"&&!drives.some(d=>d.k===OW.loc)) OW.loc="pc";   // the stick was pulled out
+  const loc=OW.loc, ico=d=>d.usb?OS_ICON.usb:OS_ICON.drive, side=[["pc",OS_ICON.drive,t("fl_pc")],...drives.map(d=>[d.k,ico(d),owName(d.k)])];
   let main;
   if(loc==="pc") main=`<div class="ow-drives">${drives.map(d=>{ const k=d.k, sel=OW.sel===k;
       const name=OW.renaming&&sel?`<span class="ow-ren"><input id="owName" value="${OW.draft.replace(/"/g,"&quot;")}" maxlength="32" aria-label="${t("ow_rename")}"><button class="os-btn pri" data-o="renOk">${t("ok")}</button></span>`:`<b>${owName(k)}</b>`;
-      return `<div class="ow-drive${sel?" on":""}" data-o="sel" data-v="${k}">${OS_ICON.drive}<div>${name}<div class="pbar"><i style="width:${((1-d.free/d.size)*100).toFixed(1)}%"></i></div><small>${t("ow_free",{f:gbFmt(d.free),s:gbFmt(d.size)})}</small></div></div>`; }).join("")}</div>`;
+      const use=d.raw?"":`<div class="pbar"><i style="width:${((1-d.free/d.size)*100).toFixed(1)}%"></i></div><small>${t("ow_free",{f:gbFmt(d.free),s:gbFmt(d.size)})}</small>`;   // raw: Windows can't tell what's free
+      return `<div class="ow-drive${sel?" on":""}" data-o="sel" data-v="${k}">${ico(d)}<div>${name}${use}</div></div>`; }).join("")}</div>`;
   else main=`<div class="fl-head"><span>${t("fl_name")}</span><span>${t("fl_size")}</span></div>`+(owFiles(loc).map(x=>`<div class="fl-item">${OS_ICON[x.k]}<span>${x.n}</span><small>${x.s||""}</small></div>`).join("")||`<p class="fl-empty">${t("fl_empty")}</p>`);
   return `<section class="win"><header class="win-bar"><span class="win-ic">${OS_ICON.files}</span><b>${t("ow_explorer")}</b><button data-o="close" class="x" aria-label="${t("os_close")}">×</button></header>
     <div class="win-body"><div class="fl"><div class="fl-tools">${loc==="pc"?`<button class="os-btn" data-o="openSel"${OW.sel?"":" disabled"}>${t("ow_open")}</button><button class="os-btn" data-o="ren"${OW.sel?"":" disabled"}>${t("ow_rename")}</button>`:""}
       <span class="fl-path">${t("fl_pc")}${loc==="pc"?"":" › "+owName(loc)}</span></div>
       <div class="fl-main"><nav class="fl-side">${side.map(s=>`<button data-o="loc" data-v="${s[0]}" class="${loc===s[0]?"on":""}">${s[1]}<span>${s[2]}</span></button>`).join("")}</nav>
-      <div class="fl-list">${main}</div></div>${loc==="pc"?`<p class="fl-tip">${t("ow_tip")}</p>`:""}</div></div></section>`;
+      <div class="fl-list">${main}</div></div>${loc==="pc"?`<p class="fl-tip">${t("ow_tip")}</p>`:""}</div></div>${OW.dlg?owDlg():""}</section>`;
 }
+// a drive that was never formatted: Windows asks to format it before it opens, then the Format dialog
+function owDlg(){ const d=OW.dlg, n=owName(d.k);
+  const wrap=(title,body,btns,cls="")=>`<div class="os-dlg-bg"><div class="os-dlg${cls}" role="dialog"><h3>${title}</h3>${body}${btns?`<div class="os-dlg-btns">${btns}</div>`:""}</div></div>`;
+  const btn=(a,k,pri)=>`<button class="os-btn${pri?" pri":""}" data-o="${a}">${t(k)}</button>`;
+  if(d.kind==="raw") return wrap(t("ow_rawT"),t("ow_raw",{d:d.k.toUpperCase()+":"}).split("\n").map(p=>`<p>${p}</p>`).join(""),btn("rawFmt","ow_rawFmt",1)+btn("dlgNo","ws_cancel")," warn");
+  if(d.kind==="fmt") return wrap(t("fm_title",{d:n}),`<div class="dm-form"><span>${t("fm_cap")}</span><b>${gbFmt(owDrive(d.k).size)}</b>
+      <span>${t("dm_fs")}</span><b>NTFS</b><span>${t("dm_alloc")}</span><b>${t("dm_default")}</b>
+      <label for="owFmtLbl">${t("dm_label")}</label><input id="owFmtLbl" value="${d.label.replace(/"/g,"&quot;")}" maxlength="32"></div>
+    <label class="ws-chk"><input type="checkbox" checked disabled> ${t("dm_quick")}</label>`,btn("fmtStart","fm_start",1)+btn("dlgNo","ws_cancel"));
+  return wrap(t("fm_busy"),`<div class="pbar"><i id="owFmtBar" style="width:0%"></i></div>`,"");
+}
+function owFormat(){ const d=OW.dlg, p=owDrive(d.k).part; OW.dlg={kind:"busy",k:d.k}; renderScreen();
+  tween(1600,k=>{ const b=document.getElementById("owFmtBar"); if(b) b.style.width=(k*100).toFixed(1)+"%"; },()=>{
+    p.raw=false; p.label=d.label.trim(); OW.dlg=null; OW.loc="pc"; toast(t("ow_rawDone",{d:owName(d.k)}),"ok"); renderScreen(); inCheck(); }); }
 function owAct(a,v){
   if(a!=="start") OW.start=false;
   if(owChAct(a,v)){ renderScreen(); inCheck(); return; }               // network flyout, Windows Update (in-challenges.js)
@@ -57,12 +85,15 @@ function owAct(a,v){
     case "unlock": OW.view="desk"; OW.seen=true; break;
     case "open": OW.app=true; OW.dm=OW.wu=false; OW.loc="pc"; OW.sel=null; if(OW.fresh) OW.checked=true; if(DM.made) DM.checked=true; break;
     case "dm": OW.dm=true; OW.wu=false; DM.opened=true; break;
-    case "close": OW.app=OW.wu=false; OW.renaming=false; break;
+    case "close": OW.app=OW.wu=false; OW.renaming=false; OW.dlg=null; break;
     case "bin": toast(t("ow_binEmpty")); return;
     case "start": OW.start=!OW.start; break;
-    case "loc": OW.loc=v; OW.sel=null; OW.renaming=false; if(v==="d") OW.openedD=true; break;
+    case "loc": if(owDrive(v)&&owDrive(v).raw){ OW.dlg={kind:"raw",k:v}; break; } OW.loc=v; OW.sel=null; OW.renaming=false; if(v==="d") OW.openedD=true; break;
     case "sel": if(OW.renaming) return; OW.sel=v; owSelDom(); return;    // in place: a redraw would flicker and swallow the double-click
-    case "openSel": OW.loc=OW.sel; if(OW.sel==="d") OW.openedD=true; OW.sel=null; break;
+    case "openSel": if(owDrive(OW.sel)&&owDrive(OW.sel).raw){ OW.dlg={kind:"raw",k:OW.sel}; break; } OW.loc=OW.sel; if(OW.sel==="d") OW.openedD=true; OW.sel=null; break;
+    case "rawFmt": OW.dlg={kind:"fmt",k:OW.dlg.k,label:""}; break;
+    case "dlgNo": OW.dlg=null; break;
+    case "fmtStart": owFormat(); return;
     case "ren": if(OW.sel==="c"){ toast(t("in_renameC")); return; } if(!inGate("oldRename")) return; OW.renaming=true; OW.draft=IN.label||t("ow_disk"); break;
     case "renOk": owRenameDone(); return;
     case "restart": pcPost(); return;
@@ -105,5 +136,5 @@ scrBody.addEventListener("click",e=>{
 scrBody.addEventListener("contextmenu",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive");
   if(!el||OW.renaming) return; e.preventDefault(); owCtx(e,el.dataset.v); });
 scrBody.addEventListener("dblclick",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive"); if(el&&!OW.renaming){ OW.sel=el.dataset.v; owAct("openSel"); } });
-scrBody.addEventListener("input",e=>{ if(e.target.id==="owName") OW.draft=e.target.value; });
+scrBody.addEventListener("input",e=>{ if(e.target.id==="owName") OW.draft=e.target.value; else if(e.target.id==="owFmtLbl"&&OW.dlg) OW.dlg.label=e.target.value; });
 scrBody.addEventListener("keydown",e=>{ if(e.target.id!=="owName") return; if(e.key==="Enter"){ e.preventDefault(); owRenameDone(); } else if(e.key==="Escape"){ OW.renaming=false; renderScreen(); } });

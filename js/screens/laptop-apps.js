@@ -60,13 +60,15 @@ const isoName=()=>"Win11_25H2_"+(LAP_LANGS.find(l=>l[0]===LAP.web.lng)||LAP_LANG
 /* ---- drawing ---- */
 // an MBR stick already failed to boot once: MBR again is blocked, arrows lead to Options → GPT
 const lapMbrAgain=()=>IN.mbrFails>0&&LAP.dev==="E"&&LAP.style==="MBR";
+// ...but the arrows only once the PC's screen has shown why (pcUefiBack): first the student tries, then sees, then gets help
+const lapMbrPoint=()=>lapMbrAgain()&&IN.uefiSeen&&S.glow;
 // the eject step is easy to miss: arrows on the taskbar's USB icon, then on "Eject" (hints on)
 const lapPoint=()=>S.hints&&S.glow&&inCur()==="eject"&&!LAP.ejected&&(STICK.iso||carOn());
 function lapRender(){
   if(SCR.dev!=="laptop") return;
   const focusQ=document.activeElement&&document.activeElement.id==="wbQ";
   scrBody.innerHTML=`<div class="os" data-app="${LAP.app||""}">
-    <div class="os-desk"><button class="os-ico" data-a="openPc">${OS_ICON.pc}<span>${t("fl_pc")}</span></button>${["files","web","tool"].map(a=>`<button class="os-ico" data-a="open" data-v="${a}">${OS_ICON[a]}<span>${t("app_"+a)}</span></button>`).join("")}</div>
+    <div class="os-desk${carOn()?" many":""}"><button class="os-ico" data-a="openPc">${OS_ICON.pc}<span>${t("fl_pc")}</span></button>${["files","web","tool"].map(a=>`<button class="os-ico" data-a="open" data-v="${a}">${OS_ICON[a]}<span>${t("app_"+a)}</span></button>`).join("")}${lapDeskIcons()}</div>
     ${LAP.app?lapWin():""}${LAP.dlg?lapDlg():""}${LAP.note?`<div class="os-note" role="status">${OS_ICON.usb}<div><b>${t(LAP.note[0])}</b><span>${t(LAP.note[1])}</span></div></div>`:""}
     <footer class="os-bar"><div class="os-apps">${["files","web","tool"].map(a=>`<button data-a="open" data-v="${a}" class="${LAP.app===a?"on":""}" title="${t("app_"+a)}" aria-label="${t("app_"+a)}">${OS_ICON[a]}</button>`).join("")}</div>
       <div class="os-tray">${stickIn()?`<button data-a="tray" class="${LAP.tray?"on":""}${lapPoint()&&!LAP.tray?" point":""}" title="${t("os_eject")}" aria-label="${t("os_eject")}">${OS_ICON.usb}</button>`:""}<span>14:32</span></div>
@@ -75,6 +77,8 @@ function lapRender(){
   lapProg();
   if(focusQ){ const q=document.getElementById("wbQ"); if(q){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); } }
 }
+// the car challenge: what was copied to the Desktop lies on the desktop itself too (a click opens it in Files)
+const lapDeskIcons=()=>carOn()?lapFiles("desk").map(x=>`<button class="os-ico" data-a="deskOpen" data-v="${x.n}">${OS_ICON[x.k]}<span>${x.lb||x.n}</span></button>`).join(""):"";
 function lapWin(){ const a=LAP.app;
   return `<section class="win"><header class="win-bar"><span class="win-ic">${OS_ICON[a]}</span><b>${t("app_"+a)}</b>
     <button data-a="min" title="${t("os_min")}" aria-label="${t("os_min")}">–</button><button data-a="min" class="x" title="${t("os_close")}" aria-label="${t("os_close")}">×</button></header>
@@ -83,8 +87,8 @@ function lapTool(){
   const busy=LAP.tool==="busy", inDev=LAP.dev==="E"&&stickIn()&&STICK.boot;
   const devs=[["D",t("dv_D")],...(stickIn()?[["E",t("dv_E")]]:[])];
   return `<div class="tl">
-    <nav class="tl-menu"><button data-a="menu" aria-expanded="${LAP.menu}"${lapMbrAgain()&&!LAP.menu&&S.glow?' class="point"':""}>${t("tl_opt")} ▾</button><span>${t("tl_lang")}</span>
-      ${LAP.menu?`<div class="tl-drop" role="menu"><p>${t("tl_style")}</p>${["MBR","GPT"].map(s=>`<button role="menuitemradio" aria-checked="${LAP.style===s}" data-a="style" data-v="${s}"${s==="GPT"&&lapMbrAgain()&&S.glow?' class="point"':""}><i>${LAP.style===s?"●":""}</i>${t("tl_"+s)}</button>`).join("")}<hr><p class="tl-sb">✓ ${t("tl_secure")}</p></div>`:""}</nav>
+    <nav class="tl-menu"><button data-a="menu" aria-expanded="${LAP.menu}"${lapMbrPoint()&&!LAP.menu?' class="point"':""}>${t("tl_opt")} ▾</button><span>${t("tl_lang")}</span>
+      ${LAP.menu?`<div class="tl-drop" role="menu"><p>${t("tl_style")}</p>${["MBR","GPT"].map(s=>`<button role="menuitemradio" aria-checked="${LAP.style===s}" data-a="style" data-v="${s}"${s==="GPT"&&lapMbrPoint()?' class="point"':""}><i>${LAP.style===s?"●":""}</i>${t("tl_"+s)}</button>`).join("")}<hr><p class="tl-sb">✓ ${t("tl_secure")}</p></div>`:""}</nav>
     <label class="tl-dev"><span>${t("tl_device")}</span><select data-a="dev"${busy?" disabled":""}>${devs.map(([v,l])=>`<option value="${v}"${LAP.dev===v?" selected":""}>${l}</option>`).join("")}</select></label>
     <div class="tl-ver"><div><small>${t("tl_pkg")}</small><b>1.0.99</b></div><div><small>${t("tl_dev")}</small><b>${inDev?"1.0.99":"—"}</b>${inDev?`<small class="pill">${STICK.boot}</small>`:""}</div></div>
     <p class="tl-style"><span class="pill ${LAP.style==="MBR"?"bad":"ok"}">${t("tl_style")}: ${LAP.style}</span><span class="pill">🔒 ${t("tl_secure")}</span></p>
@@ -184,6 +188,7 @@ function lapAct(a,v){
   switch(a){
     case "open": LAP.app=v; break;
     case "openPc": LAP.app="files"; LAP.files.loc="pc"; LAP.files.sel=null; break;
+    case "deskOpen": LAP.app="files"; if(carFolder(v)){ LAP.files.loc=v; LAP.files.sel=null; } else { LAP.files.loc="desk"; LAP.files.sel=v; } break;
     case "fnew": { const n=++CAR.nf, id="f"+n; CAR.folders.push({id,name:t("fl_newFolder")+(n>1?" ("+n+")":""),files:[]}); LAP.files.ren=id; LAP.files.sel=null;
       lapRender(); const i=document.getElementById("flRen"); if(i){ i.focus(); i.select(); } return; }
     case "fren": LAP.files.loc="desk"; LAP.files.ren=v; lapRender(); { const i=document.getElementById("flRen"); if(i){ i.focus(); i.select(); } } return;
@@ -222,16 +227,28 @@ function lapAct(a,v){
 // Install always wipes the device first (also a stick that already has Ventoy on it: the ISO goes too)
 function lapInstall(){
   if(LAP.tool==="busy"||!inGate("toolDevice")) return;
-  if(lapMbrAgain()){ inCard(t("in_warn"),t("in_mbrAgain_t"),t("in_mbrAgain"),{cls:"info",onOk:lapRender}); return; }
+  if(lapMbrAgain()){ pcUefiShow(); return; }                            // over to the PC: its BIOS says UEFI (pc-boot.js)
   LAP.dlg={kind:"warn"}; lapRender();
 }
 // "Yes" in the wipe warning: the backup drive is a big mistake (nothing really happens to it); the stick gets Ventoy
 function lapWipe(){
   LAP.dlg=null;
-  if(LAP.dev==="D"){ lapRender(); inMistake("in_m_wipeD"); return; }
+  if(LAP.dev==="D"){ lapRender(); hddAngry(); return; }
   LAP.tool="busy"; LAP.toolP=0; lapRender();
   STICK.boot=null; STICK.iso=false;
   tween(4200,k=>{ LAP.toolP=k; lapProg(); },()=>{ LAP.tool="done"; Object.assign(STICK,{boot:LAP.style,gen:IN.gen,iso:false}); LAP.files.sel=null; LAP.dlg={kind:"info",title:"app_tool",text:"tl_ok"}; lapRender(); inCheck(); });
+}
+// "Yes" on the backup drive: out of the laptop's screen, the drive shakes, glows red and pulls a face, then the mistake card
+function hddAngry(){
+  closeScreen(); S.busy=true;
+  setTimeout(()=>{ const p=wpos(hddG), v=laptopView(), dir=v.pos.clone().sub(v.tgt).normalize();
+    focusPoint(p.clone().addScaledVector(dir,24).add(V3(0,6,0)),p.clone().add(V3(0,3,0)),900);
+    setTimeout(()=>{ const y0=hddG.position.y, r0=hddG.rotation.y; hddFace.visible=true;
+      tween(2400,k=>{ const s=Math.sin(k*Math.PI*16), e=1-k*.4;
+        hddG.rotation.y=r0+s*.14*e; hddG.position.y=y0+Math.abs(Math.sin(k*Math.PI*6))*1.4*e;
+        hddMat.emissive.setRGB(.45+.3*s,0,0); hddFace.scale.setScalar(8+1.2*Math.abs(s)); },
+      ()=>{ hddG.rotation.y=r0; hddG.position.y=y0; S.busy=false;
+        inMistake("in_m_wipeD",()=>{ hddFace.visible=false; hddMat.emissive.setRGB(0,0,0); openScreen("laptop"); }); }); },950); },950);
 }
 function lapSearch(){ const q=(LAP.web.q||t("wb_sug")).toLowerCase();
   LAP.web.q=LAP.web.q||t("wb_sug"); LAP.web.rel=/win|وندوز|ويندوز/.test(q); LAP.web.page="results"; lapRender(); }

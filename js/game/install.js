@@ -132,8 +132,23 @@ function inSkip(){
   const at=IN.step; startClock(); IN_FINISH[inCur()]();                // a finisher may move the steps on by itself (owShutdown)
   if(IN.step===at&&!IN_DONE[inCur()]()){ IN.step++; inStepChanged(); }   // should not happen; never get stuck
   else inCheck();
-  renderScreen(); toast(t("ok_skipped"),"ok");
+  renderScreen(); toast(t("ok_skipped"),"ok"); inSkipView();
 }
+// where a step happens: a screen ("laptop", "pc", "phone") or the 3D view (null)
+const IN_3D=["stickLaptop","stickPc","removeStick","bsodOff","bsodOpen","bsodRam","phoneCable"];
+function inWhere(id){
+  if(IN_LAPTOP_STEPS.includes(id)||IN_GROUP_OF[id]==="car") return "laptop";
+  if(id==="phoneTether") return "phone";
+  return IN_3D.includes(id)||!S.powered?null:"pc"; }
+// after Ctrl+H: off the screen the skipped step was on, and over to the next step's screen or part of the desk
+function inSkipView(){
+  if(IN.step>=IN_STEPS.length) return;
+  const id=inCur(), want=inWhere(id); if(want===SCR.dev) return;
+  const go=()=>{ if(IN.step>=IN_STEPS.length||inCur()!==id) return;
+    if(want){ openScreen(want); return; }
+    if(id==="removeStick") inLookAtStick(); else if(id==="bsodRam") ramLook();
+    else focus(IN_POWER_STEPS.includes(id)||id==="bsodOff"?"powerBtn":"inDesk",1000); };
+  if(SCR.dev){ closeScreen(); setTimeout(go,950); } else go(); }
 function inMistake(key,onOk){ mistake(); shakeRed(); inCard(t("in_err"),inT(key+"_t"),inT(key),{onOk}); }
 // the serious one: the customer's files would be gone. A mistake, plus a minute to read why before going on.
 function inPenalty(key){ mistake(); shakeRed(); inCard(t("in_fatal"),inT(key+"_t"),inT(key)+"\n"+t("in_restored"),{cls:"fatal",wait:60}); }
