@@ -239,7 +239,7 @@ function wsRestart(){
   setTimeout(()=>{ if(PC.boot!==id) return;
     if(IN.stick==="pc"&&IN.cfg.trap){ PC.mode="ventoy"; renderScreen();   // the challenge: the PC found the stick again, and Setup starts over
       setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; WS.page="again"; renderScreen();
-        inMistake("in_m_stickIn",()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }); },2500); return; }
+        mistake(); shakeRed(); inCard(t("in_err"),inT("in_m_stickIn_t"),inT("in_m_stickIn")+"\n"+inBootOrder(),{onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}); },2500); return; }   // inMistake, with the boot order
     // otherwise Setup has put Windows Boot Manager first in the boot order, so the new Windows starts even with the stick in
     pcFirstBoot(); },1600);
 }

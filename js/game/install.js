@@ -18,7 +18,7 @@ const IN_SCENARIOS={
   usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
   used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskNew","diskInstall"],disks:"used",stick:"ready",plan:1},
   plan:{steps:["diskPlan","diskNew","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
-  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true},
+  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true,intro:true},
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
   car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
@@ -118,7 +118,7 @@ function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen()
   // copied: the countdown waits for this card, then out to the stick. The card says what the step card would, so no step card
   // (two cards at once, and the countdown ran on while the second one was being read)
   const note=id==="removeStick"&&IN.stick==="pc";
-  if(note) setTimeout(()=>{ if(inCur()!=="removeStick"||IN.stick!=="pc") return; inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
+  if(note) setTimeout(()=>{ if(inCur()!=="removeStick"||IN.stick!=="pc") return; inCard(t("in_note"),t("in_rmT"),t("in_rmP")+"\n"+inBootOrder(),{cls:"info",
     onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}); },1200);   // not if the step passed meanwhile (Ctrl+H)
   if(IN.step>=IN_STEPS.length){ setTimeout(inScDone,1200); return; }
   if(IN_STEP_HOOK[id]) IN_STEP_HOOK[id]();                               // a challenge's own start for this step (in-challenges.js)
@@ -173,8 +173,12 @@ function inQuiz(){
     if(k==="a"){ IN.quizDone=true; IN.asking=false; toast(t("in_q_ok"),"ok"); stickPcOut(false); }
     else { mistake(); shakeRed(); toast(t("in_q_no"),"err"); setTimeout(inQuiz,500); } }}))});
 }
+// the finish challenge's PC: its BIOS starts from USB first (drawn in the cards that explain why the stick must come out)
+const inBootOrder=()=>`<span class="ic-boot"><b>${t("in_bootOrder")}</b><span class="first">1. UEFI USB Key: SanDisk Ultra 32GB</span><span>2. Windows Boot Manager</span><span>3. UEFI Network</span></span>`;
 /* a card over the 3D view: mistakes, a choice (buttons: [{l,fn,pri}]) or the end of a scenario.
-   opt: {cls, buttons, onOk, wait (seconds before OK works)} */
+   opt: {cls, buttons, onOk, wait (seconds before OK works)}
+   The click that opened a card (on the 3D view) also lands on whatever button is now under the pointer: for 350 ms
+   after a card shows, its buttons ignore clicks, so a question can't answer itself. */
 const inCardEl=document.getElementById("inCard"), icBtns=document.getElementById("icBtns"), icOk=document.getElementById("icOk");
 let icOnOk=null;
 function inCard(top,title,text,opt={}){ document.getElementById("icNum").textContent=top; document.getElementById("icTitle").textContent=title;
@@ -184,9 +188,9 @@ function inCard(top,title,text,opt={}){ document.getElementById("icNum").textCon
   if(opt.wait){ let n=opt.wait; const tick=()=>{ icOk.textContent=n>0?t("in_wait",{s:n}):t("ok"); icOk.disabled=n>0; if(n--<=0) clearInterval(inCard.timer); };
     tick(); inCard.timer=setInterval(tick,1000); }
   const bs=opt.buttons||[]; icBtns.hidden=!bs.length; icOk.hidden=!!bs.length; icBtns.innerHTML="";
-  bs.forEach(b=>{ const el=document.createElement("button"); el.className=b.pri?"primary":"chip-btn"; el.textContent=b.l; el.onclick=()=>{ inCardEl.hidden=true; b.fn(); }; icBtns.appendChild(el); });
-  inCardEl.hidden=false; (bs.length?icBtns.firstChild:icOk).focus({preventScroll:true}); }
-function inCardOk(){ if(inCardEl.hidden||icOk.disabled) return; inCardEl.hidden=true; const f=icOnOk; icOnOk=null; if(f) f(); }
+  bs.forEach(b=>{ const el=document.createElement("button"); el.className=b.pri?"primary":"chip-btn"; el.textContent=b.l; el.onclick=()=>{ if(performance.now()-inCard.at<350) return; inCardEl.hidden=true; b.fn(); }; icBtns.appendChild(el); });
+  inCard.at=performance.now(); inCardEl.hidden=false; (bs.length?icBtns.firstChild:icOk).focus({preventScroll:true}); }
+function inCardOk(){ if(inCardEl.hidden||icOk.disabled||performance.now()-inCard.at<350) return; inCardEl.hidden=true; const f=icOnOk; icOnOk=null; if(f) f(); }
 icOk.onclick=inCardOk;
 inCardEl.addEventListener("keydown",e=>{ if(e.key==="Escape"&&icBtns.hidden) inCardOk(); });
 function inStepCard(){ if(IN.step>=IN_STEPS.length) return;
@@ -360,7 +364,7 @@ function inStart(){
   if(c.start==="desktop"){                                              // the new PC, already on its desktop
     powerUp(); PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk"}); WS.user=t("in_owner"); setTimeout(()=>openScreen("pc"),700); }
   inChStart();
-  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc),{cls:"info",onOk:inStepCardSoon}),1400);   // the step card after it, not on top of it
+  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc)+(c.trap?"\n"+inBootOrder():""),{cls:"info",onOk:inStepCardSoon}),1400);   // the step card after it, not on top of it
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
   else if(!c.intro) inStepCardSoon();

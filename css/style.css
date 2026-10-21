@@ -443,3 +443,7 @@ body.fs-open .fs-panel{ background:var(--err); color:#fff; box-shadow:0 0 0 3px 
 body.classroom .mode-menu, body.classroom #offlineBtn{ display:none; }   /* the teacher picks the mode */
 .steps li.locked::before{ content:"🔒"; font-size:12px; opacity:.6; }
 .steps li.locked span{ opacity:.55; }
+/* install mode: a BIOS boot order drawn in a card (the finish challenge) */
+.ic-boot{ display:grid; gap:3px; margin:4px 0 0; padding:8px 10px; border-radius:6px; background:#0c0e13; color:#e3e6ea; font:500 13px/1.35 "Barlow", sans-serif; direction:ltr; text-align:left; }
+.ic-boot b{ color:#ff5a5f; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+.ic-boot span{ color:#aab1ba; } .ic-boot span.first{ color:#fff; font-weight:700; }

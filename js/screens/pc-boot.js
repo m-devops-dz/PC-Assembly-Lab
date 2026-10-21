@@ -18,6 +18,8 @@ const PC_KEYS=[["Escape","Esc"],["Delete","Del"],["F7","F7"],["F10","F10"],["F11
 // the BIOS challenge's first start: the student only watches what the PC starts by itself, so no keys (inCur: install.js)
 const pcKeysOff=()=>IN.sc==="bios"&&inCur()==="oldBoot";
 const pcKeyList=()=>PC_KEYS.filter(([k])=>k==="F7"?IN.cfg.bios:k==="F11"?!IN.cfg.noF11:true);
+// challenges that end when the PC starts from the stick (Ventoy's menu): the install itself is the main path
+const inBootOnly=()=>IN.sc==="usb"||IN.sc==="bios";
 const stickUefi=()=>IN.stick==="pc"&&!!STICK.boot;                   // a Ventoy stick in the PC (MBR or GPT: both boot in UEFI)
 function pcEntries(){ return [...(WS.disks==="used"?[{id:"win",l:"Windows Boot Manager (Samsung SSD 980 PRO 1TB)"}]:[]),
   ...(stickUefi()?[{id:"usb",l:"UEFI: SanDisk Ultra 32GB 1.00, Partition 1"}]:[]), {id:"setup",l:"Enter Setup"}]; }
@@ -83,7 +85,7 @@ function pcChoose(i){
 // Ventoy's menu: the ISO files on the stick. It waits for the student to choose one (Enter or a click).
 function pcVentoy(){ PC.mode="ventoy"; PC.ventoySeen=true; renderScreen(); inCheck(); }
 function pcIso(){
-  if(IN.sc==="usb"){ toast(t("in_usbDone"),"ok"); return; }            // the challenge was the stick: it boots, that's the end
+  if(inBootOnly()){ toast(t(IN.sc==="usb"?"in_usbDone":"in_biosDone"),"ok"); return; }   // the challenge was the boot itself: that's the end
   if(IN.cfg.bsod&&!WS.copied){ bsodResume(); return; }                  // the blue-screen challenge: the copy never finished, Setup picks it up again
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
@@ -99,7 +101,7 @@ function pcRender(){
   else if(m==="bios"&&IN.cfg.bios) s=bxRender();
   else if(m==="bsod") s=bsodRender();
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
-  else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&IN.sc!=="usb"?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
+  else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&!inBootOnly()?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
   else if(m==="oldwin") s=owRender();
   else if(m==="nodisk") s=`<div class="pc nodisk"><p>Reboot and Select proper Boot device<br>or Insert Boot Media in selected Boot device and press a key_</p><button class="pc-power" data-k="restart">↻ ${t("pc_restart")}</button></div>`;
