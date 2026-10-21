@@ -18,9 +18,14 @@ let CL_MAX=Infinity;                                        // build mode: steps
 function clMaySkip(n){ return !CL.on||(!!CL.st.skip&&n<=CL_MAX); }
 // the teacher's choice of what the student sees (an empty or missing list = everything; always everything outside the classroom)
 const clAllowed=(list,k)=>!CL.on||!Array.isArray(list)||!list.length||list.includes(k);
-const clScOk=k=>clAllowed(CL.st.challenges,k), clCaseOk=n=>clAllowed(CL.st.tsCases,n);
+// ids the app no longer has are dropped first: a list of only those counts as empty (everything)
+const clValid=(list,ok)=>Array.isArray(list)?list.filter(ok):list;
+const clScOk=k=>clAllowed(clValid(CL.st.challenges,x=>IN_SCENARIOS[x]),k), clCaseOk=n=>clAllowed(clValid(CL.st.tsCases,x=>!!TS_CASES[x]),n);
+// a reload the teacher's settings ask for, at most once in 10 s (with storage blocked the setting can't stick: no reload loop)
+function clReload(){ const m=/clr=(\d+)/.exec(location.hash); if(m&&Date.now()-m[1]<10000) return false;
+  history.replaceState(null,"","#clr="+Date.now()); location.reload(); return true; }
 const clLoad=k=>{ try{ return JSON.parse(sessionStorage.getItem(k)||"null"); }catch(e){ return null; } };
-const clSave=(k,v)=>{ try{ sessionStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+const clSave=(k,v)=>{ if(RESETTING) return; try{ sessionStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
 
 // full-page cards (name, wait, pause): over the sidebar too, so nothing can be clicked behind them
 function clCover(id,html){
@@ -62,11 +67,11 @@ function clGo(){
 // the teacher's settings, on connect and after every change
 function clApply(st){
   CL.st=st;
-  if(st.app&&window.APP_VERSION&&st.app!==APP_VERSION&&clLoad("pclabVer")!==st.app){ clSave("pclabVer",st.app); location.reload(); return; }   // the app was updated: load the new copy (once)
+  if(st.app&&window.APP_VERSION&&st.app!==APP_VERSION&&clLoad("pclabVer")!==st.app){ clSave("pclabVer",st.app); if(clReload()) return; }   // the app was updated: load the new copy (once)
   if(!CL.me.session){ CL.me.session=st.session; clSave("pclabStudent",CL.me); }
   if(CL.me.session!==st.session||(st.resets&&st.resets[CL.me.id])){ clReset(); return; }
-  if(["build","trouble","install"].includes(st.mode)&&st.mode!==appMode){ appMode=st.mode; persist(); location.reload(); return; }
-  if(IN.on&&!clScOk(IN.sc)){ const k=IN_ORDER.find(clScOk); if(k){ inGo(k); return; } }   // this challenge was taken off the list
+  if(["build","trouble","install"].includes(st.mode)&&st.mode!==appMode){ appMode=st.mode; persist(); if(clReload()) return; }
+  if(IN.on&&!clScOk(IN.sc)){ const k=IN_ORDER.find(clScOk); if(k){ IN.sc=k; persist(); if(clReload()) return; } }   // this challenge was taken off the list
   if(TS.on) clCases();
   const nn=st.names&&st.names[CL.me.id];                                // the teacher corrected the name
   if(nn&&nn!==CL.me.name){ CL.me.name=nn; clSave("pclabStudent",CL.me); if(CL.dot) CL.dot.querySelector("span").textContent=nn; }

@@ -12,7 +12,7 @@ function clickSlot(i){
   if(!GOOD.includes(i)){ mistake(); toast(t("e_wrongSlot",{s:SLOT_NAMES[i]}),"err"); return; }
   if(slots[i].open) return;
   setLatches(i,true); toast(t("ok_open",{s:SLOT_NAMES[i]}),"ok");
-  if(GOOD.every(g=>slots[g].open)) setTimeout(()=>setStep(ST.ram1),400);
+  if(GOOD.every(g=>slots[g].open)) setTimeout(()=>{ if(S.step===ST.clips) setStep(ST.ram1); },400);   // not if a skip moved on meanwhile
 }
 function clickBracket(){
   if(S.busy) return;
@@ -28,7 +28,7 @@ function clickScrew(i){
   const o=S.tightOrder;
   if(o.length%2===1&&i!==(o[o.length-1]+2)%4){ mistake(); toast(t("e_diag"),"err"); return; }
   sc.tight=true; o.push(i); S.busy=true;
-  tween(700,k=>coolerScrewDepth(sc,k),()=>{ S.busy=false; toast(t("ok_screw"),"ok"); if(o.length===4) setTimeout(()=>setStep(ST.fanCable),300); });
+  tween(700,k=>coolerScrewDepth(sc,k),()=>{ S.busy=false; toast(t("ok_screw"),"ok"); if(o.length===4) setTimeout(()=>{ if(S.step===ST.coolerScrews) setStep(ST.fanCable); },300); });
 }
 function clickM2Screw(){
   if(S.busy) return;

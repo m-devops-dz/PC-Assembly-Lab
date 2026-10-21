@@ -301,7 +301,8 @@ $("heads").onclick=e=>{ const th=e.target.closest("th[data-sort]"); if(!th) retu
 applyTx(); renderHeads();
 // CSV in the list's current order; the BOM lets Excel read the Arabic
 $("csvBtn").onclick=()=>{
-  const q=v=>{ v=String(v??""); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  // a value starting with = + - @ (or a tab / return) would run as a formula in Excel: a leading ' keeps it text
+  const q=v=>{ v=String(v??""); if(/^[=+\-@\t\r]/.test(v)) v="'"+v; return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
   const rows=LIST.map(s=>[s.name,s.ip,s.first?new Date(s.first*1000).toLocaleString("sv-SE"):"",t("mode_"+s.mode),
     s.steps?Math.min(s.step,s.steps)+"/"+s.steps:s.done?s.done.length+" ✓":"",s.steps?Math.round(100*prog(s)):"",stepName(s),s.mistakes||0,fmt(s.time||0),tx(s.online?"yes":"no"),s.rush||0,s.checkBad||0]);
   const csv="﻿"+[TX[lang].csvHead,...rows].map(r=>r.map(q).join(",")).join("\r\n");
@@ -316,6 +317,7 @@ async function poll(){
     const d=await (await fetch("/api/students",{cache:"no-store"})).json();
     if(JSON.stringify(d.state)!==JSON.stringify(ST)){ ST=d.state; renderState(); }
     $("urls").innerHTML=d.urls&&d.urls.length?esc(tx("urls"))+d.urls.map(u=>`<b>${esc(u)}</b>`).join(esc(tx("or"))):"";
+    d.students.forEach(s=>{ ["step","steps","mistakes","time","rush","checkBad"].forEach(k=>{ s[k]=+s[k]||0; }); s.name=String(s.name??""); if(!Array.isArray(s.done)) s.done=null; });   // numbers stay numbers in the HTML below
     const list=LIST=sortList(d.students);
     $("empty").hidden=list.length>0;
     const on=list.filter(s=>s.online), wait=on.filter(s=>s.wait).length;

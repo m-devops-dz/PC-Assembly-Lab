@@ -1,8 +1,7 @@
 /* ---------------- the PC's monitor (install mode, phase 2: start the PC from the stick) ----------------
    post    MSI logo: a few seconds to press F11 (boot menu) or DEL (BIOS setup); a bar shows the time running out
-   menu    the boot menu. A GPT stick shows as "UEFI: SanDisk…". An MBR (Legacy) stick doesn't show at all: this PC boots
-           UEFI only (CSM off, as Windows 11 needs), so picking anything there explains that and sends the student
-           back to the laptop to remake it (inRedo)
+   menu    the boot menu. A Ventoy stick shows as "UEFI: SanDisk…", whichever partition style it was made with (Ventoy's
+           MBR style boots in UEFI too; GPT is only the safer choice on fussy UEFI firmware)
    bios    BIOS setup (the EZ-mode picture from peripherals.js); Esc or F10 restarts
    ventoy  Ventoy's menu: the ISO files on the stick; the student picks the Windows ISO
    nodisk  a new PC with nothing to start from (no stick, empty drives)
@@ -19,7 +18,7 @@ const PC_KEYS=[["Escape","Esc"],["Delete","Del"],["F7","F7"],["F10","F10"],["F11
 // the BIOS challenge's first start: the student only watches what the PC starts by itself, so no keys (inCur: install.js)
 const pcKeysOff=()=>IN.sc==="bios"&&inCur()==="oldBoot";
 const pcKeyList=()=>PC_KEYS.filter(([k])=>k==="F7"?IN.cfg.bios:k==="F11"?!IN.cfg.noF11:true);
-const stickUefi=()=>IN.stick==="pc"&&STICK.boot==="GPT";
+const stickUefi=()=>IN.stick==="pc"&&!!STICK.boot;                   // a Ventoy stick in the PC (MBR or GPT: both boot in UEFI)
 function pcEntries(){ return [...(WS.disks==="used"?[{id:"win",l:"Windows Boot Manager (Samsung SSD 980 PRO 1TB)"}]:[]),
   ...(stickUefi()?[{id:"usb",l:"UEFI: SanDisk Ultra 32GB 1.00, Partition 1"}]:[]), {id:"setup",l:"Enter Setup"}]; }
 // press the case's power button: the PC starts, the camera goes to the monitor, the MSI logo comes up
@@ -72,14 +71,13 @@ function pcKey(k){
 }
 function pcBios(){ PC.mode="bios"; PC.biosSeen=true; const tex=pcBiosTex(); showScreen(tex); renderScreen(); inCheck(); }
 const pcBiosCache={};
-function pcBiosTex(){ const k=stickUefi()?"usb":"none"; return pcBiosCache[k]||(pcBiosCache[k]=biosTex(stickUefi()?{usb:"ok"}:{})); }
+function pcBiosTex(){ const k=(stickUefi()?"usb":"none")+WS.disks, o={noSata:WS.disks==="fresh"}; if(stickUefi()) o.usb="ok";   // fresh: the SATA SSD has no power
+  return pcBiosCache[k]||(pcBiosCache[k]=biosTex(o)); }
 function pcChoose(i){
   const e=pcEntries()[i];
-  if(IN.stick==="pc"&&STICK.boot!=="GPT"){ IN.mbrFails++; mistake(); shakeRed();      // read why before going back: OK after 30 s
-    inCard(t("in_err"),inT("in_m_mbrMissing_t"),inT("in_m_mbrMissing"),{wait:30,onOk:()=>inRedo(true)}); return; }   // the stick should be in this list, and isn't
   if(e.id==="setup"){ pcBios(); return; }
   if(e.id==="win"){ pcBootDisk(false); return; }
-  if(!STICK.iso){ inMistake("in_m_noIso",()=>inRedo(false)); return; }
+  if(!STICK.iso){ inMistake("in_m_noIso",inRedo); return; }
   pcVentoy();
 }
 // Ventoy's menu: the ISO files on the stick. It waits for the student to choose one (Enter or a click).
@@ -90,9 +88,6 @@ function pcIso(){
   if(WS.installing){ toast(t("in_stickIn2"),"err"); return; }            // Windows is already copied: starting Setup again would start over
   const id=PC.boot; PC.mode="load"; PC.loadMsg="pc_setupLoad"; renderScreen();
   setTimeout(()=>{ if(PC.boot!==id) return; PC.mode="setup"; PC.setup=true; WS.page="lang"; renderScreen(); inCheck(); },2600); }
-// an MBR stick a second time: the PC's monitor shows its BIOS mode (UEFI) and why, then back to the laptop
-function pcUefiShow(){ closeScreen(); setTimeout(()=>{ PC.uefiBack=PC.mode; PC.mode="uefi"; openScreen("pc"); },950); }
-function pcUefiBack(){ IN.uefiSeen=true; PC.mode=PC.uefiBack||"off"; closeScreen(); setTimeout(()=>openScreen("laptop"),950); }
 function pcBar(){ const b=document.getElementById("pcBar"); if(b) b.style.width=((1-PC.k)*100).toFixed(1)+"%"; }
 function pcRender(){
   if(SCR.dev!=="pc") return;
@@ -103,10 +98,6 @@ function pcRender(){
       <p class="pc-foot">↑ and ↓ to move selection<br>ENTER to select boot device<br>ESC to boot using defaults</p></div></div>`;
   else if(m==="bios"&&IN.cfg.bios) s=bxRender();
   else if(m==="bsod") s=bsodRender();
-  else if(m==="uefi") s=`<div class="pc bx uefi"><div class="bx-top"><b class="bx-msi">msi</b><span>CLICK BIOS 5</span></div>
-      <div class="bx-info"><div><small>CPU Speed</small><b>3.90 GHz</b></div><div class="bx-mode point"><small>BIOS Mode</small><b>UEFI</b></div><div><small>CSM</small><b>Disabled</b></div></div>
-      <div class="bx-main"><section class="bx-box uefi-why"><h4>${t("in_mbrAgain_t")}</h4>${t("in_mbrAgain").split("\n").map(l=>`<p>${l}</p>`).join("")}
-        <p><button class="ws-next" data-k="uefiBack">${t("pc_uefiBack")}</button></p></section></div></div>`;
   else if(m==="bios") s=`<div class="pc bios"><img src="${pcBiosTex().image.toDataURL()}" alt="MSI Click BIOS 5"><p class="pc-note">${t("pc_biosNote")}</p></div>`;
   else if(m==="ventoy") s=`<div class="pc vt"><header>Ventoy 1.0.99 · UEFI</header><ul><li><button class="on${S.hints&&S.glow&&!WS.installing&&IN.sc!=="usb"?" point":""}" data-k="Enter"><span>${LAP.iso}</span><small>${ISO_GB} GB</small></button></li></ul><footer>↑↓ Select · Enter Boot · F1 Help</footer></div>`;
   else if(m==="load") s=`<div class="pc load"><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div>${PC.loadMsg?`<p>${t(PC.loadMsg)}</p>`:""}</div>`;
@@ -122,7 +113,6 @@ scrBody.addEventListener("click",e=>{
   if(SCR.dev!=="pc") return; const el=e.target.closest("[data-k]"); if(!el) return;
   const k=el.dataset.k;
   if(k==="pick"){ PC.sel=+el.dataset.v; pcChoose(PC.sel); }
-  else if(k==="uefiBack") pcUefiBack();
   else if(k==="restart"){ startClock(); pcPost(); }
   else pcKey(k);
 });

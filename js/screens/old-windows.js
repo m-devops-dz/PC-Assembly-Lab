@@ -17,7 +17,7 @@ function owDrives(){
 }
 function owDisks(){
   if(IN.sc==="split") return dmDrives();                              // the one-partition challenge: what Disk Management made
-  const d={k:"d",size:476.9,free:112.4};
+  const d={k:"d",size:SATA_GB,free:83.4};                            // a 480 GB SSD shows as 447 GB in Windows
   if(!OW.fresh) return [{k:"c",size:930.8,free:810.3},d];
   const pr=m2Prim(), c=pr[0]?pr[0].gb:931.4, used=WS.disks==="used";
   return [{k:"c",size:c,free:c-24.6},...(used?[d]:[]),...(pr[1]?[{k:used?"e":"d",size:pr[1].gb,free:pr[1].gb-.1,raw:pr[1].raw,label:pr[1].label,part:pr[1]}]:[])];
@@ -44,6 +44,7 @@ function owRender(){
     ${OW.dm?dmWindow():OW.wu?wuWindow():OW.app?owExplorer():""}
     ${OW.start?`<div class="ow-start" role="menu"><p>${OW.fresh?WS.user:t("ow_user")}</p>${OW.fresh?`${IN.cfg.wifi?`<button data-o="wu">${WU_ICON} ${t("wu_title")}</button>`:""}<button data-o="dm">${DM_ICON} ${t("dm_title")}</button>`:`${owOffOnly()?"":`<button data-o="restart">↻ ${t("pc_restart")}</button>`}<button data-o="shutdown">${PWR_SVG} ${t("ow_shutdown")}</button>`}</div>`:""}
     ${OW.net?netFlyout():""}
+    ${OW.winx?`<div class="ow-start ow-winx" role="menu">${OW.fresh&&IN.cfg.wifi?`<button data-o="wu">${WU_ICON} ${t("wu_title")}</button>`:""}<button data-o="dm">${DM_ICON} ${t("dm_title")}</button><button data-o="open">${OS_ICON.files} ${t("ow_explorer")}</button></div>`:""}
     <footer class="os-bar"><div class="os-apps"><button data-o="start" class="${OW.start?"on":""} ow-startbtn" title="${t("ow_startMenu")}" aria-label="${t("ow_startMenu")}"><i></i><i></i><i></i></button>
       <button data-o="open" class="${OW.app&&!OW.dm&&!OW.wu?"on":""}" title="${t("ow_explorer")}" aria-label="${t("ow_explorer")}">${OS_ICON.files}</button>${OW.dm?`<button data-o="dm" class="on" title="${t("dm_title")}" aria-label="${t("dm_title")}">${DM_ICON}</button>`:""}${OW.wu?`<button data-o="wu" class="on" title="${t("wu_title")}" aria-label="${t("wu_title")}">${WU_ICON}</button>`:""}</div>
       <div class="os-tray">${IN.cfg.wifi&&OW.fresh?netBtn():""}<span>14:36</span></div></footer></div>`;
@@ -78,7 +79,7 @@ function owFormat(){ const d=OW.dlg, p=owDrive(d.k).part; OW.dlg={kind:"busy",k:
   tween(1600,k=>{ const b=document.getElementById("owFmtBar"); if(b) b.style.width=(k*100).toFixed(1)+"%"; },()=>{
     p.raw=false; p.label=d.label.trim(); OW.dlg=null; OW.loc="pc"; toast(t("ow_rawDone",{d:owName(d.k)}),"ok"); renderScreen(); inCheck(); }); }
 function owAct(a,v){
-  if(a!=="start") OW.start=false;
+  if(a!=="start") OW.start=false; OW.winx=false;
   if(owChAct(a,v)){ renderScreen(); inCheck(); return; }               // network flyout, Windows Update (in-challenges.js)
   OW.net=false;
   switch(a){
@@ -133,7 +134,9 @@ scrBody.addEventListener("click",e=>{
   if(inCtx&&el.dataset.o==="openSel"&&OW.loc!=="pc") return;
   startClock(); owAct(el.dataset.o,el.dataset.v);
 });
-scrBody.addEventListener("contextmenu",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive");
+scrBody.addEventListener("contextmenu",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return;
+  if(e.target.closest(".ow-startbtn")&&OW.fresh){ e.preventDefault(); OW.start=false; OW.winx=!OW.winx; renderScreen(); return; }   // right-click Start (Win+X): Disk Management lives here
+  const el=e.target.closest(".ow-drive");
   if(!el||OW.renaming) return; e.preventDefault(); owCtx(e,el.dataset.v); });
 scrBody.addEventListener("dblclick",e=>{ if(SCR.dev!=="pc"||PC.mode!=="oldwin") return; const el=e.target.closest(".ow-drive"); if(el&&!OW.renaming){ OW.sel=el.dataset.v; owAct("openSel"); } });
 scrBody.addEventListener("input",e=>{ if(e.target.id==="owName") OW.draft=e.target.value; else if(e.target.id==="owFmtLbl"&&OW.dlg) OW.dlg.label=e.target.value; });

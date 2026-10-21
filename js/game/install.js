@@ -5,8 +5,8 @@
      main    plug the stick in → power on, F11 → pick the stick → click through Setup → Windows + Data on the M.2 →
              install → wait → sign in (name, "Hi", desktop)
    Everything else is a challenge the student picks from the list in the sidebar (each one starts from a fresh page):
-     usb     make the install stick on the laptop (Ventoy, official ISO, copy, eject); MBR passes but the stick is then
-             missing from the boot menu, and inRedo() sends the student back (laptop-apps.js, pc-boot.js)
+     usb     make the install stick on the laptop (Ventoy with GPT recommended, official ISO, copy, eject), then start the
+             PC from it (laptop-apps.js, pc-boot.js)
      used    a customer's PC: look at the old Windows, name the drive with their files, then clean the M.2 without
              touching that drive (Delete/Format on it = a 60 s penalty) (old-windows.js, win-setup.js)
      plan    choose how to split the M.2: Windows only / + files / + room for Linux, and what Windows adds (System, MSR)
@@ -26,7 +26,7 @@ const IN_SCENARIOS={
   bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
   wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
-const IN_ORDER=["main","bios","usb","used","plan","finish","bsod","split","wifi","car"];
+const IN_ORDER=["main","bios","finish","usb","used","plan","bsod","split","wifi","car"];   // finish right after bios: it starts where those leave off
 // the sidebar group a step belongs to
 const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
@@ -39,7 +39,7 @@ const IN_BIOS_FIRST=["stickPc","oldBoot","oldShutdown"], IN_BIOS_TEXT=["oldBoot"
 const IN_SC_ID=IN_SCENARIOS[saved.inSc]?saved.inSc:"main";
 const IN={on:appMode==="install", sc:IN_SC_ID, cfg:IN_SCENARIOS[IN_SC_ID], step:0, gen:0,   // gen: goes up when the stick must be remade (STICK.gen must match)
   done:Array.isArray(saved.inDone)?saved.inDone:[],                 // scenarios finished this session
-  label:"", plan:0, quizDone:false, mbrFails:0,                     // label: the name given to the customer's drive; plan: how the M.2 is split; mbrFails: MBR sticks missing from the boot menu
+  label:"", plan:0, quizDone:false,                                 // label: the name given to the customer's drive; plan: how the M.2 is split
   stick:"mat",                                                      // "mat" (blank, by the laptop), "laptop", "table" (on the desk by the PC), "pc"
   port:null, slow:false, picking:false};                            // the PC port it's in; slow: kept in a USB 2.0 port
 const IN_STEPS=IN.cfg.steps;
@@ -55,7 +55,7 @@ const IN_DONE={
   instCopy:()=>WS.copied, removeStick:()=>WS.copied&&IN.stick==="table", firstBoot:()=>WS.oobeDone,
   userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh,
   dmOpen:()=>DM.opened, dmShrink:()=>DM.shrunk, dmNew:()=>DM.made, dmCheck:()=>DM.checked,
-  carCopy:()=>carSaved(), carFormat:()=>CAR.fs==="exFAT", carBack:()=>CAR.fs==="exFAT"&&SONGS.every(s=>CAR.stick.includes(s))
+  carCopy:()=>carSaved(), carFormat:()=>CAR.fs!=="NTFS", carBack:()=>CAR.fs!=="NTFS"&&SONGS.every(s=>CAR.stick.includes(s))
 };
 // Ctrl+H (and a scenario's starting point): the state each step leaves behind
 const gptStick=()=>Object.assign(STICK,{boot:"GPT",gen:IN.gen,iso:STICK.iso});
@@ -79,10 +79,10 @@ const IN_FINISH={
   diskNew:()=>{ WS.parts=WS.parts.filter(p=>p.drive!==WS.m2||p.old); WS.dlg=null; const plan=IN.plan||1;
     wsNew(plan===1?999:200,true); if(plan===2) wsNew(999,true); if(plan===3) wsNew(wsNewRoom()-150,true); },
   diskParts:()=>{ WS.seen={sys:1,msr:1,pri:1,files:1}; },
-  diskInstall:()=>{ WS.sel="p1"; WS.installing=true; WS.page="installing"; WS.prog=0; wsCopy(); },
-  instCopy:()=>{ WS.prog=1; if(!WS.copied) wsCopied(); },
+  diskInstall:()=>{ WS.sel=m2Prim()[0].id; WS.dlg=null; WS.msg=null; WS.installing=true; WS.page="installing"; WS.prog=0; wsCopy(); },   // B4: no dialog left over
+  instCopy:()=>{ WS.copyN=(WS.copyN||0)+1; WS.prog=1; if(!WS.copied) wsCopied(); },   // copyN: the running copy stops (it would call wsCopied again)
   removeStick:()=>stickPcOut(true),
-  firstBoot:()=>{ clearInterval(wsCopied.timer); if(IN.stick==="pc"&&IN.cfg.trap) stickPcOut(true); PC.boot++; PC.mode="setup"; WS.page="user"; WS.oobeDone=true; },
+  firstBoot:()=>{ WS.copyN=(WS.copyN||0)+1; clearInterval(wsCopied.timer); if(IN.stick==="pc"&&IN.cfg.trap) stickPcOut(true); PC.boot++; PC.mode="setup"; WS.page="user"; WS.oobeDone=true; },
   userName:()=>{ WS.draft=WS.draft||t("ob_userPh"); wsUserDone(); },
   newDesk:()=>{ PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:true,loc:"pc",checked:true}); },
   dmOpen:()=>{ OW.dm=true; DM.opened=true; },
@@ -90,9 +90,9 @@ const IN_FINISH={
   dmNew:()=>{ if(!DM.parts.some(p=>p.id==="d")) DM.parts.push({id:"d",gb:dmFree(),fs:"NTFS",letter:"D",label:t("dm_labelSug"),kind:"d"}); DM.made=true; DM.dlg=null; DM.fmt=-1; },
   dmCheck:()=>{ OW.dm=false; OW.app=true; OW.loc="pc"; DM.checked=true; },
   carCopy:()=>{ CAR.desk=[...SONGS]; LAP.dlg=null; },
-  carFormat:()=>{ CAR.fs="exFAT"; CAR.stick=[]; CAR.label="MUSIC"; LAP.dlg=null; },
+  carFormat:()=>{ CAR.fs="FAT32"; CAR.stick=[]; CAR.label="MUSIC"; LAP.dlg=null; },
   carBack:()=>{ CAR.stick=[...SONGS]; LAP.dlg=null; },
-  login:()=>{ clearInterval(wsCopied.timer); WS.copied=WS.oobeDone=true; WS.user=WS.user||t("ob_userPh"); PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:false,loc:"pc"}); }
+  login:()=>{ WS.copyN=(WS.copyN||0)+1; clearInterval(wsCopied.timer); WS.copied=WS.oobeDone=true; WS.user=WS.user||t("ob_userPh"); PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:false,loc:"pc"}); }
 };
 const inCur=()=>IN_STEPS[IN.step];
 // text that can name the customer's drive ({l}: what the student called it)
@@ -100,8 +100,8 @@ const inT=(k,v)=>t(k,{l:IN.label||t("in_labelSug"),...v});
 // a step's title and explanation: some depend on the scenario (and partitioning on the plan)
 const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":IN.sc==="bios"&&IN_BIOS_TEXT.includes(id)?"in_s_"+id+"B":id==="stickLaptop"&&IN.sc==="car"?"in_s_stickLaptopC":"in_s_"+id;
 const inStepT=id=>t(inStepK(id));
-// the customer's PC and the BIOS challenge: the stick goes straight into the case's front USB port (no port to pick)
-const IN_FRONT_USB=["used","bios"];
+// the customer's PC, the BIOS challenge and the stick made on the laptop: it goes straight into the case's front USB port (no port to pick)
+const IN_FRONT_USB=["used","bios","usb"];
 const inStepD=id=>inT(id==="stickPc"&&IN_FRONT_USB.includes(IN.sc)?"in_s_stickPcdU":id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
 // actions that belong to a later step wait for it; steps this scenario doesn't have are always open
 function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
@@ -118,8 +118,8 @@ function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen()
   // copied: the countdown waits for this card, then out to the stick. The card says what the step card would, so no step card
   // (two cards at once, and the countdown ran on while the second one was being read)
   const note=id==="removeStick"&&IN.stick==="pc";
-  if(note) setTimeout(()=>inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
-    onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}),1200);
+  if(note) setTimeout(()=>{ if(inCur()!=="removeStick"||IN.stick!=="pc") return; inCard(t("in_note"),t("in_rmT"),t("in_rmP"),{cls:"info",
+    onOk:()=>{ if(SCR.dev) closeScreen(); setTimeout(inLookAtStick,950); }}); },1200);   // not if the step passed meanwhile (Ctrl+H)
   if(IN.step>=IN_STEPS.length){ setTimeout(inScDone,1200); return; }
   if(IN_STEP_HOOK[id]) IN_STEP_HOOK[id]();                               // a challenge's own start for this step (in-challenges.js)
   if(!note) inStepCardSoon(); }
@@ -128,7 +128,7 @@ function inStepCardSoon(){ if(!cardWanted()) return; const at=IN.step;
   const go=()=>{ if(IN.step!==at) return; if(!inCardEl.hidden){ setTimeout(go,400); return; } inStepCard(); }; setTimeout(go,60); }
 function inSkip(){
   if(IN.step>=IN_STEPS.length) return;
-  if(S.busy||LAP.dlg&&LAP.dlg.kind!=="info"){ toast(t("e_skipBusy")); return; }
+  if(S.busy||lapBusy()||LAP.dlg&&LAP.dlg.kind!=="info"){ toast(t("e_skipBusy")); return; }   // lapBusy: Ventoy, the download or a copy still running
   const at=IN.step; startClock(); IN_FINISH[inCur()]();                // a finisher may move the steps on by itself (owShutdown)
   if(IN.step===at&&!IN_DONE[inCur()]()){ IN.step++; inStepChanged(); }   // should not happen; never get stuck
   else inCheck();
@@ -152,10 +152,10 @@ function inSkipView(){
 function inMistake(key,onOk){ mistake(); shakeRed(); inCard(t("in_err"),inT(key+"_t"),inT(key),{onOk}); }
 // the serious one: the customer's files would be gone. A mistake, plus a minute to read why before going on.
 function inPenalty(key){ mistake(); shakeRed(); inCard(t("in_fatal"),inT(key+"_t"),inT(key)+"\n"+t("in_restored"),{cls:"fatal",wait:60}); }
-// the stick has to be remade (wipe: with a new install; otherwise only the ISO is missing). The PC goes off, the
-// student takes the stick back to the laptop; steps that are still done pass again by themselves.
-function inRedo(wipe){
-  pcOff(); closeScreen(); if(wipe) IN.gen++;
+// the stick has no ISO on it: the PC goes off, the student takes the stick back to the laptop; steps that are still
+// done pass again by themselves.
+function inRedo(){
+  pcOff(); closeScreen();
   setTimeout(inLookAtStick,950);                                         // after the screen's own way back to the desk
   PC.menuSeen=PC.ventoySeen=false; IN.step=IS.stickLaptop;
   toast(t("in_redo")); inStepChanged();
@@ -345,6 +345,7 @@ function inStart(){
   sideG.visible=true; panelScrews.forEach(g=>g.visible=true);           // ...but the case stays closed: this PC is finished
   inPlaceDeskSet(); inMakePorts();
   const c=IN.cfg; lapG.visible=!!c.laptop; inStick.visible=true; wsSetDisks(c.disks); IN.plan=c.plan||0;
+  if(c.disks==="fresh") plugOut(CONN.power,CONN.power.a,ssdPower,2.5);   // a new PC: the SATA SSD's power plug is left off, so Setup and the BIOS don't see it
   LAP.web.lng=lang==="ar"?"ar":"en";
   if(c.stick==="ready"){ Object.assign(STICK,{boot:"GPT",gen:0,iso:true}); LAP.iso=isoName(); LAP.dl=1; stickOut(true); }   // made earlier: lying by the PC
   else if(c.stick==="none"){ inStick.visible=false; IN.stick="none"; }
@@ -352,7 +353,7 @@ function inStart(){
   if(IN.sc==="car"){ LAP.files.loc="e"; LAP.app="files"; }              // the music stick opens in Files
   showScreen(screenOff,0);
   const v=VIEWS.inDesk; camera.position.copy(viewPos(v.pos,v.tgt)); controls.target.set(...v.tgt); controls.update(); view="inDesk";
-  if(c.start){                                                          // challenges that start inside Setup
+  if(c.start&&c.start!=="desktop"){                                     // challenges that start inside Setup (not on the desktop: no stick there)
     stickToPc(inPort("front1"),true); IN_FINISH.setupGo(); WS.sel=m2U();   // in the case's front USB port, in plain view for "Take the stick out"
     if(c.start==="copy"){ IN_FINISH.diskNew(); IN_FINISH.diskInstall(); }
     setTimeout(()=>openScreen("pc"),700); }

@@ -12,8 +12,9 @@ offline zip never get that line, so they run as before.
   GET  /api/students    the students, for the teacher's panel (this PC only)
   POST /api/state       the teacher's changes (this PC only); kept in classroom/state.json
 """
-import json, os, re, socket, sys, threading, time, webbrowser
+import json, os, posixpath, re, socket, sys, threading, time, webbrowser
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+from urllib.parse import unquote
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                                   # the app: index.html, js/, css/, vendor/, themes/
@@ -41,6 +42,34 @@ def id_list(v):          # install scenario ids
 
 def int_list(v):         # troubleshooting case indexes
     return sorted({int(i) for i in v if isinstance(i, int) and 0 <= i < 100}) if isinstance(v, list) else []
+
+
+def to_int(v, lo=0, hi=10**9):
+    try: return max(lo, min(hi, int(v)))
+    except (TypeError, ValueError): return lo
+
+
+def word(v, n=30):       # an id-like string: letters, digits, _ and -
+    return re.sub(r"[^A-Za-z0-9_-]", "", str(v or ""))[:n]
+
+
+# a progress report keeps only these fields, each cleaned to its type: anything else a page (or anyone on the LAN) sends is
+# dropped, so the teacher's panel never gets markup or a value of the wrong type
+def clean_progress(d):
+    r = {"id": str(d.get("id", ""))[:40], "name": " ".join(str(d.get("name") or "").split())[:40],
+         "mode": d.get("mode") if d.get("mode") in ("build", "trouble", "install") else "build",
+         "mistakes": to_int(d.get("mistakes"), 0, 9999), "time": to_int(d.get("time"), 0, 10**7), "wait": d.get("wait") is True}
+    if isinstance(d.get("session"), (int, float)): r["session"] = int(d["session"])
+    for k in ("step", "steps", "checkBad", "rush"):
+        if k in d: r[k] = to_int(d[k], 0, 999)
+    for k in ("stepId", "sc", "phase"):
+        if k in d: r[k] = word(d[k])
+    if isinstance(d.get("tsCase"), int): r["tsCase"] = to_int(d["tsCase"], 0, 99)
+    if isinstance(d.get("done"), list): r["done"] = [x if isinstance(x, int) else word(x, 20) for x in d["done"][:50] if isinstance(x, (int, str))]
+    return r
+
+
+MAX_STUDENTS = 300       # a loop of made-up ids can't fill the memory: the longest-unseen go first
 
 
 try:
@@ -139,10 +168,20 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/students":
             if not self.local(): return self.send_error(403)
             now = time.time()
-            with lock: rows = [dict(s, online=now - s["seen"] < 15) for s in STUDENTS.values()]
-            return self.send_json({"state": STATE, "students": rows, "urls": [f"http://{ip}:{PORT}" for ip in lan_ips()]})
-        if path.startswith("/classroom/"): return self.send_error(404)   # state.json and the server stay private
+            with lock: rows = [dict(s, online=now - s["seen"] < 15) for s in STUDENTS.values()]; st = json.loads(json.dumps(STATE))   # a copy: serialised outside the lock
+            return self.send_json({"state": st, "students": rows, "urls": [f"http://{ip}:{PORT}" for ip in lan_ips()]})
+        if not self.public(path): return self.send_error(404)
         return super().do_GET()
+
+    # what the static handler may serve: the app's own folders and files. The path is decoded and normalised first (as the
+    # handler will do), so /%63lassroom/state.json, //classroom/… or /Classroom/… can't slip past; dot-files (.git) never
+    PUBLIC_DIRS = ("js/", "css/", "vendor/", "themes/", "classroom/")
+    PUBLIC_FILES = ("index.html", "version.js", "favicon.ico")
+    def public(self, path):
+        p = posixpath.normpath(unquote(path)).lstrip("/").lower()
+        if p.startswith("..") or any(part.startswith(".") for part in p.split("/")): return False
+        if p == "classroom/state.json": return False         # student names and the session: the teacher's panel only
+        return p in self.PUBLIC_FILES or p.startswith(self.PUBLIC_DIRS)
 
     def do_POST(self):
         global version
@@ -150,7 +189,7 @@ class Handler(SimpleHTTPRequestHandler):
         data = self.read_json()
         if not isinstance(data, dict): return self.send_error(400)
         if path == "/api/progress":
-            sid = str(data.get("id", ""))[:40]
+            data = clean_progress(data); sid = data["id"]
             if not sid: return self.send_error(400)
             data["seen"] = time.time(); data["ip"] = self.client_address[0]
             with lock:                                         # a page from before a reset / new session: not listed again
@@ -158,9 +197,15 @@ class Handler(SimpleHTTPRequestHandler):
                     data["first"] = STUDENTS.get(sid, {}).get("first") or data.get("first") or data["seen"]   # when they started (sorting, CSV)
                     if sid in STATE["names"]: data["name"] = STATE["names"][sid]     # the teacher's spelling wins
                     STUDENTS[sid] = data
+                    if len(STUDENTS) > MAX_STUDENTS: STUDENTS.pop(min(STUDENTS, key=lambda k: STUDENTS[k]["seen"]))
             return self.send_json({"ok": True})
         if path == "/api/state":
             if not self.local(): return self.send_error(403)
+            # only the panel itself: a JSON request from a localhost page. A web page the teacher has open elsewhere can't
+            # send one (a form or a no-cors fetch can't set this Content-Type, and its Origin isn't localhost)
+            origin = self.headers.get("Origin")
+            if not (self.headers.get("Content-Type") or "").startswith("application/json") or \
+               (origin and not re.match(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$", origin)): return self.send_error(403)
             with lock:
                 seq = int(time.time() * 1000)
                 if "forget" in data: STUDENTS.pop(str(data["forget"]), None)
@@ -168,8 +213,10 @@ class Handler(SimpleHTTPRequestHandler):
                     STUDENTS.clear(); STATE.update(session=seq, resets={}, names={}, pause=False, goto={"n": 0, "seq": seq}, msg={"text": "", "seq": seq})
                 if data.get("resetStudent"):
                     sid = str(data["resetStudent"]); STATE["resets"][sid] = seq; STUDENTS.pop(sid, None)
-                for k in ("mode", "to", "pause", "skip"):
-                    if k in data: STATE[k] = data[k]
+                if data.get("mode") in ("build", "trouble", "install"): STATE["mode"] = data["mode"]
+                if "to" in data: STATE["to"] = to_int(data["to"], 0, 999)
+                for k in ("pause", "skip"):
+                    if k in data: STATE[k] = data[k] is True
                 if "challenges" in data: STATE["challenges"] = id_list(data["challenges"])
                 if "tsCases" in data: STATE["tsCases"] = int_list(data["tsCases"])
                 for k in ("tray", "glow", "quiz", "card"):
@@ -182,14 +229,15 @@ class Handler(SimpleHTTPRequestHandler):
                         STATE["names"][sid] = name
                         if sid in STUDENTS: STUDENTS[sid]["name"] = name
                 if data.get("goto"):
-                    n = int(data["goto"]); STATE["goto"] = {"n": n, "seq": seq}
+                    n = to_int(data["goto"], 0, 999); STATE["goto"] = {"n": n, "seq": seq}
                     if STATE["to"] and STATE["to"] < n: STATE["to"] = n      # the step they are sent to must be open
                 if "msg" in data: STATE["msg"] = {"text": str(data["msg"])[:300], "seq": seq}
                 version += 1; lock.notify_all()
                 try:
                     with open(STATE_FILE, "w", encoding="utf-8") as f: json.dump({k: STATE[k] for k in KEEP}, f, ensure_ascii=False)
                 except OSError: pass
-            return self.send_json(STATE)
+                body = json.loads(json.dumps(STATE))                # a copy: sent after the lock is released
+            return self.send_json(body)
         self.send_error(404)
 
     def send_file(self, fn, inject=False):

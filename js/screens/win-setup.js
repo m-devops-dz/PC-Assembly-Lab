@@ -2,7 +2,7 @@
    Pages: lang → start (Install now) → key (I don't have a product key) → edition → license → type (Custom) → disk →
    installing (copy progress) → restart (countdown) → oobe (first start: "Is this the right country or region?").
    Inspired by the classic Setup, not a copy. Drawn by pcRender (pc-boot.js) while PC.mode is "setup".
-   Two disk layouts (wsSetDisks): "fresh" (a new PC: only Drive 0, the empty M.2; its empty SATA SSD isn't listed) and "used"
+   Two disk layouts (wsSetDisks): "fresh" (a new PC: only Drive 0, the empty M.2; its SATA SSD's power plug is off (install.js), so it isn't listed) and "used"
    (the customer challenge, on purpose: Drive 0 is the SATA SSD with the customer's files, its partition carrying the
    name the student gave it; Drive 1 is the M.2 with the old Windows). Windows doesn't promise the M.2 is Drive 0, so
    the size and the name tell them apart, not the number. Setup also selects the first row by itself.
@@ -13,19 +13,21 @@
    New's dialog (it starts empty, as it would for a student who has to work the size out) and checked against the plan
    before the partition is made. What to type, the largest size and what was wrong show in the note under the window, not
    in Setup's own dialog; in the challenges a size that doesn't fit the plan is a mistake.
-   Next on a Windows partition under 200 GB (WIN_REC) asks first; under 25 GB (WIN_MIN) Setup refuses.
+   Next on a Windows partition under 200 GB (WIN_REC) asks first; under 64 GB (WIN_MIN, Windows 11's minimum) Setup refuses.
+   New partitions get ids from a counter (WS.pid): ids stay unique after Delete and New again.
    The System and MSR partitions Windows adds get arrows until they've been clicked (their note explains them), but
    Next doesn't wait for that: it counts the diskParts step as seen.
    Partitions after the first are made unformatted (raw): Format here, or the new Windows asks for it when D: is opened.
    Mistakes: Next on the customer's partition; Delete or Format it is the serious one: a 60 s wait (inPenalty).
    A note under the window explains whatever row is selected. */
-const M2_GB=931.5, SATA_GB=476.9, WIN_MIN=25, WIN_REC=200, WIN_MAX=400, LINUX_MIN=100;   // GB
+const M2_GB=931.5, SATA_GB=447.1, WIN_MIN=64, WIN_REC=200, WIN_MAX=400, LINUX_MIN=100;   // GB
 const WS={page:"lang", started:false, noKey:false, key:"", ed:-1, license:false, custom:false, msg:null, dlg:null, size:"",
   disks:"used", drives:[], m2:1, sel:"d0p1", parts:[], cleaned:false, seen:{}, installing:false, prog:0, copied:false, left:0, oobeDone:false, region:0, user:"", draft:""};
 function wsSetDisks(kind){
   WS.disks=kind;
+  WS.pid=0;
   if(kind==="fresh"){ Object.assign(WS,{drives:[M2_GB],m2:0,parts:[],sel:"d0u",cleaned:true}); return; }
-  Object.assign(WS,{drives:[SATA_GB,M2_GB],m2:1,sel:"d0p1",cleaned:false,parts:[{id:"d0p1",drive:0,gb:476.9,free:112.4,type:"Primary",data:true},
+  Object.assign(WS,{drives:[SATA_GB,M2_GB],m2:1,sel:"d0p1",cleaned:false,parts:[{id:"d0p1",drive:0,gb:SATA_GB,free:83.4,type:"Primary",data:true},
     {id:"d1a",drive:1,gb:.0977,free:.0664,type:"System",old:true},{id:"d1b",drive:1,gb:.0156,free:.0156,type:"MSR",old:true},
     {id:"d1c",drive:1,gb:930.79,free:810.3,type:"Primary",old:true},{id:"d1d",drive:1,gb:.5947,free:.082,type:"Recovery",old:true}]}); }
 wsSetDisks("used");
@@ -64,7 +66,7 @@ function wsRender(){
   if(p==="hi") return `<div class="pc hi"><h2>${t("ob_hi",{n:WS.user})}</h2><div class="pc-spin" aria-hidden="true">${"<i></i>".repeat(5)}</div><p>${t("ob_hiP")}</p></div>`;
   if(p==="lang"||p==="again"){ const iso=t("lang_"+(LAP.web.lng||"en"));
     body=`<div class="ws-logo">${t("ws_brand")}</div>${[["ws_langI",iso],["ws_time",iso],["ws_kb",lang==="ar"?t("lang_ar"):"US"]].map(([k,v])=>`<label class="ws-f"><span>${t(k)}</span><select><option>${v}</option></select></label>`).join("")}
-      <p class="ws-small">${t("ws_langNote")}</p>`; next=p==="again"?"againNext":"langNext"; }
+      <p class="ws-small">${t("ws_langNote")}</p>${p==="lang"?`<p class="ws-small ws-newsetup">ⓘ ${t("ws_newSetupNote")}</p>`:""}`; next=p==="again"?"againNext":"langNext"; }
   else if(p==="start") body=`<div class="ws-logo big">${t("ws_brand")}</div><p class="ws-c"><button class="ws-now" data-w="now">${t("ws_now")}</button></p><p class="ws-c"><button class="ws-link" data-w="repair">${t("ws_repair")}</button></p>`;
   else if(p==="key"){ body=`<h2>${t("ws_keyH")}</h2><p>${t("ws_keyP")}</p><p class="ws-small">${t("ws_keyEx")}</p>
       <input class="ws-key" id="wsKey" value="${WS.key}" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" aria-label="${t("ws_keyH")}" autocomplete="off">
@@ -173,9 +175,9 @@ function wsNew(gb,force){
     if(plan===3&&left<LINUX_MIN) return hint("in_size3");
   } else return hint("in_planFull");
   const add=[];
-  if(!m2Parts().some(p=>p.type==="System")) add.push({id:"n1",drive:WS.m2,gb:.0977,free:.0742,type:"System"},{id:"n2",drive:WS.m2,gb:.0156,free:.0156,type:"MSR"});
-  const id="p"+(pr.length+1); add.push({id,drive:WS.m2,gb,free:gb-.1,type:"Primary",raw:id!=="p1"});   // Windows formats its own; the others stay raw
-  WS.parts=[...WS.parts,...add]; WS.sel=id; if(id==="p1") WS.seen.pri=1; else WS.seen.files=1;
+  if(!m2Parts().some(p=>p.type==="System")) add.push({id:"n"+(++WS.pid),drive:WS.m2,gb:.0977,free:.0742,type:"System"},{id:"n"+(++WS.pid),drive:WS.m2,gb:.0156,free:.0156,type:"MSR"});
+  const id="p"+(++WS.pid), first=!pr.length; add.push({id,drive:WS.m2,gb,free:gb-.1,type:"Primary",raw:!first});   // Windows formats its own; the others stay raw
+  WS.parts=[...WS.parts,...add]; WS.sel=id; if(first) WS.seen.pri=1; else WS.seen.files=1;
   if(add.length>1&&!force) setTimeout(()=>inCard(t("in_note"),t("in_newParts_t"),t("in_newParts"),{cls:"info"}),300);
   return true;
 }

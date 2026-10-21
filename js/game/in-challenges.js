@@ -43,7 +43,8 @@ function inChStart(){
   if(c.bsod){ IN.frontRam=ramFront(); IN.badRam=1-IN.frontRam;
     rams.forEach(r=>{ r.glow=[]; r.parts.slice(1,3).forEach(m=>{ m.material=m.material.map(x=>x===ramLabelMat||x===ramPlainMat?(r.glow.push(x.clone()),r.glow[r.glow.length-1]):x); }); });   // own copies: only the stick to click glows
     WS.copyN=(WS.copyN||0)+1; WS.prog=0;                                // the copy waits for the intro card, so the crash is seen
-    const go=()=>{ if(!inCardEl.hidden||!stepCard.hidden||!SCR.dev){ setTimeout(go,500); return; } wsCopy(); };
+    const go=()=>{ if(IN.bsodN>0) return;                                // already crashed (Ctrl+H on bsodSee): no second copy
+      if(!inCardEl.hidden||!stepCard.hidden||!SCR.dev){ setTimeout(go,500); return; } wsCopy(); };
     setTimeout(go,2200); }
 }
 // a question card (wrong: a mistake, and the question comes back, answers reshuffled; right: ok())
@@ -68,7 +69,7 @@ function bxRender(){
   const body=BX.view==="ez"
     ?`<section class="bx-box"><h4>Boot Priority</h4><div class="bx-prio">${o.map((k,i)=>`<span class="${i===0?"first":""}">${i+1}. ${BX_SHORT[k]}</span>`).join("")}</div>
        <p class="bx-help">Advanced (F7) › Settings › Boot to change the order</p></section>
-      <section class="bx-box"><h4>Storage</h4><p>M2_1: Samsung SSD 980 PRO 1TB</p><p>SATA1: SATA SSD 512GB</p><p>USB: SanDisk Ultra 32GB</p></section>`
+      <section class="bx-box"><h4>Storage</h4><p>M2_1: Samsung SSD 980 PRO 1TB</p><p>SATA1: SATA SSD 480GB</p><p>USB: SanDisk Ultra 32GB</p></section>`
     :`<section class="bx-box bx-adv"><p class="bx-path">Settings\\Boot</p>
        <button class="bx-row" data-b="mode"><span>Boot mode select</span><b>[UEFI]</b></button>
        <p class="bx-sub">FIXED BOOT ORDER Priorities</p>

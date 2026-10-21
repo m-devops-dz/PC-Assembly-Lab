@@ -197,7 +197,7 @@ function tsClick(d){
   const c=TS_CHECKS[TS.fault];
   if(!c.hit(d)){ mistake(); toast(t("ts_wrongPart")+(I18N[lang]["ts_how_"+TS.fault]?" "+t("ts_how_"+TS.fault):""),"err"); return; }
   S.busy=true; c.fix(()=>{ S.busy=false; TS.fixed=true; TS.phase="retry"; TS.cur=null; toast(t("ts_fix_"+TS.fault),"ok");
-    setTimeout(()=>{ focus("powerBtn",1000); toast(t("ts_retry")); },900); renderTS(); });
+    const g=TS.gen; setTimeout(()=>{ if(TS.gen!==g) return; focus("powerBtn",1000); toast(t("ts_retry")); },900); renderTS(); });   // not after a case switch
 }
 function tsSolved(){ S.busy=false; TS.phase="solved"; S.end=performance.now(); if(!TS.done.includes(TS.n)) TS.done.push(TS.n); persist(); toast(t("ts_solved"),"ok"); renderTS(); }
 // the pointer arrow: power button when it's time to press it, the faulty part while fixing (hints on)

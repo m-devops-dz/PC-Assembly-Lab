@@ -66,7 +66,7 @@ function photosChanged(){ hasCustom=Object.keys(photoBlobs).length>0; themeChoic
 
 Object.entries(PHOTO_URLS).forEach(([k,u])=>{ if(u) applyPhoto(k,u).then(drawThumbs,()=>{}); });
 /* theme menu: built-in zips, none (generated surfaces), or the user's own photos from IndexedDB */
-const BUILTIN_THEMES={ theme1:"real-parts.zip", theme2:"theme2.zip" };
+const BUILTIN_THEMES={ theme1:"real-parts.zip" };                     // add theme2:"theme2.zip" back once themes/theme2.zip (+ .zip.js) is in the repo
 const themeSel=document.getElementById("themeSel");
 let themeChoice="theme1", hasCustom=false;
 try{ themeChoice=localStorage.getItem("pcLabTheme")||"theme1"; }catch(e){}

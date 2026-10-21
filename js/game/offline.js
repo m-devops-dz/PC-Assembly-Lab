@@ -22,13 +22,14 @@ async function downloadOffline(){
   if(b.disabled) return; b.disabled=true; toast(t("off_busy"));
   try{
     const zip=new JSZip(), root=zip.folder("pc-assembly-lab"), list=await offlineFiles(); let n=0;
-    await Promise.all(list.map(async f=>{ const r=await fetch(f).catch(()=>null); if(!r||!r.ok) return;   // skip what isn't there (a theme not shipped yet)
+    const miss=[];
+    await Promise.all(list.map(async f=>{ const r=await fetch(f).catch(()=>null); if(!r||!r.ok){ miss.push(f); return; }   // skipped, but said in the toast
       root.file(f,await r.arrayBuffer()); n++; }));
     root.file("READ ME.txt",t("off_readme")+"\r\n");
     const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}});
     const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="pc-assembly-lab.zip"; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),60000);
-    toast(t("off_done",{n,mb:(blob.size/1048576).toFixed(1)}),"ok");
+    toast(t("off_done",{n,mb:(blob.size/1048576).toFixed(1)})+(miss.length?" "+t("off_miss",{f:miss.join(", ")}):""),miss.length?"err":"ok");
   }catch(e){ toast(t("off_err"),"err"); }
   b.disabled=false;
 }

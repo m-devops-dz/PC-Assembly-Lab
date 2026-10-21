@@ -1,26 +1,28 @@
 /* ---------------- Disk Management (install mode, challenge "split": a new PC with one partition) ----------------
    A new PC comes with one big C: (931 GB): Windows and the files together, so reinstalling Windows would take the files
    with it. In the new Windows (old-windows.js with OW.fresh), Start → Disk Management:
-   select C: → Shrink Volume (Windows offers up to about half) → select the Unallocated space → New Simple Volume
+   right-click Start (Win+X) → Disk Management (Start lists it too); select C: → Shrink Volume (Windows offers up to about half) → select the Unallocated space → New Simple Volume
    (size, letter D:, format NTFS with the label "ملفاتي" / "My files") → see D: in File Explorer.
    The EFI System Partition and the running C: can't be formatted or deleted here (as in Windows); a note under the
    disk says what the selected part is. Drawn into the desktop by owRender when OW.dm is set. */
 const DM_GB=931.5, DM_LABELS=["ملفاتي","my files"];
 const DM={opened:false, shrunk:false, made:false, checked:false, sel:null, dlg:null, fmt:-1,
-  parts:[{id:"efi",gb:.0977,fs:"FAT32",kind:"efi"},{id:"c",gb:931.4,fs:"NTFS",letter:"C",label:"Windows",kind:"c"}]};
+  parts:[{id:"efi",gb:.0977,fs:"FAT32",kind:"efi"},{id:"c",gb:930.7,fs:"NTFS",letter:"C",label:"Windows",kind:"c"},{id:"rec",gb:.7,fs:"NTFS",kind:"rec"}]};   // rec: Windows' Recovery partition, after C:
 const DM_ICON=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2" fill="#5f6875"/><rect x="4.5" y="8" width="6" height="8" rx="1" fill="#7fb0ff"/><rect x="11.5" y="8" width="8" height="8" rx="1" fill="#cfd8e3"/></svg>`;
 const dmFree=()=>DM_GB-DM.parts.reduce((a,p)=>a+p.gb,0);
 const dmPart=id=>id==="u"?{id:"u",gb:dmFree(),kind:"u"}:DM.parts.find(p=>p.id===id);
 // what each part is called, in the volume list and on the disk bar
-const dmName=p=>p.kind==="efi"?t("dm_efi"):p.kind==="u"?t("dm_unalloc"):`${p.label||t("ow_disk")} (${p.letter}:)`;
-const dmStatus=p=>p.kind==="u"?"":DM.fmt>=0&&p.id==="d"?t("dm_formatting",{p:Math.round(DM.fmt*100)}):t({efi:"dm_stEfi",c:"dm_stC",d:"dm_stD"}[p.kind]);
+const dmName=p=>p.kind==="efi"?t("dm_efi"):p.kind==="rec"?t("dm_rec"):p.kind==="u"?t("dm_unalloc"):`${p.label||t("ow_disk")} (${p.letter}:)`;
+const dmStatus=p=>p.kind==="u"?"":DM.fmt>=0&&p.id==="d"?t("dm_formatting",{p:Math.round(DM.fmt*100)}):t({efi:"dm_stEfi",c:"dm_stC",d:"dm_stD",rec:"dm_stRec"}[p.kind]);
+// the disk bar in disk order: the space freed by shrinking C: (and the new volume in it) sits before the Recovery partition
+const dmBlocks=()=>{ const rec=DM.parts.filter(p=>p.kind==="rec"); return [...DM.parts.filter(p=>p.kind!=="rec"),...(dmFree()>.05?[dmPart("u")]:[]),...rec]; };
 // which actions the selected part allows
 function dmCan(a){ const p=DM.sel&&dmPart(DM.sel); if(!p||DM.fmt>=0) return false;
   return a==="shrink"?p.kind==="c":a==="new"?p.kind==="u":(a==="format"||a==="del")?p.kind==="d":false; }
 const DM_ACTS=[["shrink","dm_shrink"],["new","dm_new"],["format","dm_format"],["del","dm_del"]];
 function dmWindow(){
-  const blocks=[...DM.parts,...(dmFree()>.05?[dmPart("u")]:[])], sel=DM.sel&&dmPart(DM.sel);
-  const list=DM.parts.map(p=>`<div class="dm-row${DM.sel===p.id?" on":""}" data-dm="sel" data-v="${p.id}"><span>${p.kind==="efi"?"":dmName(p)}</span><span>${t("dm_simple")}</span><span>${t("dm_basic")}</span><span>${p.fs}</span><span>${dmStatus(p)}</span><span>${gbFmt(p.gb)}</span></div>`).join("");
+  const blocks=dmBlocks(), sel=DM.sel&&dmPart(DM.sel);
+  const list=DM.parts.map(p=>`<div class="dm-row${DM.sel===p.id?" on":""}" data-dm="sel" data-v="${p.id}"><span>${p.letter?dmName(p):""}</span><span>${t("dm_simple")}</span><span>${t("dm_basic")}</span><span>${p.fs}</span><span>${dmStatus(p)}</span><span>${gbFmt(p.gb)}</span></div>`).join("");
   return `<section class="win dm"><header class="win-bar"><span class="win-ic">${DM_ICON}</span><b>${t("dm_title")}</b><button data-dm="close" class="x" aria-label="${t("os_close")}">×</button></header>
     <div class="win-body"><div class="dm-wrap">
       <div class="dm-tools">${DM_ACTS.map(([a,k])=>`<button class="os-btn" data-dm="${a}"${dmCan(a)?"":" disabled"}>${t(k)}</button>`).join("")}</div>

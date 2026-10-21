@@ -10,6 +10,7 @@ const STEPS=STEP_IDS.length;
 // sidebar groups (first step of each) and lesson modules (first step, and the step that ends them)
 const STEP_GROUPS=[[ST.leverUp,"g_desk"],[ST.psu,"g_case"],[ST.dataSsd,"g_power"],[ST.frontPanel,"g_finish"]];
 const MODULES=[["m_mobo",ST.leverUp,ST.psu],["m_case",ST.psu,ST.dataSsd],["m_pwr",ST.dataSsd,ST.frontPanel],["m_cab",ST.frontPanel,STEPS]];
+let RESETTING=false;                                                      // Start over: no more saving until the reload (drop.js resetAll)
 let saved={}; try{ saved=JSON.parse(sessionStorage.getItem("pclab")||"{}"); }catch(e){}
 if(saved.lang!=="en") lang="ar";                                     // Arabic is the default; English only when chosen
 let appMode=["trouble","install"].includes(saved.mode)?saved.mode:"build";   // "trouble": troubleshooting mode (trouble.js), "install": Windows install (install.js)
