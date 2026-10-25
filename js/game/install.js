@@ -117,6 +117,7 @@ function inCheck(){
   if(moved) inStepChanged();
 }
 function inStepChanged(){ S.stepAt=performance.now(); renderIN(); renderScreen(); const id=inCur();
+  if(IN.showDrives&&IN.step>=IS.oldOpenD) IN.showDrives=false;           // the customer's two drives: lit until "Open D:" (it's on their screen from here)
   if((id==="powerF11"||id==="oldBoot")&&!S.powered) setTimeout(()=>{ if(!S.busy&&!SCR.dev) focus("powerBtn",1000); },900);   // plugged in: over to the power button
   if(id==="diskPlan"&&!IN.plan) setTimeout(inPlanCard,700);
   // copied: the countdown waits for this card, then out to the stick. The card says what the step card would, so no step card
@@ -384,7 +385,7 @@ function inStart(){
   inChStart();
   if(c.showDrives){ IN.showDrives=true; setTimeout(inLookAtDrives,900); }   // the customer's PC: its two drives glow first, then the card names them
   if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc)+(c.trap?"\n"+inBootOrder():""),{cls:"info",
-    onOk:()=>{ if(IN.showDrives){ IN.showDrives=false; focus("inDesk",1000); } inStepCardSoon(); }}),c.showDrives?3600:1400);   // the step card after it, not on top of it
+    onOk:()=>{ if(IN.showDrives) focus("inDesk",1000); inStepCardSoon(); }}),c.showDrives?3600:1400);   // the drives stay lit until "Open D:"   // the step card after it, not on top of it
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
   else if(!c.intro) inStepCardSoon();

@@ -39,9 +39,16 @@ Object.assign(IN_FINISH,{
 });
 // the power cut at the PSU (bsod): its switch at O, or the power cord pulled out of it
 const inCut=()=>!!IN.psuOff||!!IN.cordOut;
+function inAfterCut(){ setTimeout(()=>{ if(S.busy||SCR.dev) return;
+  if(!inCut()) focus("powerBtn",1000);                                    // back on: the power button is next
+  else if(IN.bsodN>1&&ramIn(IN.badRam)&&IN.panelOff) ramLook();           // the second crash: the swap is next
+  else focus("inDesk",1000); },600); }                                    // cut: the side panel is next
 function inUncut(){ if(IN.psuOff){ IN.psuOff=false; setPsuSwitch(true,0); } if(IN.cordOut){ IN.cordOut=false; plugOut(CONN.ac,CONN.ac.a,psuInlet,0); } }
 // something a step starts by itself (install.js, inStepChanged)
-const IN_STEP_HOOK={ bsodWhy:()=>setTimeout(bsodAsk,2500) };
+const IN_STEP_HOOK={ bsodWhy:()=>setTimeout(bsodAsk,2500),
+  bsodCut:()=>setTimeout(()=>{ if(inCur()==="bsodCut"&&!SCR.dev&&!inCut()) inLookAtPsu(); },1000) };   // after the screen's own way back to the desk
+// the camera on the back of the PSU: its switch and the power cord
+function inLookAtPsu(){ psuG.updateMatrixWorld(true); const p=psuG.localToWorld(PSU_SWITCH.clone()); focusPoint(p.clone().add(V3(-16,6,8)),p,1000); }
 function inChStart(){
   const c=IN.cfg; phoneG.visible=!!c.wifi;
   if(c.bsod){ IN.frontRam=ramFront(); IN.badRam=1-IN.frontRam;
@@ -176,14 +183,14 @@ function ramMove(i,slot,now,done){
 }
 // the one in the board comes out, the one on the mat goes into its slot
 function ramSwap(i,now){ const inB=ramIn(i)?i:1-i, out=1-inB;
-  ramMove(inB,null,now,()=>ramMove(out,IN.ramSlot,now,()=>{ toast(t("in_bs_swapped"),"ok"); inCheck(); })); }
+  ramMove(inB,null,now,()=>ramMove(out,IN.ramSlot,now,()=>{ toast(t("in_bs_swapped"),"ok"); inCheck(); if(!now) inLookAtPsu(); })); }
 function ramClick(i){
   if(S.powered){ inMistake("in_m_ramOn"); return; }
   if(!inGate("bsodRam")) return;
   if(!inCut()){ toast(t("in_bs_cutFirst"),"err"); return; }              // off isn't enough: the PSU still feeds standby power
   // one out: back to the desk, where the power button is next (a second click on the board would swap them by accident)
   if(ramIn(0)&&ramIn(1)){ if(i!==IN.frontRam){ toast(t("in_bs_front")); return; }
-    ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); focus("inDesk",1000); }); return; }
+    ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); inLookAtPsu(); }); return; }   // next: the PSU back on
   if(IN.bsodN<2||WS.copied){ toast(t("in_bs_tryFirst")); return; }      // a swap only once the blue screen came back with one stick
   ramSwap(i,false);
 }
@@ -286,12 +293,12 @@ function owChAct(a){
 function inChClick(d,id){
   const c=IN.cfg;
   if(d.part==="powerBtn"&&S.powered&&c.bsod&&PC.mode==="bsod"){ startClock(); pressPower(()=>{ pcOff(); closeScreen(); inCheck();   // hold it in: off
-    if(IN.bsodN>1&&IN.panelOff) setTimeout(ramLook,950); }); return true; }                        // the second crash: next is the swap
+    if(IN.bsodN>1&&IN.panelOff) setTimeout(inLookAtPsu,950); }); return true; }                    // the second crash: cut the power, then the swap
   if(c.bsod&&(d.part==="psuSwitch"||d.part==="conn"&&d.conn==="ac")){ startClock();   // the PSU's switch or its power cord: off / back on
     if(S.powered){ toast(t("in_bs_offFirst"),"err"); return true; }
     if(!inGate("bsodCut")) return true;
-    if(d.part==="psuSwitch"){ IN.psuOff=!IN.psuOff; S.busy=true; setPsuSwitch(!IN.psuOff,350,()=>{ S.busy=false; toast(t(IN.psuOff?"in_bs_psuOff":"in_bs_psuOn"),"ok"); inCheck(); }); return true; }
-    const out=!IN.cordOut; IN.cordOut=out; S.busy=true; plugSlide(CONN.ac,CONN.ac.a,psuInlet,out?0:3,out?3:0,()=>{ S.busy=false; toast(t(out?"in_bs_cordOut":"in_bs_cordIn"),"ok"); inCheck(); }); return true; }
+    if(d.part==="psuSwitch"){ IN.psuOff=!IN.psuOff; S.busy=true; setPsuSwitch(!IN.psuOff,350,()=>{ S.busy=false; toast(t(IN.psuOff?"in_bs_psuOff":"in_bs_psuOn"),"ok"); inCheck(); inAfterCut(); }); return true; }
+    const out=!IN.cordOut; IN.cordOut=out; S.busy=true; plugSlide(CONN.ac,CONN.ac.a,psuInlet,out?0:3,out?3:0,()=>{ S.busy=false; toast(t(out?"in_bs_cordOut":"in_bs_cordIn"),"ok"); inCheck(); inAfterCut(); }); return true; }
   if(d.part==="powerBtn"&&c.bsod&&!S.powered&&inCut()){ toast(t("in_bs_noPower"),"err"); return true; }   // nothing happens with the PSU cut off
   if(d.part==="sidePanel"&&c.bsod){ startClock();
     if(S.powered){ inMistake("in_m_openOn"); return true; }
