@@ -23,7 +23,7 @@ const IN_SCENARIOS={
   car:{steps:["stickLaptop","carTry","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
   bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
-  bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodCut","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
+  bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodCut","bsodOpen","bsodRam","bsodRetry","bsodSwap","bsodFinal"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
   wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
 const IN_ORDER=["main","bios","finish","usb","used","plan","bsod","split","wifi","car"];   // finish right after bios: it starts where those leave off
@@ -140,7 +140,7 @@ function inSkip(){
   renderScreen(); toast(t("ok_skipped"),"ok"); inSkipView();
 }
 // where a step happens: a screen ("laptop", "pc", "phone") or the 3D view (null)
-const IN_3D=["stickLaptop","stickPc","removeStick","bsodOff","bsodCut","bsodOpen","bsodRam","phoneCable"];
+const IN_3D=["stickLaptop","stickPc","removeStick","bsodOff","bsodCut","bsodOpen","bsodRam","bsodSwap","phoneCable"];
 function inWhere(id){
   if(IN_LAPTOP_STEPS.includes(id)||IN_GROUP_OF[id]==="car") return "laptop";
   if(id==="phoneTether") return "phone";
@@ -326,7 +326,7 @@ function inClick(d){
 }
 const IN_LAPTOP_STEPS=["toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject"];
 // steps that start with the PC's power button; once past one, the button works for the rest of the scenario
-const IN_POWER_STEPS=["oldBoot","powerF11","biosEnter","bsodRetry"];
+const IN_POWER_STEPS=["oldBoot","powerF11","biosEnter","bsodRetry","bsodFinal"];
 const inPowerOk=id=>IN_POWER_STEPS.includes(id)||IN_POWER_STEPS.some(s=>s in IS&&IN.step>IS[s]);
 const inPowerNext=id=>IN_POWER_STEPS.includes(id)&&!S.powered;
 const inStickNext=()=>{ const id=inCur(); return id==="stickLaptop"&&IN.stick!=="laptop"||id==="eject"&&LAP.ejected||id==="stickPc"&&!IN.picking||id==="removeStick"&&IN.stick==="pc"; };

@@ -8,13 +8,14 @@
    wifi  the new Windows has no driver for the Wi-Fi card, and getting one needs the internet: share the phone's
          internet over its USB cable (USB tethering), let Windows Update fetch the drivers, then join the Wi-Fi. */
 Object.assign(IN_GROUP_OF,{biosEnter:"bios",biosMode:"bios",biosOrder:"bios",biosSave:"bios",biosBoot:"bios",
-  bsodSee:"bsod",bsodWhy:"bsod",bsodOff:"bsod",bsodCut:"bsod",bsodOpen:"bsod",bsodRam:"bsod",bsodRetry:"bsod",
+  bsodSee:"bsod",bsodWhy:"bsod",bsodOff:"bsod",bsodCut:"bsod",bsodSwap:"bsod",bsodFinal:"bsod",bsodOpen:"bsod",bsodRam:"bsod",bsodRetry:"bsod",
   wifiSee:"wifi",phoneCable:"wifi",phoneTether:"wifi",wuCheck:"wifi",wuDone:"wifi",wifiOn:"wifi"});
 const ramIn=i=>rams[i].yaw.parent===boardRoot;                       // still in its slot (not lying on the mat)
 Object.assign(IN_DONE,{
   biosEnter:()=>!!PC.biosSeen, biosMode:()=>BX.mode, biosOrder:()=>BX.order[0]==="usb", biosSave:()=>!!PC.usbFirst, biosBoot:()=>PC.ventoySeen,
   bsodSee:()=>IN.bsodN>0, bsodWhy:()=>!!IN.bsodWhy, bsodOff:()=>IN.bsodN>0&&!S.powered, bsodCut:()=>inCut(), bsodOpen:()=>!!IN.panelOff,
-  bsodRam:()=>rams.filter((r,i)=>ramIn(i)).length===1, bsodRetry:()=>WS.copied,
+  bsodRam:()=>rams.filter((r,i)=>ramIn(i)).length===1, bsodRetry:()=>IN.bsodN>1,                 // retry: the blue screen comes back
+  bsodSwap:()=>ramIn(1-IN.badRam)&&!ramIn(IN.badRam), bsodFinal:()=>WS.copied,                       // the good stick in, then the copy ends
   wifiSee:()=>!!OW.netSeen, phoneCable:()=>IN.phone==="pc", phoneTether:()=>PH.tether, wuCheck:()=>WU.on, wuDone:()=>WU.done, wifiOn:()=>!!OW.wifi
 });
 Object.assign(IN_FINISH,{
@@ -29,7 +30,9 @@ Object.assign(IN_FINISH,{
   bsodCut:()=>{ IN.psuOff=true; setPsuSwitch(false,0); },
   bsodOpen:()=>{ sideG.visible=false; panelScrews.forEach(g=>g.visible=false); IN.panelOff=true; },
   bsodRam:()=>ramMove(IN.frontRam,null,true),
-  bsodRetry:()=>{ if(ramIn(IN.badRam)) ramSwap(IN.badRam,true); inUncut(); if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; WS.page="installing"; WS.copyN=(WS.copyN||0)+1; WS.prog=1; wsCopied(); },
+  bsodRetry:()=>{ inUncut(); if(!S.powered) powerUp(); if(IN.bsodN<2) bsodCrash(); },                // the second blue screen: the stick left in is the faulty one
+  bsodSwap:()=>{ if(S.powered) pcOff(); closeScreen(); IN.psuOff=true; setPsuSwitch(false,0); if(ramIn(IN.badRam)) ramSwap(IN.badRam,true); },
+  bsodFinal:()=>{ inUncut(); if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; WS.page="installing"; WS.copyN=(WS.copyN||0)+1; WS.prog=1; wsCopied(); },
   wifiSee:()=>{ OW.netSeen=true; },
   phoneCable:()=>phonePlug(true),
   phoneTether:()=>{ PH.tether=true; },
@@ -191,7 +194,7 @@ function ramClick(i){
   // one out: back to the desk, where the power button is next (a second click on the board would swap them by accident)
   if(ramIn(0)&&ramIn(1)){ if(i!==IN.frontRam){ toast(t("in_bs_front")); return; }
     ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); inLookAtPsu(); }); return; }   // next: the PSU back on
-  if(IN.bsodN<2||WS.copied){ toast(t("in_bs_tryFirst")); return; }      // a swap only once the blue screen came back with one stick
+  if(!inGate("bsodSwap")||IN.bsodN<2||WS.copied){ if(IN.bsodN<2) toast(t("in_bs_tryFirst")); return; }      // a swap only once the blue screen came back with one stick
   ramSwap(i,false);
 }
 
@@ -316,17 +319,18 @@ function inChArrow(id){
     case "bsodCut": return inCut()?null:psuSw();
     case "bsodOpen": return sideG.visible?wpos(sideG,.3):null;
     case "bsodRam": return ramPos(IN.frontRam);
-    case "bsodRetry": if(S.powered&&PC.mode==="bsod") return wpos(powerBtn);
-      if(!S.powered&&inCut()&&!(IN.bsodN>1&&ramIn(IN.badRam))) return IN.cordOut?portWorld(psuInlet).p:psuSw();   // back on first
-      if(!S.powered&&IN.bsodN>1&&ramIn(IN.badRam)) return inCut()?ramPos(IN.badRam):psuSw(); return undefined;   // the swap: power cut first
+    case "bsodRetry": case "bsodFinal": if(S.powered) return undefined;
+      return inCut()?(IN.cordOut?portWorld(psuInlet).p:psuSw()):wpos(powerBtn);                   // PSU back on, then the power button
+    case "bsodSwap": if(S.powered) return PC.mode==="bsod"?wpos(powerBtn):undefined;
+      return inCut()?ramPos(IN.badRam):psuSw();                                                    // power cut first, then the faulty stick
     case "phoneCable": case "phoneTether": return wpos(phoneG,.5);
   }
   return undefined;
 }
-const inChPowerGlow=id=>(id==="bsodOff"||id==="bsodRetry")&&S.powered&&PC.mode==="bsod";
+const inChPowerGlow=id=>(id==="bsodOff"||id==="bsodSwap")&&S.powered&&PC.mode==="bsod";
 function inChFrame(id,idle,pulse){
   if(IN.cfg.bsod){ setGlow(panelFrameMat,idle&&id==="bsodOpen"&&sideG.visible,pulse);
-    const want=id==="bsodRam"?IN.frontRam:id==="bsodRetry"&&IN.bsodN>1&&ramIn(IN.badRam)?IN.badRam:-1;
+    const want=id==="bsodRam"?IN.frontRam:id==="bsodSwap"&&ramIn(IN.badRam)&&inCut()?IN.badRam:-1;
     rams.forEach((r,i)=>(r.glow||[]).forEach(m=>setGlow(m,idle&&!S.powered&&i===want,pulse))); }
   if(IN.cfg.wifi) setGlow(phoneMat,idle&&(id==="phoneCable"||id==="phoneTether"),pulse);
 }

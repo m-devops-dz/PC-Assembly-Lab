@@ -1,4 +1,5 @@
 /* ---------------- picking & dragging ---------------- */
+let pwrClickAt=-1e9;                                                      // the last click on the case's power button (a second one within 2 s is ignored)
 const ray=new T.Raycaster(), ndc=new T.Vector2();
 const visible=o=>{ while(o){ if(!o.visible) return false; o=o.parent; } return true; };
 const isDesc=(o,root)=>{ while(o){ if(o===root) return true; o=o.parent; } return false; };
@@ -49,6 +50,7 @@ window.addEventListener("pointerup",e=>{
   if(dragging){ dragging=false; controls.enabled=true; renderer.domElement.style.cursor="grab"; downXY=null; return; }
   if(downXY&&!moved&&e.target===renderer.domElement){
     const p=pick(e);
+    if(p&&p.d.part==="powerBtn"){ const n=performance.now(); if(n-pwrClickAt<2000){ downXY=null; return; } pwrClickAt=n; }   // every mode
     if(S.step===ST.board&&!S.held&&!S.busy){ setNDC(e); const hits=ray.intersectObjects([boardRoot],true).filter(h=>visible(h.object)); if(hits.length){ pickBoard(); downXY=null; return; } }
     if(p&&TS.on){ tsClick(p.d); downXY=null; return; }
     if(IN.on){ if(p) inClick(p.d); downXY=null; return; }
