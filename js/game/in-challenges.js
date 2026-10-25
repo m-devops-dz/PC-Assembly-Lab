@@ -8,12 +8,12 @@
    wifi  the new Windows has no driver for the Wi-Fi card, and getting one needs the internet: share the phone's
          internet over its USB cable (USB tethering), let Windows Update fetch the drivers, then join the Wi-Fi. */
 Object.assign(IN_GROUP_OF,{biosEnter:"bios",biosMode:"bios",biosOrder:"bios",biosSave:"bios",biosBoot:"bios",
-  bsodSee:"bsod",bsodWhy:"bsod",bsodOff:"bsod",bsodOpen:"bsod",bsodRam:"bsod",bsodRetry:"bsod",
+  bsodSee:"bsod",bsodWhy:"bsod",bsodOff:"bsod",bsodCut:"bsod",bsodOpen:"bsod",bsodRam:"bsod",bsodRetry:"bsod",
   wifiSee:"wifi",phoneCable:"wifi",phoneTether:"wifi",wuCheck:"wifi",wuDone:"wifi",wifiOn:"wifi"});
 const ramIn=i=>rams[i].yaw.parent===boardRoot;                       // still in its slot (not lying on the mat)
 Object.assign(IN_DONE,{
   biosEnter:()=>!!PC.biosSeen, biosMode:()=>BX.mode, biosOrder:()=>BX.order[0]==="usb", biosSave:()=>!!PC.usbFirst, biosBoot:()=>PC.ventoySeen,
-  bsodSee:()=>IN.bsodN>0, bsodWhy:()=>!!IN.bsodWhy, bsodOff:()=>IN.bsodN>0&&!S.powered, bsodOpen:()=>!!IN.panelOff,
+  bsodSee:()=>IN.bsodN>0, bsodWhy:()=>!!IN.bsodWhy, bsodOff:()=>IN.bsodN>0&&!S.powered, bsodCut:()=>inCut(), bsodOpen:()=>!!IN.panelOff,
   bsodRam:()=>rams.filter((r,i)=>ramIn(i)).length===1, bsodRetry:()=>WS.copied,
   wifiSee:()=>!!OW.netSeen, phoneCable:()=>IN.phone==="pc", phoneTether:()=>PH.tether, wuCheck:()=>WU.on, wuDone:()=>WU.done, wifiOn:()=>!!OW.wifi
 });
@@ -26,9 +26,10 @@ Object.assign(IN_FINISH,{
   bsodSee:()=>{ if(!IN.bsodN) bsodCrash(); },
   bsodWhy:()=>{ IN.bsodWhy=true; inCardEl.hidden=true; },
   bsodOff:()=>{ pcOff(); closeScreen(); },
+  bsodCut:()=>{ IN.psuOff=true; setPsuSwitch(false,0); },
   bsodOpen:()=>{ sideG.visible=false; panelScrews.forEach(g=>g.visible=false); IN.panelOff=true; },
   bsodRam:()=>ramMove(IN.frontRam,null,true),
-  bsodRetry:()=>{ if(ramIn(IN.badRam)) ramSwap(IN.badRam,true); if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; WS.page="installing"; WS.copyN=(WS.copyN||0)+1; WS.prog=1; wsCopied(); },
+  bsodRetry:()=>{ if(ramIn(IN.badRam)) ramSwap(IN.badRam,true); inUncut(); if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; WS.page="installing"; WS.copyN=(WS.copyN||0)+1; WS.prog=1; wsCopied(); },
   wifiSee:()=>{ OW.netSeen=true; },
   phoneCable:()=>phonePlug(true),
   phoneTether:()=>{ PH.tether=true; },
@@ -36,6 +37,9 @@ Object.assign(IN_FINISH,{
   wuDone:()=>{ WU.on=WU.done=true; WU.k=1; },
   wifiOn:()=>{ OW.wifi=true; }
 });
+// the power cut at the PSU (bsod): its switch at O, or the power cord pulled out of it
+const inCut=()=>!!IN.psuOff||!!IN.cordOut;
+function inUncut(){ if(IN.psuOff){ IN.psuOff=false; setPsuSwitch(true,0); } if(IN.cordOut){ IN.cordOut=false; plugOut(CONN.ac,CONN.ac.a,psuInlet,0); } }
 // something a step starts by itself (install.js, inStepChanged)
 const IN_STEP_HOOK={ bsodWhy:()=>setTimeout(bsodAsk,2500) };
 function inChStart(){
@@ -176,6 +180,7 @@ function ramSwap(i,now){ const inB=ramIn(i)?i:1-i, out=1-inB;
 function ramClick(i){
   if(S.powered){ inMistake("in_m_ramOn"); return; }
   if(!inGate("bsodRam")) return;
+  if(!inCut()){ toast(t("in_bs_cutFirst"),"err"); return; }              // off isn't enough: the PSU still feeds standby power
   // one out: back to the desk, where the power button is next (a second click on the board would swap them by accident)
   if(ramIn(0)&&ramIn(1)){ if(i!==IN.frontRam){ toast(t("in_bs_front")); return; }
     ramMove(i,null,false,()=>{ toast(t("in_bs_out"),"ok"); inCheck(); focus("inDesk",1000); }); return; }
@@ -282,6 +287,12 @@ function inChClick(d,id){
   const c=IN.cfg;
   if(d.part==="powerBtn"&&S.powered&&c.bsod&&PC.mode==="bsod"){ startClock(); pressPower(()=>{ pcOff(); closeScreen(); inCheck();   // hold it in: off
     if(IN.bsodN>1&&IN.panelOff) setTimeout(ramLook,950); }); return true; }                        // the second crash: next is the swap
+  if(c.bsod&&(d.part==="psuSwitch"||d.part==="conn"&&d.conn==="ac")){ startClock();   // the PSU's switch or its power cord: off / back on
+    if(S.powered){ toast(t("in_bs_offFirst"),"err"); return true; }
+    if(!inGate("bsodCut")) return true;
+    if(d.part==="psuSwitch"){ IN.psuOff=!IN.psuOff; S.busy=true; setPsuSwitch(!IN.psuOff,350,()=>{ S.busy=false; toast(t(IN.psuOff?"in_bs_psuOff":"in_bs_psuOn"),"ok"); inCheck(); }); return true; }
+    const out=!IN.cordOut; IN.cordOut=out; S.busy=true; plugSlide(CONN.ac,CONN.ac.a,psuInlet,out?0:3,out?3:0,()=>{ S.busy=false; toast(t(out?"in_bs_cordOut":"in_bs_cordIn"),"ok"); inCheck(); }); return true; }
+  if(d.part==="powerBtn"&&c.bsod&&!S.powered&&inCut()){ toast(t("in_bs_noPower"),"err"); return true; }   // nothing happens with the PSU cut off
   if(d.part==="sidePanel"&&c.bsod){ startClock();
     if(S.powered){ inMistake("in_m_openOn"); return true; }
     if(inGate("bsodOpen")&&!IN.panelOff) panelOpen(); return true; }
@@ -292,12 +303,15 @@ function inChClick(d,id){
   return false;
 }
 function inChArrow(id){
+  const psuSw=()=>(psuG.updateMatrixWorld(true),psuG.localToWorld(PSU_SWITCH.clone()));
   switch(id){
     case "bsodOff": return S.powered?wpos(powerBtn):null;
+    case "bsodCut": return inCut()?null:psuSw();
     case "bsodOpen": return sideG.visible?wpos(sideG,.3):null;
     case "bsodRam": return ramPos(IN.frontRam);
     case "bsodRetry": if(S.powered&&PC.mode==="bsod") return wpos(powerBtn);
-      if(!S.powered&&IN.bsodN>1&&ramIn(IN.badRam)) return ramPos(IN.badRam); return undefined;
+      if(!S.powered&&inCut()&&!(IN.bsodN>1&&ramIn(IN.badRam))) return IN.cordOut?portWorld(psuInlet).p:psuSw();   // back on first
+      if(!S.powered&&IN.bsodN>1&&ramIn(IN.badRam)) return inCut()?ramPos(IN.badRam):psuSw(); return undefined;   // the swap: power cut first
     case "phoneCable": case "phoneTether": return wpos(phoneG,.5);
   }
   return undefined;

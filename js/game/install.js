@@ -16,14 +16,14 @@
 const IN_SCENARIOS={
   main:{steps:["stickPc","powerF11","bootPick","setupGo","diskWin","diskFiles","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:2},
   usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
-  used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskWin","diskInstall"],disks:"used",stick:"ready",plan:1},
+  used:{intro:true,showDrives:true,steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskWin","diskInstall"],disks:"used",stick:"ready",plan:1},
   plan:{steps:["diskPlan","diskWin","diskFiles","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
   finish:{steps:["instCopy","removeStick","firstBoot","userName"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true,intro:true},
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
   car:{steps:["stickLaptop","carTry","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
   bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
-  bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
+  bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodCut","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
   wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
 const IN_ORDER=["main","bios","finish","usb","used","plan","bsod","split","wifi","car"];   // finish right after bios: it starts where those leave off
@@ -139,7 +139,7 @@ function inSkip(){
   renderScreen(); toast(t("ok_skipped"),"ok"); inSkipView();
 }
 // where a step happens: a screen ("laptop", "pc", "phone") or the 3D view (null)
-const IN_3D=["stickLaptop","stickPc","removeStick","bsodOff","bsodOpen","bsodRam","phoneCable"];
+const IN_3D=["stickLaptop","stickPc","removeStick","bsodOff","bsodCut","bsodOpen","bsodRam","phoneCable"];
 function inWhere(id){
   if(IN_LAPTOP_STEPS.includes(id)||IN_GROUP_OF[id]==="car") return "laptop";
   if(id==="phoneTether") return "phone";
@@ -151,6 +151,7 @@ function inSkipView(){
   const go=()=>{ if(IN.step>=IN_STEPS.length||inCur()!==id) return;
     if(want){ openScreen(want); return; }
     if(id==="removeStick") inLookAtStick(); else if(id==="bsodRam") ramLook();
+    else if(id==="bsodCut"){ const p=(psuG.updateMatrixWorld(true),psuG.localToWorld(PSU_SWITCH.clone())); focusPoint(p.clone().add(V3(-16,6,8)),p,1000); }
     else focus(IN_POWER_STEPS.includes(id)||id==="bsodOff"?"powerBtn":"inDesk",1000); };
   if(SCR.dev){ closeScreen(); setTimeout(go,950); } else go(); }
 function inMistake(key,onOk){ mistake(); shakeRed(); inCard(t("in_err"),inT(key+"_t"),inT(key),{onOk}); }
@@ -309,6 +310,7 @@ function inClick(d){
     if(IN.stick==="table"&&id==="stickPc"){ if(IN.picking) toast(t("in_pickPort")); else inStartPick(); return; }
     if(IN.stick==="pc"&&id==="removeStick"){ inQuiz(); return; }
     if(IN.stick==="pc"&&id==="instCopy"){ inMistake("in_m_pullEarly"); return; }
+    if(IN.stick==="pc"&&WS.copied){ stickPcOut(false); return; }        // the copy is done: pulling it out now is right (the main path too)
     toast(IN.stick==="pc"?t("in_stickBusy"):t("in_notYet",{s:t("in_s_"+id)})); return; }
   if((d.part==="rport"||d.part==="inPort")&&IN.stick==="pc"&&d.port===IN.port){ inClick({part:"inStick"}); return; }
   if(d.part==="rport"||d.part==="inPort"){ if(IN.picking) inPickPort(d.port); return; }
@@ -339,8 +341,20 @@ function inArrow(){
   if(IN_POWER_STEPS.includes(id)) return S.powered?screenView().tgt:wpos(powerBtn);
   return S.powered?screenView().tgt:null;                             // everything else happens on the monitor
 }
+// the customer's PC: the camera looks through the glass side panel at both drives (M.2 blue, SATA SSD green, inFrame)
+// The M.2 sits under the graphics card, so each drive also gets a name tag drawn over everything (IN.tags)
+function inDriveTag(text,color){ const tex=canvasTex(512,128,(g,W,H)=>{ g.fillStyle=color; roundRect(g,4,4,W-8,H-8,28); g.fill();
+    g.fillStyle="#fff"; g.font="700 54px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(text,W/2,H/2+2); });
+  const sp=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,transparent:true})); sp.scale.set(12,3,1); sp.renderOrder=20; scene.add(sp); return sp; }
+function inLookAtDrives(){ const a=wpos(m2G), b=wpos(sataG), c=a.clone().lerp(b,.5);
+  if(!IN.tags) IN.tags=[[inDriveTag("M.2 SSD · 1 TB","#2f6fe0"),a],[inDriveTag("SATA SSD · 480 GB","#1f9d55"),b]];
+  IN.tags.forEach(([sp,p])=>{ sp.position.copy(p).add(V3(0,7,0)); sp.visible=IN.showDrives; });
+  focusPoint(c.clone().add(V3(2,62,8)),c,1200); }
 function inFrame(now){
   if(!IN.on) return;
+  if(IN.showDrives||IN.drivesLit){ const k=IN.showDrives?.35+.45*(.5+.5*Math.sin(now/300)):0; IN.drivesLit=IN.showDrives;
+    m2Top.emissive.setHex(0x2f8cff).multiplyScalar(k); sataTop.emissive.setHex(0x2fd06e).multiplyScalar(k);
+    if(IN.tags) IN.tags.forEach(([sp])=>{ sp.visible=IN.showDrives; }); }
   const pulse=.5+.5*Math.sin(now/450), id=inCur(), idle=S.glow&&!S.busy&&!SCR.dev;
   setGlow(inStickMat,idle&&inStickNext(),pulse);
   setGlow(powerBtnMat,idle&&(inPowerNext(id)||inChPowerGlow(id)||WS.page==="again"&&IN.stick!=="pc"),pulse);
@@ -368,7 +382,9 @@ function inStart(){
   if(c.start==="desktop"){                                              // the new PC, already on its desktop
     powerUp(); PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk"}); WS.user=t("in_owner"); setTimeout(()=>openScreen("pc"),700); }
   inChStart();
-  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc)+(c.trap?"\n"+inBootOrder():""),{cls:"info",onOk:inStepCardSoon}),1400);   // the step card after it, not on top of it
+  if(c.showDrives){ IN.showDrives=true; setTimeout(inLookAtDrives,900); }   // the customer's PC: its two drives glow first, then the card names them
+  if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc)+(c.trap?"\n"+inBootOrder():""),{cls:"info",
+    onOk:()=>{ if(IN.showDrives){ IN.showDrives=false; focus("inDesk",1000); } inStepCardSoon(); }}),c.showDrives?3600:1400);   // the step card after it, not on top of it
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
   else if(!c.intro) inStepCardSoon();
