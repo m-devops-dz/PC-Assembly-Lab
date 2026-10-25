@@ -20,7 +20,7 @@ const LAP={app:null, note:null, tray:false, dlg:null, menu:false,
    SONGS are ids (names: song_<id> in i18n); CAR.stick / CAR.desk / CAR.folders[].files: the ids in each place. */
 const SONGS=["s1","s2","s3","s4","s5"];
 const songName=id=>t("song_"+id)+".mp3";
-const CAR={stick:[...SONGS], desk:[], folders:[], nf:0, fs:"NTFS", label:"MUSIC"};
+const CAR={stick:[...SONGS], desk:[], folders:[], nf:0, fs:"NTFS", label:"Ahmed"};
 const carFolder=id=>CAR.folders.find(f=>f.id===id);
 const carSaved=()=>SONGS.every(s=>CAR.desk.includes(s)||CAR.folders.some(f=>f.files.includes(s)));   // every file has a copy on the Desktop
 const carOn=()=>IN.sc==="car";
@@ -226,7 +226,7 @@ function lapAct(a,v){
       if(carOn()){ const names=carSel(); LAP.files.clip={from:LAP.files.loc,names}; toast(t("fl_copiedN",{n:names.length})); break; }
       LAP.files.sel=LAP.files.clip=v; toast(t("fl_copied",{f:v})); break;
     case "ctxPaste": if(carOn()){ carPaste(LAP.files.clip,v); return; } lapCopy(LAP.files.clip,v); return;
-    case "fmt": LAP.dlg={kind:"format",fs:"NTFS",label:CAR.label||"MUSIC"}; break;
+    case "fmt": LAP.dlg={kind:"format",fs:"NTFS",label:CAR.label||"Ahmed"}; break;
     case "fmtFs": LAP.dlg.fs=v; return;
     case "fmtStart": if(LAP.dlg.fs==="NTFS"){ toast(t("in_carNtfs"),"err"); return; } LAP.dlg={...LAP.dlg,kind:"fmtWarn"}; break;
     case "fmtOk": carFormat(); return;
@@ -305,13 +305,12 @@ function carPaste(clip,to){
     LAP.dlg=null; LAP.files.loc=to; LAP.files.sel=null; lapRender(); inCheck(); });
 }
 // format the stick: before the songs are safe on the Desktop it's a mistake (and nothing happens)
-// the first try (step carTry) isn't a mistake: a card says the songs would be erased, copy them first. Again before they're saved: a mistake
+// formatting before the files are on the Desktop: a mistake and 20 s to read why, then the next step is copying them (carTry done)
 function carFormat(){ const d=LAP.dlg;
-  if(!carSaved()){ LAP.dlg=null; lapRender();
-    if(!CAR.tried){ CAR.tried=true; inCard(t("in_warn"),t("in_carWaitT"),t("in_carWait"),{cls:"info",onOk:lapRender}); inCheck(); return; }
-    inMistake("in_m_carLost"); return; }
+  if(!carSaved()){ LAP.dlg=null; lapRender(); CAR.tried=true; mistake(); shakeRed();
+    inCard(t("in_err"),inT("in_m_carLost_t"),inT("in_m_carLost"),{cls:"fatal",wait:20,onOk:lapRender}); inCheck(); return; }
   LAP.dlg={kind:"busy",title:"fm_busy"}; LAP.copy=0; lapRender();
-  tween(1500,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; CAR.fs=d.fs; CAR.stick=[]; CAR.label=d.label.trim().toUpperCase();
+  tween(1500,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; CAR.fs=d.fs; CAR.stick=[]; CAR.label=d.fs==="FAT32"?d.label.trim().toUpperCase():d.label.trim();   // FAT32 keeps labels in capitals, as Windows shows them
     LAP.dlg={kind:"info",title:"fm_titleS",text:CAR.fs==="FAT32"?"in_carFat":"in_carExfat"}; lapRender(); inCheck(); });   // FAT32: what almost every car reads
 }
 function lapEject(v){

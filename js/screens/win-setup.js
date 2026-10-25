@@ -94,7 +94,7 @@ function wsRender(){
   else if(p==="disk"){ head="ws_diskH"; const rows=wsRows(), s=wsRow(WS.sel), d=WS.dlg&&WS.dlg.kind==="new"?WS.dlg:null;
     const tool=(a,k,ic,off)=>`<button class="ws-tool" data-w="${a}"${off?" disabled":""}>${svgI(WS_TOOL_ICON[ic])}${t(k)}</button>`;
     const offOf=a=>!s||s.usb&&a!=="refresh"||(a==="delete"||a==="format")&&s.unalloc||a==="format"&&(s.type==="System"||s.type==="MSR")||a==="new"&&!s.unalloc||a==="extend"||a==="online";   // EFI and MSR: never formatted by hand
-    body=`<div class="ws-tools">${tool("refresh","ws_refresh","refresh",false)}${tool("load","ws_load","load",false)}${tool("online","ws_online","online",true)}</div>
+    body=`<div class="ws-tools ws-tools1">${tool("refresh","ws_refresh","refresh",false)}${tool("load","ws_load","load",false)}${tool("online","ws_online","online",true)}</div>
       <div class="ws-tools">${tool("delete","ws_delete","delete",offOf("delete"))}${tool("format","ws_format","format",offOf("format"))}${tool("new","ws_new","new",offOf("new")||!!d)}${tool("extend","ws_extend","extend",true)}</div>
       ${d?`<div class="ws-size"><label for="wsSize">${t("ws_size")}</label><input id="wsSize" inputmode="numeric" value="${WS.size}"><button class="ws-next ghost" data-w="dlgOk">${t("ws_apply")}</button><button class="ws-next ghost" data-w="dlgNo">${t("ws_cancel")}</button></div>`:""}
       <div class="ws-table disk"><div class="ws-th"><span>${t("ws_name")}</span><span>${t("ws_total")}</span><span>${t("ws_free")}</span><span>${t("ws_type")}</span></div>
@@ -213,7 +213,7 @@ function wsNext(){
   if(inCur()==="diskParts"){ WS.seen={sys:1,msr:1,pri:1,files:1}; inCheck(); }   // the arrows explained System and MSR; not a must
   if(!inGate("diskInstall")) return;
   const pr=m2Prim();
-  if(r.type==="Primary"&&pr[1]&&r.id===pr[1].id){ toast(t("in_filesPart"),"err"); return; }   // the files partition: Windows goes in the first one
+  if(r.type==="Primary"&&pr[1]&&r.id===pr[1].id){ inCard(t("in_note"),t("in_bigPart_t"),t("in_bigPart",{g:gbFmt(r.gb),w:gbFmt(pr[0].gb)}),{cls:"info",wait:4}); return; }   // the files partition: Windows goes in the first one
   if(r.unalloc||r.type!=="Primary"){ WS.msg="ws_cant"; renderScreen(); return; }
   if(r.gb<WIN_MIN){ WS.msg="ws_tooSmall"; renderScreen(); return; }
   if(r.gb<WIN_REC){ WS.dlg={kind:"small",id:r.id}; renderScreen(); return; }

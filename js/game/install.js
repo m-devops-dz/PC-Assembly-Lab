@@ -94,7 +94,7 @@ const IN_FINISH={
   dmCheck:()=>{ OW.dm=false; OW.app=true; OW.loc="pc"; DM.checked=true; },
   carTry:()=>{ CAR.tried=true; LAP.dlg=null; },
   carCopy:()=>{ CAR.desk=[...SONGS]; LAP.dlg=null; },
-  carFormat:()=>{ CAR.fs="FAT32"; CAR.stick=[]; CAR.label="MUSIC"; LAP.dlg=null; },
+  carFormat:()=>{ CAR.fs="FAT32"; CAR.stick=[]; CAR.label="AHMED"; LAP.dlg=null; },
   carBack:()=>{ CAR.stick=[...SONGS]; LAP.dlg=null; },
   login:()=>{ WS.copyN=(WS.copyN||0)+1; clearInterval(wsCopied.timer); WS.copied=WS.oobeDone=true; WS.user=WS.user||t("ob_userPh"); PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:false,loc:"pc"}); }
 };
