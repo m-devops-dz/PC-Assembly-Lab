@@ -14,13 +14,13 @@
    Steps are named; a scenario lists the ones it uses. IN_DONE says when each is done and inCheck() moves on after every
    action, so students can work in any order the real tools allow. Ctrl+H skips a step (IN_FINISH). */
 const IN_SCENARIOS={
-  main:{steps:["stickPc","powerF11","bootPick","setupGo","diskNew","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:2},
+  main:{steps:["stickPc","powerF11","bootPick","setupGo","diskWin","diskFiles","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:2},
   usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
-  used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskNew","diskInstall"],disks:"used",stick:"ready",plan:1},
-  plan:{steps:["diskPlan","diskNew","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
-  finish:{steps:["instCopy","removeStick","firstBoot","userName","newDesk"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true,intro:true},
+  used:{steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskWin","diskInstall"],disks:"used",stick:"ready",plan:1},
+  plan:{steps:["diskPlan","diskWin","diskFiles","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
+  finish:{steps:["instCopy","removeStick","firstBoot","userName"],disks:"fresh",stick:"ready",start:"copy",plan:2,trap:true,intro:true},
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
-  car:{steps:["stickLaptop","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
+  car:{steps:["stickLaptop","carTry","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
   bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
   bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodOpen","bsodRam","bsodRetry"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
@@ -30,8 +30,8 @@ const IN_ORDER=["main","bios","finish","usb","used","plan","bsod","split","wifi"
 // the sidebar group a step belongs to
 const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
-  diskClean:"disk",diskPlan:"disk",diskNew:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end",
-  dmOpen:"dm",dmShrink:"dm",dmNew:"dm",dmCheck:"dm",carCopy:"car",carFormat:"car",carBack:"car"};
+  diskClean:"disk",diskPlan:"disk",diskWin:"disk",diskFiles:"disk",diskParts:"disk",diskInstall:"disk",instCopy:"end",removeStick:"end",firstBoot:"end",userName:"end",newDesk:"end",login:"end",
+  dmOpen:"dm",dmShrink:"dm",dmNew:"dm",dmCheck:"dm",carTry:"car",carCopy:"car",carFormat:"car",carBack:"car"};
 const inGroup=id=>IN.sc==="car"?"car":IN.sc==="bios"&&IN_BIOS_FIRST.includes(id)?"biosFirst":IN_GROUP_OF[id];
 // the BIOS challenge starts with the stick in and the PC started untouched (no keys): it ignores the stick and starts
 // its own Windows. Then it's shut down. oldBoot / oldShutdown have their own text there (in_s_<id>B)
@@ -50,12 +50,13 @@ const IN_DONE={
   oldBoot:()=>OW.seen, oldOpenD:()=>OW.openedD, oldRename:()=>!!IN.label, oldShutdown:()=>OW.shut,
   stickPc:()=>IN.stick==="pc", powerF11:()=>PC.menuSeen||WS.disks==="fresh"&&PC.ventoySeen, bootPick:()=>IN.sc==="usb"?PC.ventoySeen:PC.setup,
   setupGo:()=>WS.custom,
-  diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0, diskNew:()=>wsLayoutOk(),
+  diskClean:()=>WS.cleaned, diskPlan:()=>IN.plan>0,
+  diskWin:()=>IN.plan===1?wsLayoutOk():m2Prim().length>0&&m2Parts().some(p=>p.type==="System"&&!p.old), diskFiles:()=>wsLayoutOk(),   // plan 1: one step, all of it
   diskParts:()=>WS.seen.sys&&WS.seen.msr&&WS.seen.pri&&(IN.plan===1||WS.seen.files), diskInstall:()=>WS.installing,
   instCopy:()=>WS.copied, removeStick:()=>WS.copied&&IN.stick==="table", firstBoot:()=>WS.oobeDone,
   userName:()=>!!WS.user, newDesk:()=>OW.fresh&&OW.checked, login:()=>OW.fresh,
   dmOpen:()=>DM.opened, dmShrink:()=>DM.shrunk, dmNew:()=>DM.made, dmCheck:()=>DM.checked,
-  carCopy:()=>carSaved(), carFormat:()=>CAR.fs!=="NTFS", carBack:()=>CAR.fs!=="NTFS"&&SONGS.every(s=>CAR.stick.includes(s))
+  carTry:()=>!!CAR.tried||carSaved(), carCopy:()=>carSaved(), carFormat:()=>CAR.fs!=="NTFS", carBack:()=>CAR.fs!=="NTFS"&&SONGS.every(s=>CAR.stick.includes(s))
 };
 // Ctrl+H (and a scenario's starting point): the state each step leaves behind
 const gptStick=()=>Object.assign(STICK,{boot:"GPT",gen:IN.gen,iso:STICK.iso});
@@ -76,8 +77,10 @@ const IN_FINISH={
   setupGo:()=>{ if(!S.powered) powerUp(); PC.boot++; PC.mode="setup"; PC.setup=true; Object.assign(WS,{started:true,agree:true,noKey:true,ed:WS_PRO,license:true,custom:true,page:"disk",msg:null}); },
   diskClean:()=>{ WS.parts=WS.parts.filter(p=>!(p.drive===WS.m2&&p.old)); WS.cleaned=true; WS.sel=m2U(); WS.dlg=null; },
   diskPlan:()=>{ IN.plan=IN.plan||1; inCardEl.hidden=true; },
-  diskNew:()=>{ WS.parts=WS.parts.filter(p=>p.drive!==WS.m2||p.old); WS.dlg=null; const plan=IN.plan||1;
-    wsNew(plan===1?999:200,true); if(plan===2) wsNew(999,true); if(plan===3) wsNew(wsNewRoom()-150,true); },
+  diskWin:()=>{ WS.parts=WS.parts.filter(p=>p.drive!==WS.m2||p.old); WS.dlg=null; wsNew((IN.plan||1)===1?999:200,true); },
+  diskFiles:()=>{ if(!m2Prim().length) IN_FINISH.diskWin(); WS.dlg=null; const plan=IN.plan||1;
+    if(m2Prim().length<2&&plan===2) wsNew(999,true); if(m2Prim().length<2&&plan===3) wsNew(wsNewRoom()-150,true); },
+  diskNew:()=>{ IN_FINISH.diskWin(); IN_FINISH.diskFiles(); },          // not a step: both at once (a challenge's starting point)
   diskParts:()=>{ WS.seen={sys:1,msr:1,pri:1,files:1}; },
   diskInstall:()=>{ WS.sel=m2Prim()[0].id; WS.dlg=null; WS.msg=null; WS.installing=true; WS.page="installing"; WS.prog=0; wsCopy(); },   // B4: no dialog left over
   instCopy:()=>{ WS.copyN=(WS.copyN||0)+1; WS.prog=1; if(!WS.copied) wsCopied(); },   // copyN: the running copy stops (it would call wsCopied again)
@@ -89,6 +92,7 @@ const IN_FINISH={
   dmShrink:()=>{ dmPart("c").gb-=400; DM.shrunk=true; DM.sel="u"; DM.dlg=null; },
   dmNew:()=>{ if(!DM.parts.some(p=>p.id==="d")) DM.parts.push({id:"d",gb:dmFree(),fs:"NTFS",letter:"D",label:t("dm_labelSug"),kind:"d"}); DM.made=true; DM.dlg=null; DM.fmt=-1; },
   dmCheck:()=>{ OW.dm=false; OW.app=true; OW.loc="pc"; DM.checked=true; },
+  carTry:()=>{ CAR.tried=true; LAP.dlg=null; },
   carCopy:()=>{ CAR.desk=[...SONGS]; LAP.dlg=null; },
   carFormat:()=>{ CAR.fs="FAT32"; CAR.stick=[]; CAR.label="MUSIC"; LAP.dlg=null; },
   carBack:()=>{ CAR.stick=[...SONGS]; LAP.dlg=null; },
@@ -102,7 +106,7 @@ const inStepK=id=>id==="bootPick"&&IN.sc==="usb"?"in_s_bootPickU":IN.sc==="bios"
 const inStepT=id=>t(inStepK(id));
 // the customer's PC, the BIOS challenge and the stick made on the laptop: it goes straight into the case's front USB port (no port to pick)
 const IN_FRONT_USB=["used","bios","usb"];
-const inStepD=id=>inT(id==="stickPc"&&IN_FRONT_USB.includes(IN.sc)?"in_s_stickPcdU":id==="diskNew"?(IN.sc==="main"?"in_s_diskNewdM":IN.sc==="used"?"in_s_diskNewdU":IN.plan?"in_s_diskNewd"+IN.plan:"in_s_diskNewd"):inStepK(id)+"d");
+const inStepD=id=>inT(id==="stickPc"&&IN_FRONT_USB.includes(IN.sc)?"in_s_stickPcdU":id==="diskWin"?(IN.plan===1?"in_s_diskWind1":"in_s_diskWind"):id==="diskFiles"?"in_s_diskFilesd"+(IN.plan||2):inStepK(id)+"d",{n:WS.m2});
 // actions that belong to a later step wait for it; steps this scenario doesn't have are always open
 function inGate(id){ if(!(id in IS)||IN.step>=IS[id]) return true; toast(t("in_notYet",{s:t("in_s_"+inCur())})); return false; }
 function inCheck(){

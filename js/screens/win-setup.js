@@ -39,7 +39,7 @@ const driveFree=d=>WS.drives[d]-WS.parts.filter(p=>p.drive===d).reduce((a,p)=>a+
 const m2Parts=()=>WS.parts.filter(p=>p.drive===WS.m2), m2Free=()=>driveFree(WS.m2), m2U=()=>"d"+WS.m2+"u";
 const m2Prim=()=>m2Parts().filter(p=>p.type==="Primary"&&!p.old);      // the new Primary partitions: Windows first, then files
 const restartS=()=>IN.cfg.trap?30:10;                                   // long enough to pull the stick out in the challenge
-// does Drive 1 match the plan? (diskNew is done when it does)
+// does the M.2 match the plan? (diskFiles is done when it does)
 function wsLayoutOk(){ const pr=m2Prim(), free=m2Free(), plan=IN.plan;
   if(!plan||!m2Parts().some(p=>p.type==="System"&&!p.old)) return false;
   if(plan===1) return pr.length===1&&free<1;
@@ -153,7 +153,7 @@ function wsAct(a,v){
     case "sel": WS.sel=v; { const r=wsRow(v), pr=m2Prim(); if(r&&!r.old&&!r.data&&!r.unalloc&&!r.usb) WS.seen[r.type==="System"?"sys":r.type==="MSR"?"msr":pr[0]&&r.id===pr[0].id?"pri":"files"]=1; } break;
     case "refresh": break;
     case "delete": case "format": WS.dlg={kind:a,id:WS.sel}; break;
-    case "new": if(!inGate("diskNew")) return; if(wsRow(WS.sel).drive!==WS.m2){ toast(t("in_useM2")); return; }
+    case "new": if(!inGate(m2Prim().length?"diskFiles":"diskWin")) return;   // the first one is the Windows partition if(wsRow(WS.sel).drive!==WS.m2){ toast(t("in_useM2")); return; }
       WS.dlg={kind:"new",id:WS.sel}; WS.size=String(Math.floor(wsNewRoom()*1024)); break;   // filled with the largest size, as Setup does
     case "load": toast(t("in_loadDrv")); return;
     case "dlgNo": WS.dlg=null; break;

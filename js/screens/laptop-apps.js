@@ -134,7 +134,7 @@ function lapFilesApp(){ const f=LAP.files, car=carOn(), selOn=lapSelHas, fold=ca
       <div class="fl-list" data-drop="${f.loc}">${main}</div></div>
     <p class="fl-tip">${t(car?"fl_tipCar":"fl_tip")}</p></div>`; }
 // in the car challenge the stick's drive glows (right-click it → Format…) once the files are safe on the Desktop
-const carPointFmt=()=>S.hints&&S.glow&&inCur()==="carFormat"&&carSaved();
+const carPointFmt=()=>S.hints&&S.glow&&(inCur()==="carTry"||inCur()==="carFormat"&&carSaved());
 /* right-click (or a long press): its menu.
    k "f:<name>": a file → Copy (the whole selection when the file is in it); "@": the list's empty space → Paste here
    (and New folder on the car challenge's Desktop); otherwise a drive, a place or a folder → Open, Paste into it, and
@@ -305,8 +305,11 @@ function carPaste(clip,to){
     LAP.dlg=null; LAP.files.loc=to; LAP.files.sel=null; lapRender(); inCheck(); });
 }
 // format the stick: before the songs are safe on the Desktop it's a mistake (and nothing happens)
+// the first try (step carTry) isn't a mistake: a card says the songs would be erased, copy them first. Again before they're saved: a mistake
 function carFormat(){ const d=LAP.dlg;
-  if(!carSaved()){ LAP.dlg=null; lapRender(); inMistake("in_m_carLost"); return; }
+  if(!carSaved()){ LAP.dlg=null; lapRender();
+    if(!CAR.tried){ CAR.tried=true; inCard(t("in_warn"),t("in_carWaitT"),t("in_carWait"),{cls:"info",onOk:lapRender}); inCheck(); return; }
+    inMistake("in_m_carLost"); return; }
   LAP.dlg={kind:"busy",title:"fm_busy"}; LAP.copy=0; lapRender();
   tween(1500,k=>{ LAP.copy=Math.min(k,.999); lapProg(); },()=>{ LAP.copy=-1; CAR.fs=d.fs; CAR.stick=[]; CAR.label=d.label.trim().toUpperCase();
     LAP.dlg={kind:"info",title:"fm_titleS",text:CAR.fs==="FAT32"?"in_carFat":"in_carExfat"}; lapRender(); inCheck(); });   // FAT32: what almost every car reads
