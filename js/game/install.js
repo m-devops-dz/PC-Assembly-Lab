@@ -2,7 +2,7 @@
    A separate mode (header mode menu; the page reloads into it). The PC starts fully built with the case closed, the
    keyboard and mouse in front of the monitor.
    Scenarios (IN_SCENARIOS). The main one is short: the install stick is ready on the desk, the PC's drives are new.
-     main    plug the stick in → power on, F11 → pick the stick → click through Setup → Windows + Data on the M.2 →
+     main    plug the stick in → power on, F11 → pick the stick → click through Setup → one Windows partition on the M.2 →
              install → wait → sign in (name, "Hi", desktop)
    Everything else is a challenge the student picks from the list in the sidebar (each one starts from a fresh page):
      usb     make the install stick on the laptop (Ventoy with GPT recommended, official ISO, copy, eject), then start the
@@ -14,7 +14,7 @@
    Steps are named; a scenario lists the ones it uses. IN_DONE says when each is done and inCheck() moves on after every
    action, so students can work in any order the real tools allow. Ctrl+H skips a step (IN_FINISH). */
 const IN_SCENARIOS={
-  main:{steps:["stickPc","powerF11","bootPick","setupGo","diskWin","diskFiles","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:2},
+  main:{steps:["stickPc","powerF11","bootPick","setupGo","diskWin","diskInstall","instCopy","login"],disks:"fresh",stick:"ready",plan:1},
   usb:{steps:["stickLaptop","toolDevice","toolInstall","isoSearch","isoDownload","isoCopy","eject","stickPc","powerF11","bootPick"],disks:"used",stick:"blank",laptop:true},
   used:{intro:true,showDrives:true,steps:["oldBoot","oldOpenD","oldRename","oldShutdown","stickPc","powerF11","bootPick","setupGo","diskClean","diskWin","diskInstall"],disks:"used",stick:"ready",plan:1},
   plan:{steps:["diskPlan","diskWin","diskFiles","diskParts","diskInstall"],disks:"fresh",stick:"ready",start:"disk"},
@@ -22,11 +22,11 @@ const IN_SCENARIOS={
   split:{steps:["dmOpen","dmShrink","dmNew","dmCheck"],disks:"fresh",stick:"none",start:"desktop",plan:1,intro:true},
   car:{steps:["stickLaptop","carTry","carCopy","carFormat","carBack","eject"],disks:"used",stick:"blank",laptop:true,intro:true},
   // in-challenges.js: an older-style PC with no boot menu key (BIOS boot order), a blue screen during the install, no Wi-Fi driver
-  bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosMode","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
+  bios:{steps:["stickPc","oldBoot","oldShutdown","biosEnter","biosOrder","biosSave","biosBoot"],disks:"used",stick:"ready",noF11:true,bios:true,intro:true},
   bsod:{steps:["bsodSee","bsodWhy","bsodOff","bsodCut","bsodOpen","bsodRam","bsodRetry","bsodSwap","bsodFinal"],disks:"fresh",stick:"ready",start:"copy",plan:2,intro:true,bsod:true},
   wifi:{steps:["wifiSee","phoneCable","phoneTether","wuCheck","wuDone","wifiOn"],disks:"fresh",stick:"none",start:"desktop",plan:2,intro:true,wifi:true}
 };
-const IN_ORDER=["main","bios","finish","usb","used","plan","bsod","split","wifi","car"];   // finish right after bios: it starts where those leave off
+const IN_ORDER=["main","plan","usb","bios","wifi","used","bsod","split","car"];   // finish is kept but not listed
 // the sidebar group a step belongs to
 const IN_GROUP_OF={stickLaptop:"usb",toolDevice:"usb",toolInstall:"usb",isoSearch:"usb",isoDownload:"usb",isoCopy:"usb",eject:"usb",
   oldBoot:"check",oldOpenD:"check",oldRename:"check",oldShutdown:"check",stickPc:"boot",powerF11:"boot",bootPick:"boot",setupGo:"setup",
@@ -36,7 +36,7 @@ const inGroup=id=>IN.sc==="car"?"car":IN.sc==="bios"&&IN_BIOS_FIRST.includes(id)
 // the BIOS challenge starts with the stick in and the PC started untouched (no keys): it ignores the stick and starts
 // its own Windows. Then it's shut down. oldBoot / oldShutdown have their own text there (in_s_<id>B)
 const IN_BIOS_FIRST=["stickPc","oldBoot","oldShutdown"], IN_BIOS_TEXT=["oldBoot","oldShutdown"];
-const IN_SC_ID=IN_SCENARIOS[saved.inSc]?saved.inSc:"main";
+const IN_SC_ID=IN_ORDER.includes(saved.inSc)?saved.inSc:"main";
 const IN={on:appMode==="install", sc:IN_SC_ID, cfg:IN_SCENARIOS[IN_SC_ID], step:0, gen:0,   // gen: goes up when the stick must be remade (STICK.gen must match)
   done:Array.isArray(saved.inDone)?saved.inDone:[],                 // scenarios finished this session
   label:"", plan:0, quizDone:false,                                 // label: the name given to the customer's drive; plan: how the M.2 is split
@@ -90,7 +90,7 @@ const IN_FINISH={
   newDesk:()=>{ PC.boot++; PC.mode="oldwin"; Object.assign(OW,{fresh:true,view:"desk",app:true,loc:"pc",checked:true}); },
   dmOpen:()=>{ OW.dm=true; DM.opened=true; },
   dmShrink:()=>{ dmPart("c").gb-=400; DM.shrunk=true; DM.sel="u"; DM.dlg=null; },
-  dmNew:()=>{ if(!DM.parts.some(p=>p.id==="d")) DM.parts.push({id:"d",gb:dmFree(),fs:"NTFS",letter:"D",label:t("dm_labelSug"),kind:"d"}); DM.made=true; DM.dlg=null; DM.fmt=-1; },
+  dmNew:()=>{ if(!dmMain()) DM.parts.push({id:"d"+(DM.n++||""),gb:dmFree(),fs:"NTFS",letter:dmLetters()[0],label:t("dm_labelSug"),kind:"d",main:true}); DM.made=true; DM.dlg=null; DM.fmt=-1; },
   dmCheck:()=>{ OW.dm=false; OW.app=true; OW.loc="pc"; DM.checked=true; },
   carTry:()=>{ CAR.tried=true; LAP.dlg=null; },
   carCopy:()=>{ CAR.desk=[...SONGS]; LAP.dlg=null; },
@@ -333,6 +333,7 @@ const inStickNext=()=>{ const id=inCur(); return id==="stickLaptop"&&IN.stick!==
 // the pointer arrow: what to click next in the 3D view (nothing while a screen or a card is up)
 function inArrow(){
   if(!S.glow||S.busy||SCR.dev||!inCardEl.hidden||IN.step>=IN_STEPS.length) return null;
+  if(IN.m2Point) return wpos(m2G);                                    // the customer's M.2, under the graphics card
   const id=inCur();
   if(inStickNext()) return wpos(inStick);
   if(WS.page==="again") return wpos(powerBtn);                       // the stick is out: restart the PC
@@ -347,7 +348,17 @@ function inArrow(){
 function inDriveTag(text,color){ const tex=canvasTex(512,128,(g,W,H)=>{ g.fillStyle=color; roundRect(g,4,4,W-8,H-8,28); g.fill();
     g.fillStyle="#fff"; g.font="700 54px 'Barlow Semi Condensed', Arial"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(text,W/2,H/2+2); });
   const sp=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,transparent:true})); sp.scale.set(12,3,1); sp.renderOrder=20; scene.add(sp); return sp; }
-function inLookAtDrives(){ const a=wpos(m2G), b=wpos(sataG), c=a.clone().lerp(b,.5);
+// students took the blue glow under the graphics card for the card itself: while the drives are shown the card is see-through
+function inGpuGhost(on){ gpuG.traverse(o=>{ if(!o.isMesh) return;
+  if(on&&!o.userData.inMat){ o.userData.inMat=o.material; const f=m=>{ const c=m.clone(); c.transparent=true; c.opacity=.15; c.depthWrite=false; return c; };
+    o.material=Array.isArray(o.material)?o.material.map(f):f(o.material); }
+  else if(!on&&o.userData.inMat){ o.material=o.userData.inMat; delete o.userData.inMat; } }); }
+// after the intro card: close up on the M.2 with the arrow on it for 5 s, then back out to the desk and the power button
+// (its name tag moves up the screen there, off the drive and the arrow: inFrame)
+function inM2Close(){ const a=wpos(m2G); IN.m2Point=true; focusPoint(a.clone().add(V3(1,42,8)),a,1000);
+  setTimeout(()=>{ IN.m2Point=false; inGpuGhost(false); if(IN.tags) IN.tags.forEach(([sp,p])=>sp.position.copy(p).add(V3(0,7,0)));
+    if(!SCR.dev) focus("inDesk",1200); },5000); }
+function inLookAtDrives(){ const a=wpos(m2G), b=wpos(sataG), c=a.clone().lerp(b,.5); inGpuGhost(true);
   if(!IN.tags) IN.tags=[[inDriveTag("M.2 SSD · 1 TB","#2f6fe0"),a],[inDriveTag("SATA SSD · 480 GB","#1f9d55"),b]];
   IN.tags.forEach(([sp,p])=>{ sp.position.copy(p).add(V3(0,7,0)); sp.visible=IN.showDrives; });
   focusPoint(c.clone().add(V3(2,62,8)),c,1200); }
@@ -355,7 +366,8 @@ function inFrame(now){
   if(!IN.on) return;
   if(IN.showDrives||IN.drivesLit){ const k=IN.showDrives?.35+.45*(.5+.5*Math.sin(now/300)):0; IN.drivesLit=IN.showDrives;
     m2Top.emissive.setHex(0x2f8cff).multiplyScalar(k); sataTop.emissive.setHex(0x2fd06e).multiplyScalar(k);
-    if(IN.tags) IN.tags.forEach(([sp])=>{ sp.visible=IN.showDrives; }); }
+    if(IN.tags) IN.tags.forEach(([sp])=>{ sp.visible=IN.showDrives; });
+    if(IN.m2Point&&IN.tags){ const [sp,p]=IN.tags[0]; sp.position.copy(p).addScaledVector(V3(0,1,0).applyQuaternion(camera.quaternion),7); } }
   const pulse=.5+.5*Math.sin(now/450), id=inCur(), idle=S.glow&&!S.busy&&!SCR.dev;
   setGlow(inStickMat,idle&&inStickNext(),pulse);
   setGlow(powerBtnMat,idle&&(inPowerNext(id)||inChPowerGlow(id)||WS.page==="again"&&IN.stick!=="pc"),pulse);
@@ -385,7 +397,7 @@ function inStart(){
   inChStart();
   if(c.showDrives){ IN.showDrives=true; setTimeout(inLookAtDrives,900); }   // the customer's PC: its two drives glow first, then the card names them
   if(c.intro) setTimeout(()=>inCard(t("in_note"),t("in_sc_"+IN.sc),t("in_intro_"+IN.sc)+(c.trap?"\n"+inBootOrder():""),{cls:"info",
-    onOk:()=>{ if(IN.showDrives) focus("inDesk",1000); inStepCardSoon(); }}),c.showDrives?3600:1400);   // the drives stay lit until "Open D:"   // the step card after it, not on top of it
+    onOk:()=>{ if(IN.showDrives) inM2Close(); inStepCardSoon(); }}),c.showDrives?3600:1400);   // the drives stay lit until "Open D:"   // the step card after it, not on top of it
   S.stepAt=performance.now(); renderIN(); inCheck();
   if(inCur()==="diskPlan") setTimeout(inPlanCard,1800);                 // the plan challenge starts on it
   else if(!c.intro) inStepCardSoon();

@@ -16,8 +16,9 @@
    challenges a size that doesn't fit the plan is a mistake.
    Next on a Windows partition under 200 GB (WIN_REC) asks first; under 64 GB (WIN_MIN, Windows 11's minimum) Setup refuses.
    New partitions get ids from a counter (WS.pid): ids stay unique after Delete and New again.
-   The System and MSR partitions Windows adds get arrows until they've been clicked (their note explains them), but
-   Next doesn't wait for that: it counts the diskParts step as seen.
+   The System and MSR partitions Windows adds are explained by their note when clicked; Next doesn't wait for that: it
+   counts the diskParts step as seen. 30 s after the first partition, if the plan needs another one and it isn't made yet,
+   arrows point at the Unallocated Space and Create Partition, and the note says so (wsFreeHint).
    Partitions after the first are made unformatted (raw): Format here, or the new Windows asks for it when D: is opened.
    Mistakes: Next on the customer's partition; Delete or Format it is the serious one: a 60 s wait (inPenalty).
    A note under the window explains whatever row is selected. */
@@ -61,8 +62,7 @@ const typeName=k=>({System:t("ws_tSystem"),MSR:t("ws_tMsr"),Primary:t("ws_tPrima
 function wsHl(){ if(!S.hints||!S.glow) return ""; const p=WS.page;
   return {lang:"langNext",kb:"kbNext",option:WS.agree?"optNext":"agree",key:"nokey",edition:WS.ed===WS_PRO?"edNext":"ed"+WS_PRO,license:"licYes",ready:"install"}[p]||""; }
 // the disk page's toolbar icons (svgI paths, laptop-apps.js)
-const WS_TOOL_ICON={refresh:`<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>`, load:`<path d="M12 4v10M7 9l5 5 5-5M5 20h14"/>`,
-  online:`<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M12 9v6M9 12h6"/>`, delete:`<path d="M6 6l12 12M18 6L6 18"/>`,
+const WS_TOOL_ICON={delete:`<path d="M6 6l12 12M18 6L6 18"/>`,
   format:`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/>`, new:`<path d="M12 5v14M5 12h14"/>`,
   extend:`<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>`};
 // the pages before the disk list and where Back goes from each
@@ -92,10 +92,10 @@ function wsRender(){
   else if(p==="edition"){ head="ws_edH"; body=`<div class="ws-table">${WS_EDITIONS.map((e,i)=>`<button class="ws-tr ed${WS.ed===i?" on":""}${H("ed"+i)}" data-w="ed" data-v="${i}"><span>Windows 11 ${e}</span></button>`).join("")}</div>`; next="edNext"; }
   else if(p==="license"){ head="ws_licH"; body=`<div class="ws-lic">${t("ws_licText").split("\n").map(l=>`<p>${l}</p>`).join("")}</div>`; }
   else if(p==="disk"){ head="ws_diskH"; const rows=wsRows(), s=wsRow(WS.sel), d=WS.dlg&&WS.dlg.kind==="new"?WS.dlg:null;
-    const tool=(a,k,ic,off)=>`<button class="ws-tool" data-w="${a}"${off?" disabled":""}>${svgI(WS_TOOL_ICON[ic])}${t(k)}</button>`;
-    const offOf=a=>!s||s.usb&&a!=="refresh"||(a==="delete"||a==="format")&&s.unalloc||a==="format"&&(s.type==="System"||s.type==="MSR")||a==="new"&&!s.unalloc||a==="extend"||a==="online";   // EFI and MSR: never formatted by hand
-    body=`<div class="ws-tools ws-tools1">${tool("refresh","ws_refresh","refresh",false)}${tool("load","ws_load","load",false)}${tool("online","ws_online","online",true)}</div>
-      <div class="ws-tools">${tool("delete","ws_delete","delete",offOf("delete"))}${tool("format","ws_format","format",offOf("format"))}${tool("new","ws_new","new",offOf("new")||!!d)}${tool("extend","ws_extend","extend",true)}</div>
+    const tool=(a,k,ic,off,pt)=>`<button class="ws-tool${pt?" point":""}" data-w="${a}"${off?" disabled":""}>${svgI(WS_TOOL_ICON[ic])}${t(k)}</button>`;
+    const offOf=a=>!s||s.usb||(a==="delete"||a==="format")&&s.unalloc||a==="format"&&(s.type==="System"||s.type==="MSR")||a==="new"&&!s.unalloc||a==="extend";   // EFI and MSR: never formatted by hand
+    const fh=wsFreeOn()&&s&&s.unalloc&&s.drive===WS.m2&&!d;
+    body=`<div class="ws-tools">${tool("delete","ws_delete","delete",offOf("delete"))}${tool("format","ws_format","format",offOf("format"))}${tool("new","ws_new","new",offOf("new")||!!d,fh)}${tool("extend","ws_extend","extend",true)}</div>
       ${d?`<div class="ws-size"><label for="wsSize">${t("ws_size")}</label><input id="wsSize" inputmode="numeric" value="${WS.size}"><button class="ws-next ghost" data-w="dlgOk">${t("ws_apply")}</button><button class="ws-next ghost" data-w="dlgNo">${t("ws_cancel")}</button></div>`:""}
       <div class="ws-table disk"><div class="ws-th"><span>${t("ws_name")}</span><span>${t("ws_total")}</span><span>${t("ws_free")}</span><span>${t("ws_type")}</span></div>
       ${rows.map(r=>`<button class="ws-tr${WS.sel===r.id?" on":""}${wsPoint(r)?" point":""}" data-w="sel" data-v="${r.id}"><span>${r.usb?OS_ICON.usb:OS_ICON.drive}${r.name}</span><span>${gbFmt(r.gb)}</span><span>${gbFmt(r.free)}</span><span>${r.unalloc?t("ws_unalloc"):typeName(r.type)}</span></button>`).join("")}</div>`;
@@ -121,11 +121,16 @@ function wsOobe(){
     <h2>${t("ob_h")}</h2><div class="oobe-list">${OOBE_REGIONS.map((r,i)=>`<button class="${WS.region===i?"on":""}" data-w="region" data-v="${i}">${t("rg_"+r)}</button>`).join("")}</div>
     <footer><button class="ws-next" data-w="oobeYes">${t("ob_yes")}</button></footer></div></div></div>`;
 }
-// an arrow on the System and MSR partitions Windows added, until each one has been clicked
-const wsPoint=r=>S.glow&&S.hints&&!r.old&&(r.type==="System"&&!WS.seen.sys||r.type==="MSR"&&!WS.seen.msr);
+// the plan needs one more partition and the student has waited 30 s since the first: arrows on the M.2's free space
+const wsFreeOn=()=>WS.freeHint&&IN.plan>=2&&m2Prim().length===1&&m2Free()>.05;
+const wsPoint=r=>wsFreeOn()&&r.unalloc&&r.drive===WS.m2&&WS.sel!==r.id;
+function wsFreeHint(g){ if(g!==WS.hintN||!(IN.plan>=2&&m2Prim().length===1&&m2Free()>.05)) return;
+  if(WS.dlg||PC.mode!=="setup"||WS.page!=="disk"){ setTimeout(()=>wsFreeHint(g),5000); return; }   // busy: try again a little later
+  WS.freeHint=true; renderScreen(); }
 // the teaching note under the window: what the selected row is; while the size row is open, what size to type
 function wsNote(){
   const d=WS.dlg; if(d&&d.kind==="new") return `<p class="ws-note${d.err?" bad":""}">${d.err?"⚠ "+d.err+"<br>":"ⓘ "}${t("ws_sizeMax",{n:Math.floor(wsNewRoom()*1024)})}${IN.plan?" "+t("ws_sizeHelp"+IN.plan):""}</p>`;
+  if(wsFreeOn()) return `<p class="ws-note bad">⚠ ${t("ws_freeHint")}</p>`;
   const r=wsRow(WS.sel); if(!r) return "";
   const pr=m2Prim(), k=r.usb?"in_ex_usb":r.data?"in_ex_data":r.old?"in_ex_old":r.unalloc&&r.drive!==WS.m2?"in_ex_sata":r.unalloc?(IN.plan===3&&pr.length===2?"in_ex_linux":"in_ex_free")
     :r.type==="Primary"?(pr[0]&&r.id===pr[0].id?"in_ex_pri":"in_ex_files"):{System:"in_ex_sys",MSR:"in_ex_msr"}[r.type];
@@ -151,11 +156,9 @@ function wsAct(a,v){
     case "licYes": WS.license=WS.custom=true; WS.page="disk"; break;   // custom: on the disk page (the setupGo step is done)
     case "back": WS.dlg=null; WS.page=WS_BACK[WS.page]||WS.page; break;
     case "sel": WS.sel=v; { const r=wsRow(v), pr=m2Prim(); if(r&&!r.old&&!r.data&&!r.unalloc&&!r.usb) WS.seen[r.type==="System"?"sys":r.type==="MSR"?"msr":pr[0]&&r.id===pr[0].id?"pri":"files"]=1; } break;
-    case "refresh": break;
     case "delete": case "format": WS.dlg={kind:a,id:WS.sel}; break;
     case "new": if(!inGate(m2Prim().length?"diskFiles":"diskWin")) return;   // the first one is the Windows partition if(wsRow(WS.sel).drive!==WS.m2){ toast(t("in_useM2")); return; }
       WS.dlg={kind:"new",id:WS.sel}; WS.size=String(Math.floor(wsNewRoom()*1024)); break;   // filled with the largest size, as Setup does
-    case "load": toast(t("in_loadDrv")); return;
     case "dlgNo": WS.dlg=null; break;
     case "dlgOk": wsDlgOk(); return;
     case "diskNext": wsNext(); return;
@@ -203,6 +206,7 @@ function wsNew(gb,force){
   if(!m2Parts().some(p=>p.type==="System")) add.push({id:"n"+(++WS.pid),drive:WS.m2,gb:.0977,free:.0742,type:"System"},{id:"n"+(++WS.pid),drive:WS.m2,gb:.0156,free:.0156,type:"MSR"});
   const id="p"+(++WS.pid), first=!pr.length; add.push({id,drive:WS.m2,gb,free:gb-.1,type:"Primary",raw:!first});   // Windows formats its own; the others stay raw
   WS.parts=[...WS.parts,...add]; WS.sel=id; if(first) WS.seen.pri=1; else WS.seen.files=1;
+  WS.freeHint=false; if(first){ const g=WS.hintN=(WS.hintN||0)+1; setTimeout(()=>wsFreeHint(g),30000); }
   if(add.length>1&&!force) setTimeout(()=>inCard(t("in_note"),t("in_newParts_t"),t("in_newParts"),{cls:"info"}),300);
   return true;
 }

@@ -250,13 +250,48 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 /* ---- the old Windows (old-windows.js) ---- */
 .pc.lock{ cursor:pointer; }
 .os.old{ direction:inherit; background:radial-gradient(ellipse 50% 40% at 70% 40%, rgba(120,170,255,.35), transparent 70%), linear-gradient(150deg,#0b2a5c,#163f86 50%,#2a5bb5); }
-.ow-startbtn{ display:grid !important; grid-template-columns:repeat(3,5px); gap:2px; align-content:center; justify-content:center; }
-.ow-startbtn i{ width:5px; height:5px; border-radius:50%; background:#2a6fdb; }
-.ow-start{ position:absolute; bottom:54px; inset-inline-start:50%; transform:translateX(-50%); z-index:6; width:min(280px, calc(100% - 20px)); display:grid; gap:2px; padding:10px; border-radius:10px; background:#f3f5f8; box-shadow:0 14px 40px rgba(0,0,0,.35); }
+.ow-startbtn svg{ width:22px !important; height:22px !important; }
+/* Start: classic two columns (old-windows.js owStartMenu); right-click Start: the Win+X menu (owWinX) */
+.ow-start{ position:absolute; bottom:54px; inset-inline-start:50%; transform:translateX(-50%); z-index:6; width:min(420px, calc(100% - 16px)); max-height:calc(100% - 62px);
+  display:grid; grid-template-columns:1.15fr 1fr; overflow:hidden; border:1px solid #7f8a96; background:#f0f0f0; color:#1b1f24; box-shadow:0 14px 40px rgba(0,0,0,.4); font-size:13px; }
 :root[dir="rtl"] .ow-start{ transform:translateX(50%); }
-.ow-start p{ margin:2px 8px 8px; font-weight:600; }
-.ow-start button{ padding:9px 10px; border:0; border-radius:6px; background:transparent; text-align:start; cursor:pointer; }
-.ow-start button:hover{ background:#e3e9f2; }
+.ow-start button{ display:flex; align-items:center; gap:10px; width:100%; border:0; background:transparent; color:inherit; font:inherit; text-align:start; cursor:pointer; }
+.ow-start button span{ flex:1; } .ow-start button > i{ font-style:normal; font-size:16px; line-height:1; }
+.sm-l{ display:flex; flex-direction:column; min-height:0; overflow:auto; padding:6px 4px; background:#f3f3f3; }
+.sm-l button{ padding:6px 8px; } .sm-l button:hover{ background:#dce7f5; }
+.sm-l button svg{ width:28px !important; height:28px !important; flex:none; vertical-align:middle !important; }
+.sm-gap{ flex:1; min-height:8px; }
+.sm-find{ position:relative; display:block; margin:6px 4px 2px; } .sm-find input{ width:100%; box-sizing:border-box; padding:5px 26px 5px 7px; border:1px solid #b8bfc8; background:#fff; font:inherit; font-size:12px; color:inherit; }
+.sm-find svg{ position:absolute; inset-inline-end:6px; top:50%; transform:translateY(-50%); width:14px !important; height:14px !important; }
+.sm-r{ position:relative; display:flex; flex-direction:column; min-height:0; overflow:auto; padding:8px 4px 6px; background:linear-gradient(#1f5aa6,#1a4c8f); color:#fff; }
+.sm-r button{ padding:6px 10px; } .sm-r button:hover{ background:rgba(255,255,255,.14); }
+.sm-r hr{ width:calc(100% - 16px); margin:4px 8px; border:0; border-top:1px solid rgba(255,255,255,.25); }
+.sm-r > p{ margin:4px 10px 6px; font-weight:600; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sm-user{ display:grid; place-items:center; width:46px; height:46px; margin:0 auto; border-radius:50%; background:#2f7be0; border:2px solid rgba(255,255,255,.75); color:#fff; font-size:20px; flex:none; }
+.sm-pwr{ display:flex; gap:2px; margin:4px 6px 0; } .sm-pwr button{ background:rgba(255,255,255,.14); padding:7px 12px; } .sm-pwr button + button{ width:auto; flex:none; padding:7px 10px; }
+.sm-sub{ position:absolute; z-index:2; inset:auto 8px 46px auto; min-width:140px; padding:4px; background:#f3f3f3; color:#1b1f24; border:1px solid #9aa3ae; box-shadow:0 6px 18px rgba(0,0,0,.3); }
+:root[dir="rtl"] .sm-sub{ inset:auto auto 46px 8px; }
+.sm-sub button{ padding:7px 10px; } .sm-sub button:hover{ background:#dce7f5; }
+.ow-winx{ position:absolute; bottom:54px; inset-inline-start:calc(50% - 150px); z-index:6; width:min(250px, calc(100% - 16px)); max-height:calc(100% - 62px); overflow:auto; padding:5px;
+  border-radius:8px; background:#f2f3f5; color:#1b1f24; border:1px solid rgba(0,0,0,.12); box-shadow:0 14px 40px rgba(0,0,0,.35); font-size:13px; }
+.ow-winx button{ display:flex; align-items:center; width:100%; padding:6px 12px; border:0; border-radius:5px; background:transparent; color:inherit; font:inherit; text-align:start; cursor:pointer; }
+.ow-winx button span{ flex:1; } .ow-winx button > i{ font-style:normal; } .ow-winx button:hover{ background:#e2e6ec; }
+.ow-winx hr{ margin:4px 6px; border:0; border-top:1px solid #d3d8de; }
+.wx-sub{ inset:auto auto 30px calc(100% - 30px); } :root[dir="rtl"] .wx-sub{ inset:auto calc(100% - 30px) 30px auto; }
+.ow-start .point::after, .ow-winx .point::after, .set-side .point::after{ content:"◀"; left:auto; right:6px; bottom:auto; top:50%; transform:translateY(-50%); animation:none; }
+:root[dir="rtl"] .ow-start .point::after, :root[dir="rtl"] .ow-winx .point::after, :root[dir="rtl"] .set-side .point::after{ content:"▶"; right:auto; left:6px; }
+:root[dir="rtl"] .ow-start button > i, :root[dir="rtl"] .ow-winx button > i, :root[dir="rtl"] .sm-pwr button + button{ transform:scaleX(-1); }
+/* Settings (in-challenges.js wuWindow): the page list on the side, Windows Update last */
+.win-body.set{ display:grid; grid-template-columns:minmax(150px,210px) 1fr; }
+.set-side{ display:flex; flex-direction:column; gap:1px; padding:10px 6px; background:#eef1f5; overflow:auto; }
+.set-side button{ position:relative; display:flex; align-items:center; gap:10px; padding:7px 10px; border:0; border-radius:5px; background:transparent; color:inherit; font:inherit; font-size:13px; text-align:start; cursor:pointer; }
+.set-side button span{ width:18px; text-align:center; color:#3b6fc4; } .set-side button:hover{ background:#e1e6ed; }
+.set-side button.on{ background:#dde5f0; font-weight:600; } .set-side button.on::before{ content:""; position:absolute; inset-inline-start:0; top:25%; height:50%; width:3px; border-radius:2px; background:#2a6fdb; }
+.set-main{ min-width:0; overflow:auto; } .set-h{ margin:0; font-size:20px; }
+.set-me{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; background:#fff; border:1px solid var(--os-line); }
+.set-me .sm-user{ margin:0; } .set-me div{ display:grid; } .set-me small{ color:var(--os-muted); }
+@media (max-width: 860px){ .ow-start{ grid-template-columns:1fr 1fr; font-size:12px; } .sm-l button svg{ width:22px !important; height:22px !important; }
+  .win-body.set{ grid-template-columns:120px 1fr; } .set-side button{ font-size:11.5px; padding:6px; gap:5px; } }
 .ow-drives{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:10px; padding:8px; }
 .ow-drive{ display:flex; gap:10px; align-items:center; padding:10px; border:1px solid transparent; border-radius:8px; cursor:pointer; user-select:none; }
 .ow-drive:hover{ background:#f3f5f8; }
@@ -358,7 +393,6 @@ body.fs .scr-back{ inset-inline-start:auto; inset-inline-end:58px; top:10px; z-i
 .ws-ready{ margin:0; padding-inline-start:20px; display:grid; gap:8px; font-size:15px; }
 .ws-pct{ font-size:15px; }
 @media (max-width: 860px){                                            /* phones: the whole disk list in view, no scrolling */
-  .ws-tools1{ display:none; }
   .ws-win .ws-body{ padding:10px 12px 6px; } .ws-win .ws-body h2{ font-size:17px; margin:0 0 8px; }
   .ws-tools{ gap:2px 12px; margin:0 0 4px; } .ws-tool{ font-size:12px; padding:2px 1px; } .ws-tool svg{ width:13px; height:13px; }
   .ws-table.disk{ max-height:none; } .ws-table.disk .ws-th, .ws-table.disk .ws-tr{ font-size:11.5px; padding:4px 6px; gap:4px; }

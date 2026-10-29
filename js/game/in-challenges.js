@@ -1,5 +1,5 @@
 /* ---------------- install mode: three more challenges (scenarios in install.js) ----------------
-   bios  an older-style PC with no boot menu key (no F11): DEL into the BIOS, read its boot mode (UEFI), put the stick
+   bios  an older-style PC with no boot menu key (no F11): DEL into the BIOS, put the stick
          first in the boot order (Advanced F7 › Settings › Boot), F10 save and exit: the PC then starts from the stick
          by itself. The BIOS is a clickable page here (BX); the other scenarios keep the BIOS picture.
    bsod  a blue screen (MEMORY_MANAGEMENT) during Setup's copy: why (RAM), power off, open the case, take one RAM stick
@@ -7,12 +7,12 @@
          faulty one (IN.badRam): the blue screen comes back, and the student swaps the two sticks.
    wifi  the new Windows has no driver for the Wi-Fi card, and getting one needs the internet: share the phone's
          internet over its USB cable (USB tethering), let Windows Update fetch the drivers, then join the Wi-Fi. */
-Object.assign(IN_GROUP_OF,{biosEnter:"bios",biosMode:"bios",biosOrder:"bios",biosSave:"bios",biosBoot:"bios",
+Object.assign(IN_GROUP_OF,{biosEnter:"bios",biosOrder:"bios",biosSave:"bios",biosBoot:"bios",
   bsodSee:"bsod",bsodWhy:"bsod",bsodOff:"bsod",bsodCut:"bsod",bsodSwap:"bsod",bsodFinal:"bsod",bsodOpen:"bsod",bsodRam:"bsod",bsodRetry:"bsod",
   wifiSee:"wifi",phoneCable:"wifi",phoneTether:"wifi",wuCheck:"wifi",wuDone:"wifi",wifiOn:"wifi"});
 const ramIn=i=>rams[i].yaw.parent===boardRoot;                       // still in its slot (not lying on the mat)
 Object.assign(IN_DONE,{
-  biosEnter:()=>!!PC.biosSeen, biosMode:()=>BX.mode, biosOrder:()=>BX.order[0]==="usb", biosSave:()=>!!PC.usbFirst, biosBoot:()=>PC.ventoySeen,
+  biosEnter:()=>!!PC.biosSeen, biosOrder:()=>BX.order[0]==="usb", biosSave:()=>!!PC.usbFirst, biosBoot:()=>PC.ventoySeen,
   bsodSee:()=>IN.bsodN>0, bsodWhy:()=>!!IN.bsodWhy, bsodOff:()=>IN.bsodN>0&&!S.powered, bsodCut:()=>inCut(), bsodOpen:()=>!!IN.panelOff,
   bsodRam:()=>rams.filter((r,i)=>ramIn(i)).length===1, bsodRetry:()=>IN.bsodN>1,                 // retry: the blue screen comes back
   bsodSwap:()=>ramIn(1-IN.badRam)&&!ramIn(IN.badRam), bsodFinal:()=>WS.copied,                       // the good stick in, then the copy ends
@@ -20,7 +20,6 @@ Object.assign(IN_DONE,{
 });
 Object.assign(IN_FINISH,{
   biosEnter:()=>{ if(!S.powered) powerUp(); PC.boot++; BX.view="ez"; pcBios(); setTimeout(()=>openScreen("pc"),300); },
-  biosMode:()=>{ BX.mode=true; inCardEl.hidden=true; },
   biosOrder:()=>{ BX.order=["usb","win","net"]; BX.view="boot"; BX.pick=-1; },
   biosSave:()=>{ BX.order=["usb","win","net"]; bxSave(); },
   biosBoot:()=>{ PC.boot++; pcVentoy(); },
@@ -69,7 +68,7 @@ function inAsk(pre,ks,right,ok){
 }
 
 /* ---- bios: the clickable MSI BIOS ---- */
-const BX={view:"ez", order:["win","usb","net"], pick:-1, dlg:null, mode:false};
+const BX={view:"ez", order:["win","usb","net"], pick:-1, dlg:null};
 PC.savedOrder=["win","usb","net"];
 const BX_DEV={win:"Windows Boot Manager (Samsung SSD 980 PRO 1TB)",usb:"UEFI USB Key: SanDisk Ultra 32GB 1.00",net:"UEFI Network: Realtek PXE B04 D00"};
 const BX_SHORT={win:"Windows Boot Manager",usb:"USB: SanDisk",net:"Network"};
@@ -78,7 +77,7 @@ function bxRender(){
   const top=`<div class="bx-top"><b class="bx-msi">msi</b><span>CLICK BIOS 5</span>
     <nav><button data-b="ez" class="${BX.view==="ez"?"on":""}">EZ Mode</button><button data-b="adv" class="${BX.view==="boot"?"on":""}${cur==="biosOrder"&&BX.view==="ez"?pt:""}">Advanced (F7)</button></nav><time>14:32 Tue 29 Sep, 2026</time></div>`;
   const info=`<div class="bx-info"><div><small>CPU Speed</small><b>3.90 GHz</b></div><div><small>DDR Speed</small><b>3200 MHz</b></div>
-    <button data-b="mode" class="bx-mode${cur==="biosMode"?pt:""}"><small>BIOS Mode</small><b>UEFI</b></button>
+    <button data-b="mode" class="bx-mode"><small>BIOS Mode</small><b>UEFI</b></button>
     <dl><dt>CPU</dt><dd>AMD Ryzen 5 5600G with Radeon Graphics</dd><dt>Memory Size</dt><dd>16384MB</dd><dt>BIOS Ver</dt><dd>E7C02AMS.2H0</dd></dl></div>`;
   const body=BX.view==="ez"
     ?`<section class="bx-box"><h4>Boot Priority</h4><div class="bx-prio">${o.map((k,i)=>`<span class="${i===0?"first":""}">${i+1}. ${BX_SHORT[k]}</span>`).join("")}</div>
@@ -109,9 +108,7 @@ function bxAct(a,v){
     case "ez": BX.view="ez"; BX.pick=-1; break;
     case "adv": BX.view=BX.view==="boot"?"ez":"boot"; BX.pick=-1; break;
     case "esc": if(BX.view==="boot"){ BX.view="ez"; break; } BX.dlg="exit"; break;
-    case "mode": if(inCur()==="biosMode"&&!BX.mode){ inAsk("in_bm",["a","b","c"],"a",()=>{ BX.mode=true; inCheck(); renderScreen();
-        setTimeout(()=>inCard(t("in_note"),t("in_bm_okT"),t("in_bm_ok"),{cls:"info"}),50); }); return; }
-      toast(t("in_bx_uefi")); return;
+    case "mode": toast(t("in_bx_uefi")); return;
     case "opt": if(!inGate("biosOrder")) return; BX.pick=+v; break;
     case "set": { const o=BX.order, from=o.indexOf(v), to=BX.pick; [o[from],o[to]]=[o[to],o[from]]; BX.pick=-1; inCheck(); break; }
     case "save": BX.dlg="save"; break;
@@ -257,6 +254,8 @@ function netFlyout(){
     <div class="net-item${PH.tether?"":" off"}">${NET_ICON.eth}<div><b>${t("net_eth")}</b><small>${PH.tether?t("net_ethOn"):t("net_ethOff")}</small></div></div>
     ${WU.done?"":`<p class="net-tip">${t("net_noAdapterD")}</p>`}</div>`;
 }
+// Settings (Start › Settings, or Win+X › Settings): the list on the side, Windows Update last; it opens on Home
+const SET_PAGES=[["home","⌂"],["sys","▭"],["bt","✱"],["net","◍"],["pers","✎"],["apps","☷"],["acc","☺"],["time","◷"],["wu","↻"]];
 // the update list: each item downloads, then installs (the Wi-Fi driver first)
 const WU_ITEMS=["wu_i1","wu_i2","wu_i3","wu_i4"];
 function wuWindow(){
@@ -264,10 +263,14 @@ function wuWindow(){
   const sub=!WU.on?(WU.offline?t("wu_offlineD"):t("wu_never")):WU.done?t("wu_doneD"):t("wu_busyD");
   const items=WU_ITEMS.map((k,i)=>{ const [p,st]=wuItem(i);
     return `<div class="wu-item"><b>${t(k)}</b><small>${st}</small><div class="pbar"><i style="width:${(p*100).toFixed(0)}%"></i></div></div>`; }).join("");
-  return `<section class="win"><header class="win-bar"><span class="win-ic">${WU_ICON}</span><b>${t("wu_set")}</b><button data-o="close" class="x" aria-label="${t("os_close")}">×</button></header>
-    <div class="win-body"><div class="wu"><div class="wu-head"><span class="wu-big">${WU_ICON}</span><div><h3>${h}</h3><small>${sub}</small></div>
+  const pg=OW.setPg||"home", side=SET_PAGES.map(([k,ic])=>`<button data-o="setPg" data-v="${k}" class="${pg===k?"on":""}${k==="wu"&&pg!=="wu"&&inCur()==="wuCheck"&&S.glow&&S.hints?" point":""}"><span aria-hidden="true">${ic}</span>${t("set_"+k)}</button>`).join("");
+  const user=WS.user||t("ow_user");
+  const main=pg==="wu"?`<div class="wu"><div class="wu-head"><span class="wu-big">${WU_ICON}</span><div><h3>${h}</h3><small>${sub}</small></div>
       ${WU.on?"":`<button class="os-btn pri${S.glow&&S.hints&&inCur()==="wuCheck"?" point":""}" data-o="wuCheck">${t("wu_check")}</button>`}</div>
-      ${WU.on?`<div class="wu-list">${items}</div>`:""}</div></div></section>`;
+      ${WU.on?`<div class="wu-list">${items}</div>`:""}</div>`
+    :`<div class="wu"><h3 class="set-h">${t("set_home")}</h3><div class="set-me"><b class="sm-user" aria-hidden="true">${user.trim().charAt(0).toUpperCase()}</b><div><b>${user}</b><small>DESKTOP-7K2Q9 · ${t("set_local")}</small></div></div></div>`;
+  return `<section class="win"><header class="win-bar"><span class="win-ic">${SM_ICON.set}</span><b>${t("wu_set")}</b><button data-o="close" class="x" aria-label="${t("os_close")}">×</button></header>
+    <div class="win-body set"><nav class="set-side">${side}</nav><div class="set-main">${main}</div></div></section>`;
 }
 // one item's progress (0–1) and its status text
 function wuItem(i){ const p=Math.max(0,Math.min(1,(WU.k-i*.12)/.52));
@@ -282,11 +285,12 @@ function wuCheck(){
   tween(16000,k=>{ WU.k=k; const n=performance.now(); if(n-last>300){ last=n; if(SCR.dev==="pc"&&OW.wu) wuDom(); } },
     ()=>{ WU.k=1; WU.done=true; toast(t("in_wf_drivers"),"ok"); renderScreen(); inCheck(); },k=>k);
 }
-function owChAct(a){
+function owChAct(a,v){
   switch(a){
     case "net": OW.net=!OW.net; if(OW.net) OW.netSeen=true; return true;
     case "wifiCon": OW.wifi=true; toast(t("in_wf_wifiOk"),"ok"); return true;
-    case "wu": OW.wu=true; OW.app=OW.dm=OW.net=false; return true;
+    case "set": if(!OW.wu) OW.setPg="home"; OW.wu=true; OW.app=OW.dm=OW.net=false; return true;
+    case "setPg": if(v==="wu"||v==="home") OW.setPg=v; else toast(t("sm_no")); return true;
     case "wuCheck": wuCheck(); return true;
   }
   return false;
